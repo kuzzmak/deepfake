@@ -1,3 +1,4 @@
+from gui.widgets.video_player import VideoPlayer
 from PyQt5 import QtCore
 from PyQt5.QtGui import QTextCursor
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -26,11 +27,14 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
         self.select_video_btn.clicked.connect(self.select_video)
 
-        videoWidget = QVideoWidget()
-        videoWidget.setFixedSize(100, 100)
-        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-        self.mediaPlayer.setVideoOutput(videoWidget)
-        self.tab_1_layout.addWidget(videoWidget)
+        # videoWidget = QVideoWidget()
+        # videoWidget.setFixedSize(100, 100)
+        # self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+        # self.mediaPlayer.setVideoOutput(videoWidget)
+
+        self.video_player = VideoPlayer()
+        self.tab_1_layout.addWidget(self.video_player)
+        self.tab_1_layout.addWidget(QLabel(text='labels'))
 
     def goto_start_page(self):
         self.goto(START_PAGE_NAME)
@@ -46,8 +50,9 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         fileName, _ = QFileDialog.getOpenFileName(
             self, 'Select video file', "data/videos", "Video files (*.mp4)", options=options)
         if fileName:
-            print(fileName)
-            self.mediaPlayer.setMedia(
-                QMediaContent(QtCore.QUrl.fromLocalFile(fileName)))
+            # print(fileName)
+            # self.mediaPlayer.setMedia(
+            #     QMediaContent(QtCore.QUrl.fromLocalFile(fileName)))
 
-            self.mediaPlayer.play()
+            # self.mediaPlayer.play()
+            self.video_player.video_selection.emit(fileName)
