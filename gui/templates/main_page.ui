@@ -24,7 +24,7 @@
        <widget class="QWidget" name="page"/>
        <widget class="QWidget" name="page_2"/>
       </widget>
-      <widget class="QTextEdit" name="main_console">
+      <widget class="QTextEdit" name="console">
        <property name="minimumSize">
         <size>
          <width>30</width>

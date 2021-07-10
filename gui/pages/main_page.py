@@ -1,3 +1,4 @@
+import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
@@ -7,7 +8,7 @@ from gui.pages.make_deepfake_page import MakeDeepfakePage
 
 from gui.templates.main_page import Ui_main_page
 
-from constants import PREFERRED_HEIGHT, PREFERRED_WIDTH
+from constants import CONSOLE_FONT_NAME, PREFERRED_HEIGHT, PREFERRED_WIDTH
 
 from names import START_PAGE_NAME
 
@@ -16,14 +17,18 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     show_menu_bar_sig = qtc.pyqtSignal(bool)
     show_console_sig = qtc.pyqtSignal(bool)
+    console_print_sig = qtc.pyqtSignal(str)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.show_menu_bar_sig.connect(self.show_menu_bar)
         self.show_console_sig.connect(self.show_console)
+        self.console_print_sig.connect(self.console_print)
         
         self.setupUi(self)
+        font = qtg.QFont(CONSOLE_FONT_NAME)
+        self.console.setFont(font)
         self.show_console_sig.emit(False)
 
         self.m_pages = {}
@@ -66,10 +71,13 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.register_page(MakeDeepfakePage(self))
 
     def show_console(self, show: bool):
-        self.show_widget(self.main_console, show)
+        self.show_widget(self.console, show)
 
     def show_menu_bar(self, show: bool):
         self.show_widget(self.menubar, show)
+
+    def console_print(self, message):
+        self.console.append(message)
 
     def show_widget(self, widget: qwt.QWidget, show: bool):
         if show:

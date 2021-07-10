@@ -19,5 +19,8 @@ class Page(qwt.QWidget):
     def show_console(self, show):
         self.parent.show_console_sig.emit(show)
 
+    def print(self, message: str):
+        self.parent.console_print_sig.emit(message)
+
     def goto(self, name):
         self.gotoSignal.emit(name)
