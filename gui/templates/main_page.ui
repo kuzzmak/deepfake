@@ -6,19 +6,38 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>922</width>
-    <height>785</height>
+    <width>907</width>
+    <height>764</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QStackedWidget" name="stacked_widget">
-      <widget class="QWidget" name="page"/>
-      <widget class="QWidget" name="page_2"/>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <widget class="QStackedWidget" name="stacked_widget">
+       <widget class="QWidget" name="page"/>
+       <widget class="QWidget" name="page_2"/>
+      </widget>
+      <widget class="QTextEdit" name="main_console">
+       <property name="minimumSize">
+        <size>
+         <width>30</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>200</height>
+        </size>
+       </property>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -28,7 +47,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>922</width>
+     <width>907</width>
      <height>26</height>
     </rect>
    </property>

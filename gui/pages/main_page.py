@@ -2,24 +2,29 @@ import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from gui.pages.page import Page
-from gui.templates.main_page import Ui_main_page
 from gui.pages.start_page import StartPage
 from gui.pages.make_deepfake_page import MakeDeepfakePage
 
+from gui.templates.main_page import Ui_main_page
+
 from constants import PREFERRED_HEIGHT, PREFERRED_WIDTH
 
-from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME, START_PAGE_TITLE
+from names import START_PAGE_NAME
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
 
     show_menu_bar_sig = qtc.pyqtSignal(bool)
+    show_console_sig = qtc.pyqtSignal(bool)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.show_menu_bar_sig.connect(self.show_menu_bar)
+        self.show_console_sig.connect(self.show_console)
+        
         self.setupUi(self)
+        self.show_console_sig.emit(False)
 
         self.m_pages = {}
         self.register_pages()
@@ -60,11 +65,17 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.register_page(StartPage(self))
         self.register_page(MakeDeepfakePage(self))
 
+    def show_console(self, show: bool):
+        self.show_widget(self.main_console, show)
+
     def show_menu_bar(self, show: bool):
+        self.show_widget(self.menubar, show)
+
+    def show_widget(self, widget: qwt.QWidget, show: bool):
         if show:
-            self.menubar.show()
+            widget.show()
         else:
-            self.menubar.hide()
+            widget.hide()
 
     @qtc.pyqtSlot(str)
     def goto(self, name):

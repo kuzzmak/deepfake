@@ -34,12 +34,9 @@ class CONSOLE_MESSAGE_TYPE(Enum):
 class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
     def __init__(self, parent, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.parent = parent
+        super().__init__(parent, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
 
         self.setupUi(self)
-        self.page_name = MAKE_DEEPFAKE_PAGE_NAME
 
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
@@ -61,7 +58,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.video_player.hide()
 
     def goto_start_page(self):
-        self.parent.show_menu_bar_sig.emit(False)
+        self.show_menu_bar(False)
+        self.show_console(False)
         self.goto(START_PAGE_NAME)
 
     def _get_console_message_prefix(self, message_type: CONSOLE_MESSAGE_TYPE):
