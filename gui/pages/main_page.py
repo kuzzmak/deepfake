@@ -13,24 +13,27 @@ from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME, START_PAGE_TITLE
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
 
+    show_menu_bar_sig = qtc.pyqtSignal(bool)
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.show_menu_bar_sig.connect(self.show_menu_bar)
         self.setupUi(self)
 
         self.m_pages = {}
         self.register_pages()
+        self.init_toolbar()
 
-        # self.setGeometry(0, 0, MAX_WIDTH, MAX_HEIGHT)
-        # self.setMaximumHeight(MAX_HEIGHT)
-        # self.setMaximumWidth(MAX_WIDTH)
         self.resize(PREFERRED_WIDTH, PREFERRED_HEIGHT)
-        self.setWindowTitle(START_PAGE_TITLE)
-
+        
         self.goto(START_PAGE_NAME)
 
-    def goto_make_deepfake(self):
-        self.goto(MAKE_DEEPFAKE_PAGE_NAME)
+    def init_toolbar(self):
+        self.menubar = self.menuBar()
+        file_menu = self.menubar.addMenu('File')
+        file_menu.addAction('Quit', self.close)
+        self.show_menu_bar_sig.emit(False)
 
     def register_page(self, page: Page):
         self.m_pages[page.page_name] = page
@@ -39,8 +42,14 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             page.gotoSignal.connect(self.goto)
 
     def register_pages(self):
-        self.register_page(StartPage())
-        self.register_page(MakeDeepfakePage())
+        self.register_page(StartPage(self))
+        self.register_page(MakeDeepfakePage(self))
+
+    def show_menu_bar(self, show: bool):
+        if show:
+            self.menubar.show()
+        else:
+            self.menubar.hide()
 
     @qtc.pyqtSlot(str)
     def goto(self, name):
