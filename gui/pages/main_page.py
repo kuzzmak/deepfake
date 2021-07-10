@@ -11,7 +11,7 @@ from constants import PREFERRED_HEIGHT, PREFERRED_WIDTH
 from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME, START_PAGE_TITLE
 
 
-class AppPage(qwt.QMainWindow, Ui_main_page):
+class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

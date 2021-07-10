@@ -2,7 +2,7 @@ import sys
 
 import PyQt5.QtWidgets as qwt
 
-from gui.pages.app_page import AppPage
+from gui.pages.main_page import MainPage
 
 
 class App:
@@ -12,6 +12,6 @@ class App:
 
     def gui(self):
         _app = qwt.QApplication(sys.argv)
-        gui = AppPage()
+        gui = MainPage()
         gui.show()
         sys.exit(_app.exec_())
