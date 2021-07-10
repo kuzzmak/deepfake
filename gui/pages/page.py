@@ -1,10 +1,10 @@
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget
+import PyQt5.QtCore as qtc
+import PyQt5.QtWidgets as qwt
 
 
-class Page(QWidget):
+class Page(qwt.QWidget):
 
-    gotoSignal = QtCore.pyqtSignal(str)
+    gotoSignal = qtc.pyqtSignal(str)
 
     def __init__(self, page_name: str = 'page'):
         super().__init__()
