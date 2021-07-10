@@ -10,7 +10,7 @@ class StartPage(Page, Ui_start_page):
         super().__init__(*args, **kwargs)
 
         self.setupUi(self)
-        self.name = START_PAGE_NAME
+        self.page_name = START_PAGE_NAME
 
         self.setWindowTitle(START_PAGE_TITLE)
 

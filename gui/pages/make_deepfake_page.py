@@ -37,7 +37,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         super().__init__(*args, **kwargs)
 
         self.setupUi(self)
-        self.name = MAKE_DEEPFAKE_PAGE_NAME
+        self.page_name = MAKE_DEEPFAKE_PAGE_NAME
 
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
@@ -86,6 +86,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             self.console_print('Loaded video: ' + fileName, CONSOLE_MESSAGE_TYPE.ERROR)
         else:
             self.console_print('No video selected', CONSOLE_MESSAGE_TYPE.WARNING)
-        
+
         self.console_print('No video selected', CONSOLE_MESSAGE_TYPE.LOG)
         self.console_print('No video selected', CONSOLE_MESSAGE_TYPE.INFO)

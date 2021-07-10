@@ -27,7 +27,7 @@ class App(qwt.QMainWindow):
         self.setWindowTitle(APP_NAME)
 
     def register_page(self, page: Page):
-        self.m_pages[page.name] = page
+        self.m_pages[page.page_name] = page
         self.stacked_widget.addWidget(page)
         if isinstance(page, Page):
             page.gotoSignal.connect(self.goto)
