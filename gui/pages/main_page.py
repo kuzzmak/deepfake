@@ -32,8 +32,23 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def init_toolbar(self):
         self.menubar = self.menuBar()
         file_menu = self.menubar.addMenu('File')
+        file_menu.addAction('Settings', self.settings)
+        file_menu.addSeparator()
         file_menu.addAction('Quit', self.close)
+
+        help_menu = self.menubar.addMenu('Help')
+
         self.show_menu_bar_sig.emit(False)
+
+    def settings(self):
+        settings_window = qwt.QMainWindow(self)
+        cw = qwt.QWidget()
+        layout = qwt.QVBoxLayout()
+        btn_ok = qwt.QPushButton(text='ok')
+        layout.addWidget(btn_ok)
+        cw.setLayout(layout)
+        settings_window.setCentralWidget(cw)
+        settings_window.show()
 
     def register_page(self, page: Page):
         self.m_pages[page.page_name] = page
