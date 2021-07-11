@@ -42,10 +42,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.goto(START_PAGE_NAME)
 
     def init_toolbar(self):
-        self.toolbar = self.addToolBar('tools')
-        self.toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
+        toolbar = qwt.QToolBar(self)
+        self.addToolBar(qtc.Qt.LeftToolBarArea, toolbar)
+        toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
         icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_ArrowLeft)
-        self.toolbar.addAction(icon, 'back')
+        toolbar.addAction(icon, 'back')
 
     def init_menubar(self):
         self.menubar = self.menuBar()
