@@ -60,12 +60,14 @@ class ContextMenuEventFilter(qtc.QObject):
 
 
 class PictureViewer(qwt.QWidget):
+
+    picture_added_sig = qtc.pyqtSignal(str)
+
     def __init__(self):
         super(PictureViewer, self).__init__()
-        self.resize(800, 400)
-        # self.setWindowTitle('Image Viewer')
 
-        self.image_dir = 'dummy_pics'
+        self.picture_added_sig.connect(self.picture_added)
+        # self.image_dir = 'dummy_pics'
 
         self.ui_image_viewer = qwt.QListView()
         self.ui_image_viewer.viewport().installEventFilter(self)
@@ -81,14 +83,6 @@ class PictureViewer(qwt.QWidget):
         self.ui_image_viewer.setMovement(qwt.QListView.Static)
         self.ui_image_viewer.setModel(StandardItemModel())
 
-        for img in os.listdir(self.image_dir):
-            img_path = os.path.join(self.image_dir, img)
-            name = os.path.splitext(os.path.basename(img_path))[0]
-            item = StandardItem(name)
-            item.setData(img_path)
-            self.ui_image_viewer.model().appendRow(item)
-
-        # Layout
         grid = qwt.QVBoxLayout()
         # grid.setContentsMargins(10, 10, 10, 10)
         grid.addWidget(self.ui_image_viewer)
@@ -104,6 +98,13 @@ class PictureViewer(qwt.QWidget):
         newAct = self.context_menu.addAction("New")
         openAct = self.context_menu.addAction("Open")
         quitAct = self.context_menu.addAction("Quit")
+
+    @qtc.pyqtSlot(str)
+    def picture_added(self, img_path: str):
+        name = os.path.splitext(os.path.basename(img_path))[0]
+        item = StandardItem(name)
+        item.setData(img_path)
+        self.ui_image_viewer.model().appendRow(item)
 
     def eventFilter(self, source, event) -> bool:
         if source == self.ui_image_viewer.viewport():

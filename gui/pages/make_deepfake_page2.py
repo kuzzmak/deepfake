@@ -3,6 +3,7 @@ from names import MAKE_DEEPFAKE_PAGE_NAME, MAKE_DEEPFAKE_PAGE_TITLE
 from gui.pages.page import Page
 from gui.templates.make_deepfake_page_2 import Ui_make_deepfake_page
 import PyQt5.QtWidgets as qwt
+import os
 
 
 class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
@@ -23,6 +24,11 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         directory = qwt.QFileDialog.getExistingDirectory(self, "getExistingDirectory", "./")
         if directory:
             self.preview_widget.setCurrentWidget(self.pv)
+            images = os.listdir(directory)
+            curr_dir = os.path.abspath(directory)
+            image_paths = [os.path.join(curr_dir, x) for x in images]
+            for img_path in image_paths:
+                self.pv.picture_added_sig.emit(img_path)
             # self.preview_widget = PictureViewer()
             # self.preview_widget.repaint()
             # self.add_picture_viewer(directory)
