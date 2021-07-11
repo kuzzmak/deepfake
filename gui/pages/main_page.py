@@ -1,3 +1,5 @@
+from collections import namedtuple
+from enum import Enum
 from gui.pages.make_deepfake_page2 import MakeDeepfakePage2
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
@@ -12,6 +14,8 @@ from gui.templates.main_page import Ui_main_page
 from constants import CONSOLE_FONT_NAME, PREFERRED_HEIGHT, PREFERRED_WIDTH
 
 from names import START_PAGE_NAME
+
+
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
@@ -30,11 +34,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.console_print_sig.connect(self.console_print)
 
         self.m_pages = {}
-        
+
         self.init_ui()
 
         self.show_console(False)
-        
+
         self.goto(START_PAGE_NAME)
 
     def init_ui(self):
@@ -48,7 +52,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.init_toolbar()
 
         self.resize(PREFERRED_WIDTH, PREFERRED_HEIGHT)
-
 
     def init_toolbar(self):
         self.toolbar = qwt.QToolBar(self)

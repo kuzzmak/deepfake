@@ -1,6 +1,6 @@
 from gui.widgets.picture_viewer import PictureViewer
-from names import MAKE_DEEPFAKE_PAGE_NAME, MAKE_DEEPFAKE_PAGE_TITLE
-from gui.pages.page import Page
+from names import MAKE_DEEPFAKE_PAGE_TITLE
+from gui.pages.page import CONSOLE_MESSAGE_TYPE, Page
 from gui.templates.make_deepfake_page_2 import Ui_make_deepfake_page
 import PyQt5.QtWidgets as qwt
 import os
@@ -32,6 +32,8 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
             # self.preview_widget = PictureViewer()
             # self.preview_widget.repaint()
             # self.add_picture_viewer(directory)
+            message = 'Loaded: {} images from: {}'.format(len(images), curr_dir)
+            self.print(message, CONSOLE_MESSAGE_TYPE.INFO)
 
     def add_picture_viewer(self, folder_path: str):
         self.preview_widget = PictureViewer()
