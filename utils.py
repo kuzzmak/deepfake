@@ -1,5 +1,3 @@
-from genericpath import isfile
-from ntpath import join
 import os
 
 
