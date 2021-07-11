@@ -1,3 +1,4 @@
+from gui.pages.make_deepfake_page2 import MakeDeepfakePage2
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -33,6 +34,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.m_pages = {}
         self.register_pages()
+        self.init_menubar()
         self.init_toolbar()
 
         self.resize(PREFERRED_WIDTH, PREFERRED_HEIGHT)
@@ -40,6 +42,12 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.goto(START_PAGE_NAME)
 
     def init_toolbar(self):
+        self.toolbar = self.addToolBar('tools')
+        self.toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
+        icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_ArrowLeft)
+        self.toolbar.addAction(icon, 'back')
+
+    def init_menubar(self):
         self.menubar = self.menuBar()
         file_menu = self.menubar.addMenu('File')
         file_menu.addAction('Settings', self.settings)
@@ -68,7 +76,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def register_pages(self):
         self.register_page(StartPage(self))
-        self.register_page(MakeDeepfakePage(self))
+        # self.register_page(MakeDeepfakePage(self))
+        self.register_page(MakeDeepfakePage2(self))
 
     def show_console(self, show: bool):
         self.show_widget(self.console, show)
