@@ -13,12 +13,20 @@ class Page(qwt.QWidget):
         self.parent = parent
         self.page_name = page_name
 
-    def show_menu_bar(self, show):
-        self.parent.show_menu_bar_sig.emit(show)
+    def show_menubar(self, show):
+        self.parent.show_menubar_sig.emit(show)
 
     def show_console(self, show):
         self.parent.show_console_sig.emit(show)
 
+    def show_toolbar(self, show):
+        self.parent.show_toolbar_sig.emit(show)
+
+    def show_toolbars_and_console(self, show):
+        self.show_menubar(show)
+        self.show_toolbar(show)
+        self.show_console(show)
+    
     def print(self, message: str):
         self.parent.console_print_sig.emit(message)
 

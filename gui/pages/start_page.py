@@ -16,7 +16,6 @@ class StartPage(Page, Ui_start_page):
         self.make_deepfake_btn.clicked.connect(self.goto_make_deepfake)
 
     def goto_make_deepfake(self):
-        self.show_menu_bar(True)
-        self.show_console(True)
+        self.show_toolbars_and_console(True)
         # self.goto(MAKE_DEEPFAKE_PAGE_NAME)
         self.goto('make_deepfake_page_2')

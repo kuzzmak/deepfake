@@ -16,37 +16,47 @@ from names import START_PAGE_NAME
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
 
-    show_menu_bar_sig = qtc.pyqtSignal(bool)
+    show_menubar_sig = qtc.pyqtSignal(bool)
     show_console_sig = qtc.pyqtSignal(bool)
+    show_toolbar_sig = qtc.pyqtSignal(bool)
     console_print_sig = qtc.pyqtSignal(str)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.show_menu_bar_sig.connect(self.show_menu_bar)
+        self.show_menubar_sig.connect(self.show_menubar)
         self.show_console_sig.connect(self.show_console)
+        self.show_toolbar_sig.connect(self.show_toolbar)
         self.console_print_sig.connect(self.console_print)
-        
-        self.setupUi(self)
-        font = qtg.QFont(CONSOLE_FONT_NAME)
-        self.console.setFont(font)
-        self.show_console_sig.emit(False)
 
         self.m_pages = {}
+        
+        self.init_ui()
+
+        self.show_console(False)
+        
+        self.goto(START_PAGE_NAME)
+
+    def init_ui(self):
+        self.setupUi(self)
+
+        font = qtg.QFont(CONSOLE_FONT_NAME)
+        self.console.setFont(font)
+
         self.register_pages()
         self.init_menubar()
         self.init_toolbar()
 
         self.resize(PREFERRED_WIDTH, PREFERRED_HEIGHT)
-        
-        self.goto(START_PAGE_NAME)
+
 
     def init_toolbar(self):
-        toolbar = qwt.QToolBar(self)
-        self.addToolBar(qtc.Qt.LeftToolBarArea, toolbar)
-        toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
+        self.toolbar = qwt.QToolBar(self)
+        self.addToolBar(qtc.Qt.LeftToolBarArea, self.toolbar)
+        self.toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
         icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_ArrowLeft)
-        toolbar.addAction(icon, 'back')
+        self.toolbar.addAction(icon, 'back')
+        self.show_toolbar(False)
 
     def init_menubar(self):
         self.menubar = self.menuBar()
@@ -57,7 +67,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         help_menu = self.menubar.addMenu('Help')
 
-        self.show_menu_bar_sig.emit(False)
+        self.show_menubar(False)
 
     def settings(self):
         settings_window = qwt.QMainWindow(self)
@@ -80,13 +90,20 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         # self.register_page(MakeDeepfakePage(self))
         self.register_page(MakeDeepfakePage2(self))
 
+    @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
         self.show_widget(self.console, show)
 
-    def show_menu_bar(self, show: bool):
+    @qtc.pyqtSlot(bool)
+    def show_menubar(self, show: bool):
         self.show_widget(self.menubar, show)
 
-    def console_print(self, message):
+    @qtc.pyqtSlot(bool)
+    def show_toolbar(self, show: bool):
+        self.show_widget(self.toolbar, show)
+
+    @qtc.pyqtSlot(str)
+    def console_print(self, message: str):
         self.console.append(message)
 
     def show_widget(self, widget: qwt.QWidget, show: bool):

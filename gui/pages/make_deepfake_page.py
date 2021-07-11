@@ -53,7 +53,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.video_player.hide()
 
     def goto_start_page(self):
-        self.show_menu_bar(False)
+        self.show_menubar(False)
         self.show_console(False)
         self.goto(START_PAGE_NAME)
 
