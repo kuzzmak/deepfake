@@ -8,8 +8,9 @@ from constants import CONSOLE_TEXT_SIZE
 
 from gui.templates.main_page import Ui_main_page
 
-console_message_template = '<span style="font-size:{}pt; color:{}; white-space:pre;">{}<span>'
 ConsolePrefix = namedtuple('ConsolePrefix', 'prefix prefix_color')
+
+console_message_template = '<span style="font-size:{}pt; color:{}; white-space:pre;">{}<span>'
 
 
 class CONSOLE_COLORS(Enum):
