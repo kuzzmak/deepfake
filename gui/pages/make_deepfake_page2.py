@@ -4,6 +4,7 @@ from gui.pages.page import CONSOLE_MESSAGE_TYPE, Page
 from gui.templates.make_deepfake_page_2 import Ui_make_deepfake_page
 import PyQt5.QtWidgets as qwt
 import os
+from utils import get_file_paths_from_dir
 
 
 class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
@@ -21,21 +22,20 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.select_pictures_btn.clicked.connect(self.select_pictures)
 
     def select_pictures(self):
-        directory = qwt.QFileDialog.getExistingDirectory(self, "getExistingDirectory", "./")
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self, "getExistingDirectory", "./")
         if directory:
             self.preview_widget.setCurrentWidget(self.pv)
-            images = os.listdir(directory)
-            curr_dir = os.path.abspath(directory)
-            image_paths = [os.path.join(curr_dir, x) for x in images]
-            for img_path in image_paths:
-                self.pv.picture_added_sig.emit(img_path)
-            # self.preview_widget = PictureViewer()
-            # self.preview_widget.repaint()
-            # self.add_picture_viewer(directory)
-            message = 'Loaded: {} images from: {}'.format(len(images), curr_dir)
-            self.print(message, CONSOLE_MESSAGE_TYPE.INFO)
 
-    def add_picture_viewer(self, folder_path: str):
-        self.preview_widget = PictureViewer()
-        
-        
+            image_paths = get_file_paths_from_dir(directory)
+            if len(image_paths) == 0:
+                self.print(f'No images were found in: {directory}.', CONSOLE_MESSAGE_TYPE.WARNING)
+            else:
+                for img_path in image_paths:
+                    self.pv.picture_added_sig.emit(img_path)
+
+                message = 'Loaded: {} images from: {}.'.format(
+                    len(image_paths), directory)
+                self.print(message, CONSOLE_MESSAGE_TYPE.LOG)
+        else:
+            self.print('No folder was selected.', CONSOLE_MESSAGE_TYPE.WARNING)
