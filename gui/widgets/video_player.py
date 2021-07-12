@@ -70,8 +70,6 @@ class VideoPlayer(qwt.QWidget):
         self.mediaPlayer.setMedia(
             QMediaContent(qtc.QUrl.fromLocalFile(video_path)))
         self.playButton.setEnabled(True)
-        print('from da real')
-        print(video_path)
 
     def play(self):
         if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
