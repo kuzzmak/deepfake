@@ -33,7 +33,7 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
         self.select_pictures_btn.clicked.connect(self.select_pictures)
-        self.select_video_btn.clicked.connect(self.selecte_video)
+        self.select_video_btn.clicked.connect(self.select_video)
 
     def slider_moved(self, position: int):
         self.number_of_threads_label.setText(str(position))
@@ -44,7 +44,7 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
     def enable_detection_algorithm_tab(self, enable: bool):
         self.tab_widget.setTabEnabled(1, enable)
 
-    def selecte_video(self):
+    def select_video(self):
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
         video_path, _ = qwt.QFileDialog.getOpenFileName(
@@ -53,7 +53,7 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
             self.video_player.video_selection.emit(video_path)
             self.preview_widget.setCurrentWidget(self.video_player)
             video_name = os.path.splitext(os.path.basename(video_path))[0]
-            
+
             self.set_preview_label_text(
                 'Preview of: ' + video_name + ' video.')
             message = 'Loaded video from: {}'.format(video_path)
