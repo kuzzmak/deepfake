@@ -6,9 +6,27 @@ from gui.templates.make_deepfake_page_2 import Ui_make_deepfake_page
 import PyQt5.QtWidgets as qwt
 import os
 from utils import get_file_paths_from_dir
+import PyQt5.QtCore as qtc
+import time
+
+
+class Worker(qtc.QObject):
+
+    incremented_val = qtc.pyqtSignal(int)
+
+    @qtc.pyqtSlot(int)
+    def increment_value(self, value: int):
+        new_value = value
+        while new_value < 100:
+            new_value += 1
+            time.sleep(0.05)
+            self.incremented_val.emit(new_value)
+
 
 
 class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
+
+    new_val_requested = qtc.pyqtSignal(int)
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, page_name='make_deepfake_page_2', *args, **kwargs)
@@ -28,12 +46,42 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.number_of_threads_label.setText(str(init_cpus_num))
         self.number_of_threads_slider.sliderMoved.connect(self.slider_moved)
 
-        self.enable_detection_algorithm_tab(False)
+        # self.enable_detection_algorithm_tab(False)
 
+        # self.face_extraction_progress.hide()
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
         self.select_pictures_btn.clicked.connect(self.select_pictures)
         self.select_video_btn.clicked.connect(self.select_video)
+        self.start_detection_btn.clicked.connect(self.start_detection)
+
+        self.worker = Worker()
+        self.worker_thread = qtc.QThread()
+        self.worker.incremented_val.connect(self.increment_progress)
+        self.new_val_requested.connect(self.worker.increment_value)
+        self.worker.moveToThread(self.worker_thread)
+        self.worker_thread.start()
+
+
+        self.face_extraction_progress.valueChanged.connect(self.progress_value_changed)
+
+    def progress_value_changed(self, value: int):
+        if value == 100:
+            msg = qwt.QMessageBox(self)
+            msg.setIcon(qwt.QMessageBox.Information)
+            msg.setText("Face extraction successful.")
+            msg.setInformativeText("Extracted faces are shown below.")
+            msg.setWindowTitle("Face extraction information")
+            msg.setStandardButtons(qwt.QMessageBox.Ok)
+            msg.exec_()
+
+    def increment_progress(self, new_val: int):
+        self.face_extraction_progress.setValue(new_val)
+
+    def start_detection(self):
+        self.new_val_requested.emit(0)
+        
+        # self.face_extraction_progress.show()
 
     def slider_moved(self, position: int):
         self.number_of_threads_label.setText(str(position))
