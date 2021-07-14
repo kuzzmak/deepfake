@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main_page.ui'
+# Form implementation generated from reading ui file 'main_page_2.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -14,11 +14,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_main_page(object):
     def setupUi(self, main_page):
         main_page.setObjectName("main_page")
-        main_page.resize(907, 764)
+        main_page.resize(843, 710)
+        main_page.setBaseSize(QtCore.QSize(200, 0))
         self.centralwidget = QtWidgets.QWidget(main_page)
         self.centralwidget.setObjectName("centralwidget")
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
-        self.verticalLayout.setObjectName("verticalLayout")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.centralwidget)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.splitter = QtWidgets.QSplitter(self.centralwidget)
         self.splitter.setOrientation(QtCore.Qt.Vertical)
         self.splitter.setObjectName("splitter")
@@ -30,14 +31,25 @@ class Ui_main_page(object):
         self.page_2 = QtWidgets.QWidget()
         self.page_2.setObjectName("page_2")
         self.stacked_widget.addWidget(self.page_2)
-        self.console = QtWidgets.QTextEdit(self.splitter)
-        self.console.setMinimumSize(QtCore.QSize(30, 0))
-        self.console.setMaximumSize(QtCore.QSize(16777215, 200))
+        self.verticalLayoutWidget = QtWidgets.QWidget(self.splitter)
+        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayout.setContentsMargins(10, 0, 10, 0)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.console = QtWidgets.QTextEdit(self.verticalLayoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.console.sizePolicy().hasHeightForWidth())
+        self.console.setSizePolicy(sizePolicy)
+        self.console.setMinimumSize(QtCore.QSize(0, 30))
+        self.console.setBaseSize(QtCore.QSize(0, 0))
         self.console.setObjectName("console")
-        self.verticalLayout.addWidget(self.splitter)
+        self.verticalLayout.addWidget(self.console)
+        self.verticalLayout_2.addWidget(self.splitter)
         main_page.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(main_page)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 907, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 843, 26))
         self.menubar.setObjectName("menubar")
         main_page.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(main_page)
