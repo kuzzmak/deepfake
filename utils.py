@@ -1,7 +1,8 @@
 import os
+from typing import List
 
 
-def get_file_paths_from_dir(dir: str) -> list[str] or None:
+def get_file_paths_from_dir(dir: str) -> List[str] or None:
     """Returns list of paths to files in directory. If no files
     are found in directory, None is returned.
 
