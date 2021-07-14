@@ -56,6 +56,8 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.start_detection_btn.clicked.connect(self.start_detection)
         icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_MediaPlay)
         self.start_detection_btn.setIcon(icon)
+        self.enable_widget(self.start_detection_btn, False)
+        self.select_faces_folder_btn.clicked.connect(self.select_faces_folder)
 
         self.worker = Worker()
         self.worker_thread = qtc.QThread()
@@ -65,6 +67,13 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.worker_thread.start()
 
         self.face_extraction_progress.valueChanged.connect(self.progress_value_changed)
+
+    def select_faces_folder(self):
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self, "getExistingDirectory", "./")
+        if directory:
+            self.selected_faces_folder_label.setText(directory)
+            self.enable_widget(self.start_detection_btn, True)
 
     def progress_value_changed(self, value: int):
         if value == 100:
