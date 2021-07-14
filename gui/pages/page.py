@@ -69,3 +69,6 @@ class Page(qwt.QWidget):
 
     def goto(self, name):
         self.gotoSignal.emit(name)
+
+    def enable_widget(self, widget: qwt.QWidget, enabled: bool):
+        widget.setEnabled(enabled)
