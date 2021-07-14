@@ -48,12 +48,14 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
 
         # self.enable_detection_algorithm_tab(False)
 
-        # self.face_extraction_progress.hide()
+        self.face_extraction_progress.hide()
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
         self.select_pictures_btn.clicked.connect(self.select_pictures)
         self.select_video_btn.clicked.connect(self.select_video)
         self.start_detection_btn.clicked.connect(self.start_detection)
+        icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_MediaPlay)
+        self.start_detection_btn.setIcon(icon)
 
         self.worker = Worker()
         self.worker_thread = qtc.QThread()
@@ -61,7 +63,6 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.new_val_requested.connect(self.worker.increment_value)
         self.worker.moveToThread(self.worker_thread)
         self.worker_thread.start()
-
 
         self.face_extraction_progress.valueChanged.connect(self.progress_value_changed)
 
@@ -79,10 +80,9 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.face_extraction_progress.setValue(new_val)
 
     def start_detection(self):
+        self.face_extraction_progress.show()
         self.new_val_requested.emit(0)
         
-        # self.face_extraction_progress.show()
-
     def slider_moved(self, position: int):
         self.number_of_threads_label.setText(str(position))
 
