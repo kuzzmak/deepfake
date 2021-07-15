@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -61,13 +62,12 @@ class ContextMenuEventFilter(qtc.QObject):
 
 class PictureViewer(qwt.QWidget):
 
-    picture_added_sig = qtc.pyqtSignal(str)
+    pictures_added_sig = qtc.pyqtSignal(list)
 
     def __init__(self):
         super(PictureViewer, self).__init__()
 
-        self.picture_added_sig.connect(self.picture_added)
-        # self.image_dir = 'dummy_pics'
+        self.pictures_added_sig.connect(self.pictures_added)
 
         self.ui_image_viewer = qwt.QListView()
         self.ui_image_viewer.viewport().installEventFilter(self)
@@ -99,12 +99,13 @@ class PictureViewer(qwt.QWidget):
         openAct = self.context_menu.addAction("Open")
         quitAct = self.context_menu.addAction("Quit")
 
-    @qtc.pyqtSlot(str)
-    def picture_added(self, img_path: str):
-        name = os.path.splitext(os.path.basename(img_path))[0]
-        item = StandardItem(name)
-        item.setData(img_path)
-        self.ui_image_viewer.model().appendRow(item)
+    @qtc.pyqtSlot(list)
+    def pictures_added(self, img_paths: List[str]):
+        for img_path in img_paths:
+            name = os.path.splitext(os.path.basename(img_path))[0]
+            item = StandardItem(name)
+            item.setData(img_path)
+            self.ui_image_viewer.model().appendRow(item)
 
     def eventFilter(self, source, event) -> bool:
         if source == self.ui_image_viewer.viewport():
