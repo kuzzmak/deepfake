@@ -8,6 +8,7 @@ import os
 from utils import get_file_paths_from_dir
 import PyQt5.QtCore as qtc
 import time
+from typing import List
 
 
 class Worker(qtc.QObject):
@@ -23,18 +24,31 @@ class Worker(qtc.QObject):
             self.incremented_val.emit(new_value)
 
 
+class FaceExtractionWorker(qtc.QObject):
+
+    new_images = qtc.pyqtSignal(list)
+
+    @qtc.pyqtSlot(str)
+    def process_faces_folder(self, faces_folder_path: str):
+        image_paths = get_file_paths_from_dir(faces_folder_path)
+        print('image paths')
+        print(image_paths)
+        print()
+        self.new_images.emit(image_paths)
+
 
 class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
 
     new_val_requested = qtc.pyqtSignal(int)
+    faces_extraction_requested = qtc.pyqtSignal(str)
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, page_name='make_deepfake_page_2', *args, **kwargs)
 
         self.setupUi(self)
 
-        self.picture_viewer = PictureViewer()
-        self.preview_widget.addWidget(self.picture_viewer)
+        self.picture_viewer_tab_1 = PictureViewer()
+        self.preview_widget.addWidget(self.picture_viewer_tab_1)
 
         self.video_player = VideoPlayer()
         self.preview_widget.addWidget(self.video_player)
@@ -59,12 +73,22 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.enable_widget(self.start_detection_btn, False)
         self.select_faces_folder_btn.clicked.connect(self.select_faces_folder)
 
+        self.picture_viewer_tab_2 = PictureViewer()
+        self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
+
         self.worker = Worker()
         self.worker_thread = qtc.QThread()
         self.worker.incremented_val.connect(self.increment_progress)
         self.new_val_requested.connect(self.worker.increment_value)
         self.worker.moveToThread(self.worker_thread)
         self.worker_thread.start()
+
+        self.face_extraction_worker = FaceExtractionWorker()
+        self.face_extraction_worker_thread = qtc.QThread()
+        self.face_extraction_worker.new_images.connect(self.add_new_faces_to_image_viewer)
+        self.faces_extraction_requested.connect(self.face_extraction_worker.process_faces_folder)
+        self.face_extraction_worker.moveToThread(self.face_extraction_worker_thread)
+        self.face_extraction_worker_thread.start()
 
         self.face_extraction_progress.valueChanged.connect(self.progress_value_changed)
 
@@ -74,6 +98,9 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         if directory:
             self.selected_faces_folder_label.setText(directory)
             self.enable_widget(self.start_detection_btn, True)
+
+    def add_new_faces_to_image_viewer(self, image_paths: List[str]):
+        print('from fun: ', image_paths)
 
     def progress_value_changed(self, value: int):
         if value == 100:
@@ -91,6 +118,7 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
     def start_detection(self):
         self.face_extraction_progress.show()
         self.new_val_requested.emit(0)
+        self.faces_extraction_requested.emit('C:/Users/tonkec/Documents/deepfake/dummy_pics')
         
     def slider_moved(self, position: int):
         self.number_of_threads_label.setText(str(position))
@@ -125,15 +153,14 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         directory = qwt.QFileDialog.getExistingDirectory(
             self, "getExistingDirectory", "./")
         if directory:
-            self.preview_widget.setCurrentWidget(self.picture_viewer)
+            self.preview_widget.setCurrentWidget(self.picture_viewer_tab_1)
 
             image_paths = get_file_paths_from_dir(directory)
             if len(image_paths) == 0:
                 self.print(
                     f'No images were found in: {directory}.', CONSOLE_MESSAGE_TYPE.WARNING)
             else:
-                for img_path in image_paths:
-                    self.picture_viewer.picture_added_sig.emit(img_path)
+                self.picture_viewer_tab_1.pictures_added_sig.emit(image_paths)
 
                 message = 'Loaded: {} images from: {}.'.format(
                     len(image_paths), directory)
