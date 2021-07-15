@@ -141,7 +141,7 @@
       <attribute name="title">
        <string>Detection algorithm</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="detection_algorithm_tab_layout">
        <item>
         <widget class="QGroupBox" name="available_algorithms_gb">
          <property name="title">
@@ -298,17 +298,7 @@
         </layout>
        </item>
        <item>
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
+        <layout class="QVBoxLayout" name="image_viewer_layout"/>
        </item>
        <item>
         <widget class="QProgressBar" name="face_extraction_progress">
