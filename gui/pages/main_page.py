@@ -1,6 +1,3 @@
-from collections import namedtuple
-from enum import Enum
-from gui.pages.make_deepfake_page2 import MakeDeepfakePage2
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -8,14 +5,13 @@ import PyQt5.QtWidgets as qwt
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
 from gui.pages.make_deepfake_page import MakeDeepfakePage
+from gui.pages.make_deepfake_page2 import MakeDeepfakePage2
 
 from gui.templates.main_page import Ui_main_page
 
 from constants import CONSOLE_FONT_NAME, PREFERRED_HEIGHT, PREFERRED_WIDTH
 
 from names import START_PAGE_NAME
-
-
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
@@ -37,8 +33,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.init_ui()
 
-        self.show_console(False)
-
         self.goto(START_PAGE_NAME)
 
     def init_ui(self):
@@ -46,6 +40,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         font = qtg.QFont(CONSOLE_FONT_NAME)
         self.console.setFont(font)
+        self.show_console(False)
 
         self.register_pages()
         self.init_menubar()
@@ -62,7 +57,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.show_toolbar(False)
 
     def init_menubar(self):
-        self.menubar = self.menuBar()
         file_menu = self.menubar.addMenu('File')
         file_menu.addAction('Settings', self.settings)
         file_menu.addSeparator()
