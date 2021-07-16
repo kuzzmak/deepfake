@@ -8,7 +8,9 @@ import os
 from utils import get_file_paths_from_dir
 import PyQt5.QtCore as qtc
 import time
+import PyQt5.QtGui as qtg
 from typing import List
+from resources.icons import icons
 
 
 class Worker(qtc.QObject):
@@ -68,7 +70,8 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.select_pictures_btn.clicked.connect(self.select_pictures)
         self.select_video_btn.clicked.connect(self.select_video)
         self.start_detection_btn.clicked.connect(self.start_detection)
-        icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_MediaPlay)
+        # icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_MediaPlay)
+        icon = qtg.QIcon(qtg.QPixmap(':/play.svg'))
         self.start_detection_btn.setIcon(icon)
         self.enable_widget(self.start_detection_btn, False)
         self.select_faces_folder_btn.clicked.connect(self.select_faces_folder)
