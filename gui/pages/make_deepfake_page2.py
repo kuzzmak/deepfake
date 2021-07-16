@@ -13,30 +13,8 @@ from typing import List
 from resources.icons import icons
 
 
-class Worker(qtc.QObject):
-
-    incremented_val = qtc.pyqtSignal(int)
-
-    @qtc.pyqtSlot(int)
-    def increment_value(self, value: int):
-        new_value = value
-        while new_value < 100:
-            new_value += 1
-            time.sleep(0.05)
-            self.incremented_val.emit(new_value)
-
-
-class FaceExtractionWorker(qtc.QObject):
-
-    new_images = qtc.pyqtSignal(list)
-
-    @qtc.pyqtSlot(str)
-    def process_faces_folder(self, faces_folder_path: str):
-        image_paths = get_file_paths_from_dir(faces_folder_path)
-        print('image paths')
-        print(image_paths)
-        print()
-        self.new_images.emit(image_paths)
+from gui.workers.worker import Worker
+from gui.workers.face_extraction_worker import FaceExtractionWorker
 
 
 class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
@@ -70,9 +48,7 @@ class MakeDeepfakePage2(Page, Ui_make_deepfake_page):
         self.select_pictures_btn.clicked.connect(self.select_pictures)
         self.select_video_btn.clicked.connect(self.select_video)
         self.start_detection_btn.clicked.connect(self.start_detection)
-        # icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_MediaPlay)
-        icon = qtg.QIcon(qtg.QPixmap(':/play.svg'))
-        self.start_detection_btn.setIcon(icon)
+        self.start_detection_btn.setIcon(qtg.QIcon(qtg.QPixmap(':/play.svg')))
         self.enable_widget(self.start_detection_btn, False)
         self.select_faces_folder_btn.clicked.connect(self.select_faces_folder)
 
