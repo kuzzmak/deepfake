@@ -17,5 +17,4 @@ class StartPage(Page, Ui_start_page):
 
     def goto_make_deepfake(self):
         self.show_toolbars_and_console(True)
-        # self.goto(MAKE_DEEPFAKE_PAGE_NAME)
-        self.goto('make_deepfake_page_2')
+        self.goto(MAKE_DEEPFAKE_PAGE_NAME)

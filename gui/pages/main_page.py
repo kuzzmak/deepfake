@@ -5,7 +5,6 @@ import PyQt5.QtWidgets as qwt
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
 from gui.pages.make_deepfake_page import MakeDeepfakePage
-from gui.pages.make_deepfake_page2 import MakeDeepfakePage2
 
 from gui.templates.main_page import Ui_main_page
 
@@ -84,8 +83,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def register_pages(self):
         self.register_page(StartPage(self))
-        # self.register_page(MakeDeepfakePage(self))
-        self.register_page(MakeDeepfakePage2(self))
+        self.register_page(MakeDeepfakePage(self))
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
