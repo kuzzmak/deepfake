@@ -1,3 +1,4 @@
+from enums import IO_OP_TYPE
 import os
 from typing import List, Union
 
@@ -8,6 +9,8 @@ import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from utils import np_array_to_qicon, qicon_from_path
+
+from common_structures import IO_OP
 
 DEFAULT_ROLE = qtc.Qt.UserRole + 1
 
@@ -97,12 +100,14 @@ class PictureViewer(qwt.QWidget):
 
     pictures_added_sig = qtc.pyqtSignal(list)
 
-    def __init__(self):
+    def __init__(self, app):
         super(PictureViewer, self).__init__()
 
         self.pictures_added_sig.connect(self.pictures_added)
 
         self.init_ui()
+
+        self.app = app
 
     def init_ui(self):
         self.ui_image_viewer = qwt.QListView()
@@ -135,18 +140,30 @@ class PictureViewer(qwt.QWidget):
         rename.triggered.connect(self.rename_selected_picture)
         delete.triggered.connect(self.remove_selected_picture)
 
-    def remove_selected_picture(self):
-        index = self.ui_image_viewer.selectionModel().currentIndex()
-        print(self.ui_image_viewer.model().data(index, qtc.Qt.UserRole + 1))
+    def get_selected_index(self) -> qtc.QModelIndex:
+        return self.ui_image_viewer.selectionModel().currentIndex()
 
-        self.ui_image_viewer.model().removeRow(index.row())
+    def get_data_from_selected_item(self, role=StandardItem.PathRole):
+        index = self.get_selected_index()
+        data = self.ui_image_viewer.model().data(index, role)
+        return index, data
+
+    def remove_item_from_viewer(self, row: int):
+        self.ui_image_viewer.model().removeRow(row)
+
+    def remove_selected_picture(self):
+        index, path = self.get_data_from_selected_item()
+        self.remove_item_from_viewer(index.row())
+        op = IO_OP(IO_OP_TYPE.DELETE, path)
+        self.app.io_op_sig.emit(op)
 
     def rename_selected_picture(self):
 
         index = self.ui_image_viewer.selectionModel().currentIndex()
         print(self.ui_image_viewer.model().data(index, qtc.Qt.UserRole + 1))
 
-        self.ui_image_viewer.model().removeRow(index.row())
+        self.remove_item_from_viewer(index.row())
+        # self.ui_image_viewer.model().removeRow(index.row())
 
         # print(index)
         # print(self.ui_image_viewer.model().data(index[0], qtc.Qt.UserRole+1))
