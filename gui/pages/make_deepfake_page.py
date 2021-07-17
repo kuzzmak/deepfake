@@ -14,7 +14,7 @@ from gui.workers.worker import Worker
 
 from utils import get_file_paths_from_dir
 
-from names import MAKE_DEEPFAKE_PAGE_NAME, MAKE_DEEPFAKE_PAGE_TITLE, START_PAGE_NAME
+from names import MAKE_DEEPFAKE_PAGE_NAME, MAKE_DEEPFAKE_PAGE_TITLE
 
 from resources.icons import icons
 
@@ -29,7 +29,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
         self.setupUi(self)
 
-        self.picture_viewer_tab_1 = PictureViewer()
+        self.picture_viewer_tab_1 = PictureViewer(self.app)
         self.preview_widget.addWidget(self.picture_viewer_tab_1)
 
         self.video_player = VideoPlayer()
@@ -54,7 +54,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.enable_widget(self.start_detection_btn, False)
         self.select_faces_folder_btn.clicked.connect(self.select_faces_folder)
 
-        self.picture_viewer_tab_2 = PictureViewer()
+        self.picture_viewer_tab_2 = PictureViewer(self.app)
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
         self.worker = Worker()
@@ -136,8 +136,11 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                        CONSOLE_MESSAGE_TYPE.WARNING)
 
     def select_pictures(self):
-        directory = qwt.QFileDialog.getExistingDirectory(
-            self, "getExistingDirectory", "./")
+
+        directory = 'C:\\Users\\tonkec\\Documents\\deepfake\\dummy_pics'
+
+        # directory = qwt.QFileDialog.getExistingDirectory(
+        #     self, "getExistingDirectory", "./")
         if directory:
             self.preview_widget.setCurrentWidget(self.picture_viewer_tab_1)
 
@@ -146,6 +149,11 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 self.print(
                     f'No images were found in: {directory}.', CONSOLE_MESSAGE_TYPE.WARNING)
             else:
+                import numpy as np
+
+                im = np.random.randint(0, 255, [100, 50, 3], np.uint8)
+
+                image_paths.append(im)
                 self.picture_viewer_tab_1.pictures_added_sig.emit(image_paths)
 
                 message = 'Loaded: {} images from: {}.'.format(
