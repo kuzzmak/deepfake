@@ -6,7 +6,7 @@ import PyQt5.QtWidgets as qwt
 
 from constants import CONSOLE_TEXT_SIZE
 
-from gui.templates.main_page import Ui_main_page
+from enums import IO_OP_TYPE
 
 ConsolePrefix = namedtuple('ConsolePrefix', 'prefix prefix_color')
 
@@ -30,20 +30,21 @@ class Page(qwt.QWidget):
 
     gotoSignal = qtc.pyqtSignal(str)
 
-    def __init__(self, parent: Ui_main_page, page_name: str = 'page'):
+    def __init__(self, main_page, page_name='page'):
         super().__init__()
 
-        self.parent = parent
         self.page_name = page_name
+        self.app = main_page.app
+        self.main_page = main_page
 
     def show_menubar(self, show):
-        self.parent.show_menubar_sig.emit(show)
+        self.main_page.show_menubar_sig.emit(show)
 
     def show_console(self, show):
-        self.parent.show_console_sig.emit(show)
+        self.main_page.show_console_sig.emit(show)
 
     def show_toolbar(self, show):
-        self.parent.show_toolbar_sig.emit(show)
+        self.main_page.show_toolbar_sig.emit(show)
 
     def show_toolbars_and_console(self, show):
         self.show_menubar(show)
@@ -51,7 +52,7 @@ class Page(qwt.QWidget):
         self.show_console(show)
 
     def _print(self, message: str):
-        self.parent.console_print_sig.emit(message)
+        self.main_page.console_print_sig.emit(message)
 
     def _get_console_message_prefix(self, message_type: CONSOLE_MESSAGE_TYPE):
         prefix_color = message_type.value.prefix_color.value
