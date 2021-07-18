@@ -138,9 +138,11 @@ class PictureViewer(qwt.QWidget):
         self.context_menu = qwt.QMenu()
         self.cmef = ContextMenuEventFilter(self.context_menu)
         self.context_menu.installEventFilter(self.cmef)
+
         rename = self.context_menu.addAction("Rename")
-        delete = self.context_menu.addAction("Delete")
         rename.triggered.connect(self.rename_selected_picture)
+
+        delete = self.context_menu.addAction("Delete")
         delete.triggered.connect(self.remove_selected_picture)
 
     def get_selected_index(self) -> qtc.QModelIndex:
@@ -172,15 +174,7 @@ class PictureViewer(qwt.QWidget):
         dialog.exec()
 
     def rename_selected_picture(self):
-
-        index = self.ui_image_viewer.selectionModel().currentIndex()
-        # print(self.ui_image_viewer.model().data(index, qtc.Qt.UserRole + 1))
-
-        # self.remove_item_from_viewer(index.row())
-        # self.ui_image_viewer.model().removeRow(index.row())
-
-        # print(index)
-        # print(self.ui_image_viewer.model().data(index[0], qtc.Qt.UserRole+1))
+        ...
 
     @qtc.pyqtSlot(list)
     def pictures_added(self, images: List[Union[str, np.ndarray]]):

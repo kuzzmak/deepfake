@@ -74,6 +74,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             self.face_extraction_worker_thread)
         self.face_extraction_worker_thread.start()
 
+        self.select_pictures()
+
         self.face_extraction_progress.valueChanged.connect(
             self.progress_value_changed)
 

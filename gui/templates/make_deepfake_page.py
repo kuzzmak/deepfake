@@ -154,7 +154,7 @@ class Ui_make_deepfake_page(object):
         self.verticalLayout_7.addItem(spacerItem3)
 
         self.retranslateUi(make_deepfake_page)
-        self.tab_widget.setCurrentIndex(1)
+        self.tab_widget.setCurrentIndex(0)
         self.preview_widget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(make_deepfake_page)
 
