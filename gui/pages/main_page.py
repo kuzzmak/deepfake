@@ -10,7 +10,7 @@ from gui.templates.main_page import Ui_main_page
 
 from constants import CONSOLE_FONT_NAME, PREFERRED_HEIGHT, PREFERRED_WIDTH
 
-from names import START_PAGE_NAME
+from names import MAKE_DEEPFAKE_PAGE_NAME
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
@@ -20,8 +20,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     show_toolbar_sig = qtc.pyqtSignal(bool)
     console_print_sig = qtc.pyqtSignal(str)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, app, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.app = app
 
         self.show_menubar_sig.connect(self.show_menubar)
         self.show_console_sig.connect(self.show_console)
@@ -32,7 +34,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.init_ui()
 
-        self.goto(START_PAGE_NAME)
+        # self.goto(START_PAGE_NAME)
+        self.goto(MAKE_DEEPFAKE_PAGE_NAME)
 
     def init_ui(self):
         self.setupUi(self)
@@ -108,7 +111,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             widget.hide()
 
     @qtc.pyqtSlot(str)
-    def goto(self, name):
+    def goto(self, name: str):
         if name in self.m_pages:
             page = self.m_pages[name]
             self.stacked_widget.setCurrentWidget(page)
