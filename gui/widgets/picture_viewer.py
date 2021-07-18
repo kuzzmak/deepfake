@@ -1,4 +1,3 @@
-from enums import IO_OP_TYPE
 import os
 from typing import List, Union
 
@@ -8,9 +7,13 @@ import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
+from gui.widgets.dialog import Dialog
+
 from utils import np_array_to_qicon, qicon_from_path
 
-from common_structures import IO_OP
+from common_structures import DialogMessages, IO_OP
+
+from enums import IO_OP_TYPE
 
 DEFAULT_ROLE = qtc.Qt.UserRole + 1
 
@@ -153,16 +156,27 @@ class PictureViewer(qwt.QWidget):
 
     def remove_selected_picture(self):
         index, path = self.get_data_from_selected_item()
-        self.remove_item_from_viewer(index.row())
-        op = IO_OP(IO_OP_TYPE.DELETE, path)
-        self.app.io_op_sig.emit(op)
+
+        def remove_fn(remove: bool):
+            if remove:
+                self.remove_item_from_viewer(index.row())
+                op = IO_OP(IO_OP_TYPE.DELETE, path)
+                self.app.io_op_sig.emit(op)
+
+        dialog_msg = DialogMessages.DELETE(
+            f'Do you really want to delete: \n{path}')
+        dialog = Dialog(dialog_msg, self)
+
+        dialog.remove_sig.connect(remove_fn)
+
+        dialog.exec()
 
     def rename_selected_picture(self):
 
         index = self.ui_image_viewer.selectionModel().currentIndex()
-        print(self.ui_image_viewer.model().data(index, qtc.Qt.UserRole + 1))
+        # print(self.ui_image_viewer.model().data(index, qtc.Qt.UserRole + 1))
 
-        self.remove_item_from_viewer(index.row())
+        # self.remove_item_from_viewer(index.row())
         # self.ui_image_viewer.model().removeRow(index.row())
 
         # print(index)
@@ -183,11 +197,10 @@ class PictureViewer(qwt.QWidget):
             if isinstance(image, str):
                 name = os.path.splitext(os.path.basename(image))[0]
                 item.setData(image, StandardItem.PathRole)
-                item.setData(image, StandardItem.DataRole)
             else:
                 name = str(self.ui_image_viewer.model().rowCount())
-                item.setData(image, StandardItem.DataRole)
                 item.setData(name, StandardItem.PathRole)
+            item.setData(image, StandardItem.DataRole)
             item.setData(name, StandardItem.NameRole)
             self.ui_image_viewer.model().appendRow(item)
 
