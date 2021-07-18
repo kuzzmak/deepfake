@@ -18,7 +18,9 @@ class IO_Worker(qtc.QObject):
 
     def delete(self, value: str):
         exists = os.path.exists(value)
-        print('from worker: ', value, exists)
+        if exists:
+            os.remove(value)
+            print('removed: ', value)
 
     # @qtc.pyqtSlot(int)
     # def increment_value(self, value: int):
