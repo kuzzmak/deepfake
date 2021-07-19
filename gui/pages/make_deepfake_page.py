@@ -1,3 +1,4 @@
+from gui.workers.threads.incrementer_thread import IncrementerThread
 import os
 from typing import List
 
@@ -10,7 +11,7 @@ from gui.templates.make_deepfake_page import Ui_make_deepfake_page
 from gui.widgets.video_player import VideoPlayer
 from gui.widgets.picture_viewer import PictureViewer
 from gui.workers.face_extraction_worker import FaceExtractionWorker
-from gui.workers.worker import Worker
+from gui.workers.worker import IncrementerWorker, Worker
 
 from utils import get_file_paths_from_dir
 
@@ -23,6 +24,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
     new_val_requested = qtc.pyqtSignal(int)
     faces_extraction_requested = qtc.pyqtSignal(str)
+    send_data_sig = qtc.pyqtSignal(str)
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
@@ -47,7 +49,15 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.face_extraction_progress.hide()
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
-        self.select_pictures_btn.clicked.connect(self.select_pictures)
+        # self.select_pictures_btn.clicked.connect(self.select_pictures) # -------------
+
+        self.incrementer_thread = IncrementerThread()
+        self.send_data_sig.connect(self.incrementer_thread.worker.process)
+        self.incrementer_thread.start()
+
+        self.select_pictures_btn.clicked.connect(
+            self.test_fun)  # -------------
+
         self.select_video_btn.clicked.connect(self.select_video)
         self.start_detection_btn.clicked.connect(self.start_detection)
         self.start_detection_btn.setIcon(qtg.QIcon(qtg.QPixmap(':/play.svg')))
@@ -57,12 +67,12 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.picture_viewer_tab_2 = PictureViewer(self.app)
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
-        self.worker = Worker()
-        self.worker_thread = qtc.QThread()
-        self.worker.incremented_val.connect(self.increment_progress)
-        self.new_val_requested.connect(self.worker.increment_value)
-        self.worker.moveToThread(self.worker_thread)
-        self.worker_thread.start()
+        # self.worker = Worker()
+        # self.worker_thread = qtc.QThread()
+        # self.worker.incremented_val.connect(self.increment_progress)
+        # self.new_val_requested.connect(self.worker.increment_value)
+        # self.worker.moveToThread(self.worker_thread)
+        # self.worker_thread.start()
 
         self.face_extraction_worker = FaceExtractionWorker()
         self.face_extraction_worker_thread = qtc.QThread()
@@ -78,6 +88,10 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
         self.face_extraction_progress.valueChanged.connect(
             self.progress_value_changed)
+
+    def test_fun(self):
+        print('testan')
+        self.send_data_sig.emit('testna poruka')
 
     def select_faces_folder(self):
         directory = qwt.QFileDialog.getExistingDirectory(
