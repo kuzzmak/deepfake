@@ -6,6 +6,14 @@ from enums import DIALOG_MESSAGE_ICON, DIALOG_MESSAGE_TYPE, IO_OP_TYPE
 
 @dataclass
 class DialogMessage:
+    """Class describing one type of a message which can be displayed
+    in dialog. Every message has type, icon and text message.
+
+    Returns
+    -------
+    DialogMessage
+        message displayable in dialog
+    """
     _message_type: DIALOG_MESSAGE_TYPE
     _message_icon: DIALOG_MESSAGE_ICON
     message: str
@@ -20,6 +28,9 @@ class DialogMessage:
 
 
 class DialogMessages:
+    """Common dialog messages where only message text should
+    be passed as an argument.
+    """
 
     DELETE = partial(DialogMessage,
                      DIALOG_MESSAGE_TYPE.DELETE,
@@ -36,5 +47,8 @@ class DialogMessages:
 
 @dataclass
 class IO_OP:
+    """Describes one IO operation which has a type and
+    path to a file on which this operation should be executed.
+    """
     type: IO_OP_TYPE
     value: str
