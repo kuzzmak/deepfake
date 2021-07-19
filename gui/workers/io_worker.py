@@ -8,7 +8,6 @@ from common_structures import IO_OP
 
 class IO_Worker(qtc.QObject):
 
-    # incremented_val = qtc.pyqtSignal(int)
     io_op_successful_sig = qtc.pyqtSignal(bool)
 
     @qtc.pyqtSlot(IO_OP)
@@ -21,11 +20,3 @@ class IO_Worker(qtc.QObject):
         if exists:
             os.remove(value)
             print('removed: ', value)
-
-    # @qtc.pyqtSlot(int)
-    # def increment_value(self, value: int):
-    #     new_value = value
-    #     while new_value < 100:
-    #         new_value += 1
-    #         time.sleep(0.05)
-    #         self.incremented_val.emit(new_value)
