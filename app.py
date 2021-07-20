@@ -35,13 +35,6 @@ class App(qtc.QObject):
         with open('app_config.json') as f:
             self.conf = json.load(f)
 
-    # def setup_io_worker(self):
-    #     self.io_worker = IO_Worker()
-    #     self.io_worker_thread = qtc.QThread()
-    #     self.io_op_sig.connect(self.io_worker.io_op)
-    #     self.io_worker.moveToThread(self.io_worker_thread)
-    #     self.io_worker_thread.start()
-
     def gui(self):
         _app = qwt.QApplication(sys.argv)
         gui = MainPage(self)
