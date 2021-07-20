@@ -1,3 +1,4 @@
+from message.message import MESSAGE_TYPE, Message
 from gui.workers.threads.incrementer_thread import IncrementerThread
 import os
 from typing import List
@@ -24,12 +25,13 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
     new_val_requested = qtc.pyqtSignal(int)
     faces_extraction_requested = qtc.pyqtSignal(str)
-    send_data_sig = qtc.pyqtSignal(str)
+    send_message_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
 
         self.setupUi(self)
+        self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
         self.picture_viewer_tab_1 = PictureViewer(self.app)
         self.preview_widget.addWidget(self.picture_viewer_tab_1)
@@ -47,13 +49,15 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         # self.enable_detection_algorithm_tab(False)
 
         self.face_extraction_progress.hide()
-        self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
         # self.select_pictures_btn.clicked.connect(self.select_pictures) # -------------
 
-        self.incrementer_thread = IncrementerThread()
-        self.send_data_sig.connect(self.incrementer_thread.worker.process)
-        self.incrementer_thread.start()
+        # self.incrementer_thread = IncrementerThread()
+        # self.send_data_sig.connect(self.incrementer_thread.worker.process)
+        # self.incrementer_thread.start()
+
+        self.send_message_sig.connect(
+            self.app.message_worker_thread.worker.process)
 
         self.select_pictures_btn.clicked.connect(
             self.test_fun)  # -------------
@@ -90,8 +94,11 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             self.progress_value_changed)
 
     def test_fun(self):
-        print('testan')
-        self.send_data_sig.emit('testna poruka')
+        # print('testan')
+        msg = Message(MESSAGE_TYPE.IO_OPERATION, {
+                      'operation_type': 'delete', 'file': 'picture.png'})
+        self.send_message_sig.emit(msg)
+        # self.app.message_worker_thread.worker.
 
     def select_faces_folder(self):
         directory = qwt.QFileDialog.getExistingDirectory(
