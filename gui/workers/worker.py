@@ -1,4 +1,5 @@
 # import time
+from message.message import Message
 import abc
 import PyQt5
 
@@ -35,6 +36,24 @@ class Worker(qtc.QObject, metaclass=WorkerMeta):
 
     @abc.abstractclassmethod
     def process(self, data):
+        ...
+
+
+class NewWorker(qtc.QObject, metaclass=WorkerMeta):
+
+    succesful_op = qtc.pyqtSignal(bool)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.succesful_op.connect(self.print)
+
+    @qtc.pyqtSlot(bool)
+    def print(self, val: bool):
+        print('val: ', val)
+
+    @abc.abstractclassmethod
+    @qtc.pyqtSlot(Message)
+    def process(self, msg: Message):
         ...
 
 
