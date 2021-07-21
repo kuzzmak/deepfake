@@ -1,4 +1,4 @@
-from message.message import MESSAGE_TYPE, Message
+from message.message import ConsolePrintMessageBody, JOB_TYPE, MESSAGE_TYPE, Message, MessageBody
 from gui.workers.threads.incrementer_thread import IncrementerThread
 import os
 from typing import List
@@ -25,7 +25,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
     new_val_requested = qtc.pyqtSignal(int)
     faces_extraction_requested = qtc.pyqtSignal(str)
-    send_message_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
@@ -33,7 +32,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.setupUi(self)
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
-        self.picture_viewer_tab_1 = PictureViewer(self.app)
+        self.picture_viewer_tab_1 = PictureViewer()
         self.preview_widget.addWidget(self.picture_viewer_tab_1)
 
         self.video_player = VideoPlayer()
@@ -50,17 +49,14 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
         self.face_extraction_progress.hide()
 
-        # self.select_pictures_btn.clicked.connect(self.select_pictures) # -------------
+        self.select_pictures_btn.clicked.connect(self.select_pictures)
 
         # self.incrementer_thread = IncrementerThread()
         # self.send_data_sig.connect(self.incrementer_thread.worker.process)
         # self.incrementer_thread.start()
 
-        self.send_message_sig.connect(
-            self.app.message_worker_thread.worker.process)
-
-        self.select_pictures_btn.clicked.connect(
-            self.test_fun)  # -------------
+        # self.select_pictures_btn.clicked.connect(
+        #     self.test_fun)  # -------------
 
         self.select_video_btn.clicked.connect(self.select_video)
         self.start_detection_btn.clicked.connect(self.start_detection)
@@ -68,7 +64,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.enable_widget(self.start_detection_btn, False)
         self.select_faces_folder_btn.clicked.connect(self.select_faces_folder)
 
-        self.picture_viewer_tab_2 = PictureViewer(self.app)
+        self.picture_viewer_tab_2 = PictureViewer()
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
         # self.worker = Worker()
@@ -88,14 +84,12 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             self.face_extraction_worker_thread)
         self.face_extraction_worker_thread.start()
 
-        self.select_pictures()
-
         self.face_extraction_progress.valueChanged.connect(
             self.progress_value_changed)
 
     def test_fun(self):
         # print('testan')
-        msg = Message(MESSAGE_TYPE.IO_OPERATION, {
+        msg = Message(JOB_TYPE.IO_OPERATION, {
                       'operation_type': 'delete', 'file': 'picture.png'})
         self.send_message_sig.emit(msg)
         # self.app.message_worker_thread.worker.
@@ -139,31 +133,36 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.tab_widget.setTabEnabled(1, enable)
 
     def select_video(self):
-        options = qwt.QFileDialog.Options()
-        options |= qwt.QFileDialog.DontUseNativeDialog
-        video_path, _ = qwt.QFileDialog.getOpenFileName(
-            self, 'Select video file', "data/videos", "Video files (*.mp4)", options=options)
-        if video_path:
-            self.video_player.video_selection.emit(video_path)
-            self.preview_widget.setCurrentWidget(self.video_player)
-            video_name = os.path.splitext(os.path.basename(video_path))[0]
 
-            self.set_preview_label_text(
-                'Preview of: ' + video_name + ' video.')
-            message = 'Loaded video from: {}'.format(video_path)
-            self.print(message, CONSOLE_MESSAGE_TYPE.LOG)
+        msg = Message(MESSAGE_TYPE.REQUEST, ConsolePrintMessageBody(
+            CONSOLE_MESSAGE_TYPE.ERROR, 'Errrrrrrr'))
 
-            self.enable_detection_algorithm_tab(True)
-        else:
-            self.print('No video folder was selected.',
-                       CONSOLE_MESSAGE_TYPE.WARNING)
+        self.send_message_sig.emit(msg)
+
+        # options = qwt.QFileDialog.Options()
+        # options |= qwt.QFileDialog.DontUseNativeDialog
+        # video_path, _ = qwt.QFileDialog.getOpenFileName(
+        #     self, 'Select video file', "data/videos", "Video files (*.mp4)", options=options)
+        # if video_path:
+        #     self.video_player.video_selection.emit(video_path)
+        #     self.preview_widget.setCurrentWidget(self.video_player)
+        #     video_name = os.path.splitext(os.path.basename(video_path))[0]
+
+        #     self.set_preview_label_text(
+        #         'Preview of: ' + video_name + ' video.')
+        #     message = 'Loaded video from: {}'.format(video_path)
+        #     self.print(message, CONSOLE_MESSAGE_TYPE.LOG)
+
+        #     self.enable_detection_algorithm_tab(True)
+        # else:
+        #     self.print('No video folder was selected.',
+        #                CONSOLE_MESSAGE_TYPE.WARNING)
+        ...
 
     def select_pictures(self):
 
-        directory = 'C:\\Users\\tonkec\\Documents\\deepfake\\dummy_pics'
-
-        # directory = qwt.QFileDialog.getExistingDirectory(
-        #     self, "getExistingDirectory", "./")
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self, "getExistingDirectory", "./")
         if directory:
             self.preview_widget.setCurrentWidget(self.picture_viewer_tab_1)
 
@@ -172,11 +171,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 self.print(
                     f'No images were found in: {directory}.', CONSOLE_MESSAGE_TYPE.WARNING)
             else:
-                import numpy as np
-
-                im = np.random.randint(0, 255, [100, 50, 3], np.uint8)
-
-                image_paths.append(im)
                 self.picture_viewer_tab_1.pictures_added_sig.emit(image_paths)
 
                 message = 'Loaded: {} images from: {}.'.format(

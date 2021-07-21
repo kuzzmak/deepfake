@@ -103,14 +103,12 @@ class PictureViewer(qwt.QWidget):
 
     pictures_added_sig = qtc.pyqtSignal(list)
 
-    def __init__(self, app):
+    def __init__(self):
         super(PictureViewer, self).__init__()
 
         self.pictures_added_sig.connect(self.pictures_added)
 
         self.init_ui()
-
-        self.app = app
 
     def init_ui(self):
         self.ui_image_viewer = qwt.QListView()
@@ -163,7 +161,7 @@ class PictureViewer(qwt.QWidget):
             if remove:
                 self.remove_item_from_viewer(index.row())
                 op = IO_OP(IO_OP_TYPE.DELETE, path)
-                self.app.io_op_sig.emit(op)
+                # self.app.io_op_sig.emit(op)
 
         dialog_msg = DialogMessages.DELETE(
             f'Do you really want to delete: \n{path}')
