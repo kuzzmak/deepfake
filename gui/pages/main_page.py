@@ -8,9 +8,12 @@ from gui.pages.make_deepfake_page import MakeDeepfakePage
 
 from gui.templates.main_page import Ui_main_page
 
+from gui.workers.threads.io_worker_thread import IO_WorkerThread
+from gui.workers.threads.message_worker_thread import MessageWorkerThread
+
 from constants import CONSOLE_FONT_NAME, PREFERRED_HEIGHT, PREFERRED_WIDTH
 
-from names import MAKE_DEEPFAKE_PAGE_NAME
+from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
@@ -20,22 +23,23 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     show_toolbar_sig = qtc.pyqtSignal(bool)
     console_print_sig = qtc.pyqtSignal(str)
 
-    def __init__(self, app, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.app = app
 
         self.show_menubar_sig.connect(self.show_menubar)
         self.show_console_sig.connect(self.show_console)
         self.show_toolbar_sig.connect(self.show_toolbar)
         self.console_print_sig.connect(self.console_print)
 
+        self.setup_io_worker()
+        self.setup_message_worker()
+
         self.m_pages = {}
 
         self.init_ui()
 
-        # self.goto(START_PAGE_NAME)
-        self.goto(MAKE_DEEPFAKE_PAGE_NAME)
+        self.goto(START_PAGE_NAME)
+        # self.goto(MAKE_DEEPFAKE_PAGE_NAME)
 
     def init_ui(self):
         self.setupUi(self)
@@ -68,6 +72,14 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.show_menubar(False)
 
+    def setup_io_worker(self):
+        self.io_worker_thread = IO_WorkerThread()
+        self.io_worker_thread.start()
+
+    def setup_message_worker(self):
+        self.message_worker_thread = MessageWorkerThread()
+        self.message_worker_thread.start()
+
     def settings(self):
         settings_window = qwt.QMainWindow(self)
         cw = qwt.QWidget()
@@ -82,7 +94,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.m_pages[page.page_name] = page
         self.stacked_widget.addWidget(page)
         if isinstance(page, Page):
-            page.gotoSignal.connect(self.goto)
+            page.goto_sig.connect(self.goto)
 
     def register_pages(self):
         self.register_page(StartPage(self))
