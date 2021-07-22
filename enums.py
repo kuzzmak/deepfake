@@ -32,3 +32,7 @@ class DIALOG_MESSAGE_TYPE(Enum):
     DELETE = 'Delete'
     RENAME = 'Rename'
     WARNING = 'Warning'
+
+
+class SIGNAL_OWNER(Enum):
+    CONOSLE = 'console'
