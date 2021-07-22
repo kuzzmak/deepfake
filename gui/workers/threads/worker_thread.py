@@ -1,11 +1,11 @@
 import PyQt5.QtCore as qtc
 
-from gui.workers.worker import Worker
+from gui.workers.worker import NewWorker
 
 
 class WorkerThread(qtc.QThread):
 
-    def __init__(self, worker: Worker, *args, **kwargs):
+    def __init__(self, worker: NewWorker, *args, **kwargs):
         """Base class for any worker related threads.
 
         Parameters
