@@ -3,12 +3,6 @@ import PyQt5.QtWidgets as qwt
 
 from message.message import Message
 
-from constants import CONSOLE_TEXT_SIZE
-
-from enums import CONSOLE_COLORS, CONSOLE_MESSAGE_TYPE
-
-console_message_template = '<span style="font-size:{}pt; color:{}; white-space:pre;">{}<span>'
-
 
 class Page(qwt.QWidget):
 
@@ -37,23 +31,6 @@ class Page(qwt.QWidget):
         self.show_menubar(show)
         self.show_toolbar(show)
         self.show_console(show)
-
-    def _print(self, message: str):
-        self.main_page.console_print_sig.emit(message)
-
-    def _get_console_message_prefix(self, message_type: CONSOLE_MESSAGE_TYPE):
-        prefix_color = message_type.value.prefix_color.value
-        prefix = message_type.value.prefix
-        prefix = console_message_template.format(
-            CONSOLE_TEXT_SIZE, prefix_color, f'{prefix: <11}')
-        return prefix
-
-    def print(self, message: str, message_type: CONSOLE_MESSAGE_TYPE):
-        prefix = self._get_console_message_prefix(message_type)
-        text = prefix + \
-            console_message_template.format(
-                CONSOLE_TEXT_SIZE, CONSOLE_COLORS.BLACK.value, message)
-        self._print(text)
 
     def goto(self, name):
         self.goto_sig.emit(name)
