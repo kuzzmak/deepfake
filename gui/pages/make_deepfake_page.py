@@ -1,5 +1,3 @@
-from message.message import ConsolePrintMessageBody, JOB_TYPE, MESSAGE_TYPE, Message, MessageBody
-from gui.workers.threads.incrementer_thread import IncrementerThread
 import os
 from typing import List
 
@@ -7,16 +5,19 @@ import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
-from gui.pages.page import CONSOLE_MESSAGE_TYPE, Page
+from gui.pages.page import Page
 from gui.templates.make_deepfake_page import Ui_make_deepfake_page
 from gui.widgets.video_player import VideoPlayer
 from gui.widgets.picture_viewer import PictureViewer
 from gui.workers.face_extraction_worker import FaceExtractionWorker
-from gui.workers.worker import IncrementerWorker, Worker
 
-from utils import get_file_paths_from_dir
+from message.message import ConsolePrintMessageBody, MESSAGE_TYPE, Message
+
+from enums import CONSOLE_MESSAGE_TYPE
 
 from names import MAKE_DEEPFAKE_PAGE_NAME, MAKE_DEEPFAKE_PAGE_TITLE
+
+from utils import get_file_paths_from_dir
 
 from resources.icons import icons
 
@@ -45,19 +46,12 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.number_of_threads_label.setText(str(init_cpus_num))
         self.number_of_threads_slider.sliderMoved.connect(self.slider_moved)
 
-        # self.enable_detection_algorithm_tab(False)
+        # until pictures or video is selected, page with face detection is disabled
+        self.enable_detection_algorithm_tab(False)
 
         self.face_extraction_progress.hide()
 
         self.select_pictures_btn.clicked.connect(self.select_pictures)
-
-        # self.incrementer_thread = IncrementerThread()
-        # self.send_data_sig.connect(self.incrementer_thread.worker.process)
-        # self.incrementer_thread.start()
-
-        # self.select_pictures_btn.clicked.connect(
-        #     self.test_fun)  # -------------
-
         self.select_video_btn.clicked.connect(self.select_video)
         self.start_detection_btn.clicked.connect(self.start_detection)
         self.start_detection_btn.setIcon(qtg.QIcon(qtg.QPixmap(':/play.svg')))
@@ -86,13 +80,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
         self.face_extraction_progress.valueChanged.connect(
             self.progress_value_changed)
-
-    def test_fun(self):
-        # print('testan')
-        msg = Message(JOB_TYPE.IO_OPERATION, {
-                      'operation_type': 'delete', 'file': 'picture.png'})
-        self.send_message_sig.emit(msg)
-        # self.app.message_worker_thread.worker.
 
     def select_faces_folder(self):
         directory = qwt.QFileDialog.getExistingDirectory(
@@ -134,30 +121,34 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
     def select_video(self):
 
-        msg = Message(MESSAGE_TYPE.REQUEST, ConsolePrintMessageBody(
-            CONSOLE_MESSAGE_TYPE.ERROR, 'Errrrrrrr'))
+        options = qwt.QFileDialog.Options()
+        options |= qwt.QFileDialog.DontUseNativeDialog
+        video_path, _ = qwt.QFileDialog.getOpenFileName(
+            self, 'Select video file', "data/videos", "Video files (*.mp4)", options=options)
+        if video_path:
+            self.video_player.video_selection.emit(video_path)
+            self.preview_widget.setCurrentWidget(self.video_player)
+            video_name = os.path.splitext(os.path.basename(video_path))[0]
+
+            self.set_preview_label_text(
+                'Preview of: ' + video_name + ' video.')
+
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.LOG,
+                    f'Loaded video from: {video_path}'))
+
+            self.enable_detection_algorithm_tab(True)
+
+        else:
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.WARNING,
+                    'No video folder was selected.'))
 
         self.send_message_sig.emit(msg)
-
-        # options = qwt.QFileDialog.Options()
-        # options |= qwt.QFileDialog.DontUseNativeDialog
-        # video_path, _ = qwt.QFileDialog.getOpenFileName(
-        #     self, 'Select video file', "data/videos", "Video files (*.mp4)", options=options)
-        # if video_path:
-        #     self.video_player.video_selection.emit(video_path)
-        #     self.preview_widget.setCurrentWidget(self.video_player)
-        #     video_name = os.path.splitext(os.path.basename(video_path))[0]
-
-        #     self.set_preview_label_text(
-        #         'Preview of: ' + video_name + ' video.')
-        #     message = 'Loaded video from: {}'.format(video_path)
-        #     self.print(message, CONSOLE_MESSAGE_TYPE.LOG)
-
-        #     self.enable_detection_algorithm_tab(True)
-        # else:
-        #     self.print('No video folder was selected.',
-        #                CONSOLE_MESSAGE_TYPE.WARNING)
-        ...
 
     def select_pictures(self):
 
@@ -168,16 +159,31 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
             image_paths = get_file_paths_from_dir(directory)
             if len(image_paths) == 0:
-                self.print(
-                    f'No images were found in: {directory}.', CONSOLE_MESSAGE_TYPE.WARNING)
+                msg = Message(
+                    MESSAGE_TYPE.REQUEST,
+                    ConsolePrintMessageBody(
+                        CONSOLE_MESSAGE_TYPE.WARNING,
+                        f'No images were found in: {directory}.'))
+
             else:
                 self.picture_viewer_tab_1.pictures_added_sig.emit(image_paths)
 
-                message = 'Loaded: {} images from: {}.'.format(
-                    len(image_paths), directory)
-                self.print(message, CONSOLE_MESSAGE_TYPE.LOG)
+                msg = Message(
+                    MESSAGE_TYPE.REQUEST,
+                    ConsolePrintMessageBody(
+                        CONSOLE_MESSAGE_TYPE.INFO,
+                        'Loaded: {} images from: {}.'.format(
+                            len(image_paths),
+                            directory)))
+
                 self.set_preview_label_text(
                     'Preview of pictures in: ' + directory + ' folder.')
+
         else:
-            self.print('No picture folder was selected.',
-                       CONSOLE_MESSAGE_TYPE.WARNING)
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.WARNING,
+                    'No picture folder was selected.'))
+
+        self.send_message_sig.emit(msg)
