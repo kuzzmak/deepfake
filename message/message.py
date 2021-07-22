@@ -54,10 +54,3 @@ class IO_OperationMessageBody(MessageBody):
 class Message:
     type: MESSAGE_TYPE
     body: MessageBody
-
-    # def get_data(self):
-    #     if self.type == MESSAGE_TYPE.REQUEST:
-    #         if self.body.job_type == JOB_TYPE.CONSOLE_PRINT:
-    #             msg_type, message = self.body.get_data()
-    #             print('mes type: ', msg_type)
-    #             print('messa: ', message)
