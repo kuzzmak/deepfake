@@ -20,6 +20,7 @@ class CONSOLE_MESSAGE_TYPE(Enum):
 class IO_OP_TYPE(Enum):
     DELETE = 'delete'
     RENAME = 'rename'
+    SAVE = 'save'
 
 
 class DIALOG_MESSAGE_ICON(Enum):
@@ -37,6 +38,7 @@ class DIALOG_MESSAGE_TYPE(Enum):
 class SIGNAL_OWNER(Enum):
     CONOSLE = 'console'
     FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
+    IO_WORKER = 'io_worker'
 
 
 class MESSAGE_TYPE(Enum):
@@ -49,3 +51,8 @@ class JOB_TYPE(Enum):
     CONSOLE_PRINT = 'console_print'
     FRAME_EXTRACTION = 'frame_extraction'
     NO_JOB = 'no_job'
+
+
+class APP_STATUS(Enum):
+    BUSY = 'BUSY'
+    NO_JOB = 'NO JOB'
