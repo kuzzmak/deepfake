@@ -1,5 +1,8 @@
 import abc
+from typing import Optional
 from dataclasses import dataclass
+
+import numpy as np
 
 from enums import (
     CONSOLE_MESSAGE_TYPE,
@@ -33,7 +36,8 @@ class ConsolePrintMessageBody(MessageBody):
 
 class FrameExtractionMessageBody(MessageBody):
 
-    def __init__(self, video_path: str,
+    def __init__(self,
+                 video_path: str,
                  destination_directory: str,
                  image_format: str):
         super().__init__(JOB_TYPE.FRAME_EXTRACTION)
@@ -48,14 +52,20 @@ class FrameExtractionMessageBody(MessageBody):
 
 class IO_OperationMessageBody(MessageBody):
 
-    def __init__(self, type: IO_OP_TYPE, file_path: str):
+    def __init__(self,
+                 type: IO_OP_TYPE,
+                 file_path: str,
+                 new_file_path: Optional[str] = '',
+                 file: Optional[np.ndarray] = None):
         super().__init__(JOB_TYPE.IO_OPERATION)
 
         self.type = type
         self.file_path = file_path
+        self.new_file_path = new_file_path
+        self.file = file
 
     def get_data(self):
-        return self.type, self.file_path
+        return self.type, self.file_path, self.new_file_path, self.file
 
 
 @dataclass
