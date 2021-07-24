@@ -1,3 +1,5 @@
+from gui.workers.threads.frames_extraction_worker_thread \
+    import FramesExtractionWorkerThread
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -13,21 +15,34 @@ from gui.workers.threads.message_worker_thread import MessageWorkerThread
 
 from message.message import Message
 
-from constants import CONSOLE_FONT_NAME, CONSOLE_TEXT_SIZE, PREFERRED_HEIGHT, PREFERRED_WIDTH
+from constants import (
+    CONSOLE_FONT_NAME,
+    CONSOLE_TEXT_SIZE,
+    PREFERRED_HEIGHT,
+    PREFERRED_WIDTH,
+)
 
-from enums import CONSOLE_COLORS, CONSOLE_MESSAGE_TYPE, SIGNAL_OWNER
+from enums import (
+    CONSOLE_COLORS,
+    CONSOLE_MESSAGE_TYPE,
+    SIGNAL_OWNER,
+)
 
-from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
+from names import START_PAGE_NAME
 
 console_message_template = '<span style="font-size:{}pt; color:{}; white-space:pre;">{}<span>'
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
 
+    # -- gui signals ---
     show_menubar_sig = qtc.pyqtSignal(bool)
     show_console_sig = qtc.pyqtSignal(bool)
     show_toolbar_sig = qtc.pyqtSignal(bool)
     console_print_sig = qtc.pyqtSignal(Message)
+
+    # -- worker signals ---
+    frame_extraction_worker_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -37,7 +52,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.show_toolbar_sig.connect(self.show_toolbar)
         self.console_print_sig.connect(self.console_print)
 
+        # -- setup workers --
         self.setup_io_worker()
+        self.setup_frame_extraction_worker()
         self.setup_message_worker()
 
         self.m_pages = {}
@@ -45,7 +62,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.init_ui()
 
         self.goto(START_PAGE_NAME)
-        # self.goto(MAKE_DEEPFAKE_PAGE_NAME)
 
     def init_ui(self):
         self.setupUi(self)
@@ -86,7 +102,17 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.message_worker_thread = MessageWorkerThread()
         self.message_worker_thread.worker.add_signal(
             self.console_print_sig, SIGNAL_OWNER.CONOSLE)
+        self.message_worker_thread.worker.add_signal(
+            self.frame_extraction_worker_sig,
+            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER
+        )
         self.message_worker_thread.start()
+
+    def setup_frame_extraction_worker(self):
+        self.frame_extraction_worker_thread = FramesExtractionWorkerThread()
+        self.frame_extraction_worker_sig.connect(
+            self.frame_extraction_worker_thread.worker.process)
+        self.frame_extraction_worker_thread.start()
 
     def settings(self):
         settings_window = qwt.QMainWindow(self)
