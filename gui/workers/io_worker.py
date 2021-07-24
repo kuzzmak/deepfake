@@ -1,22 +1,21 @@
-import os
+import cv2 as cv
 
-import PyQt5.QtCore as qtc
+from message.message import Message
+
+from gui.workers.worker import Worker
 
 from enums import IO_OP_TYPE
-from common_structures import IO_OP
 
 
-class IO_Worker(qtc.QObject):
+class IO_Worker(Worker):
 
-    io_op_successful_sig = qtc.pyqtSignal(bool)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    @qtc.pyqtSlot(IO_OP)
-    def io_op(self, op: IO_OP):
-        if op.type == IO_OP_TYPE.DELETE:
-            self.delete(op.value)
+    def process(self, msg: Message):
 
-    def delete(self, value: str):
-        exists = os.path.exists(value)
-        if exists:
-            os.remove(value)
-            print('removed: ', value)
+        op_type, file_path, new_file_path, file = msg.body.get_data()
+
+        if op_type == IO_OP_TYPE.SAVE:
+            if file is not None:
+                cv.imwrite(file_path, file)
