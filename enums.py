@@ -36,3 +36,16 @@ class DIALOG_MESSAGE_TYPE(Enum):
 
 class SIGNAL_OWNER(Enum):
     CONOSLE = 'console'
+    FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
+
+
+class MESSAGE_TYPE(Enum):
+    REQUEST = 'request'
+    ANSWER = 'answer'
+
+
+class JOB_TYPE(Enum):
+    IO_OPERATION = 'io_operation'
+    CONSOLE_PRINT = 'console_print'
+    FRAME_EXTRACTION = 'frame_extraction'
+    NO_JOB = 'no_job'
