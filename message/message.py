@@ -1,19 +1,12 @@
 import abc
 from dataclasses import dataclass
-from enum import Enum
 
-from enums import CONSOLE_MESSAGE_TYPE, IO_OP_TYPE
-
-
-class MESSAGE_TYPE(Enum):
-    REQUEST = 'request'
-    ANSWER = 'answer'
-
-
-class JOB_TYPE(Enum):
-    IO_OPERATION = 'io_operation'
-    CONSOLE_PRINT = 'console_print'
-    NO_JOB = 'no_job'
+from enums import (
+    CONSOLE_MESSAGE_TYPE,
+    IO_OP_TYPE,
+    JOB_TYPE,
+    MESSAGE_TYPE
+)
 
 
 class MessageBody(metaclass=abc.ABCMeta):
@@ -36,6 +29,21 @@ class ConsolePrintMessageBody(MessageBody):
 
     def get_data(self):
         return self.type, self.message
+
+
+class FrameExtractionMessageBody(MessageBody):
+
+    def __init__(self, video_path: str,
+                 destination_directory: str,
+                 image_format: str):
+        super().__init__(JOB_TYPE.FRAME_EXTRACTION)
+
+        self.video_path = video_path
+        self.destination_directory = destination_directory
+        self.image_format = image_format
+
+    def get_data(self):
+        return self.video_path, self.destination_directory, self.image_format
 
 
 class IO_OperationMessageBody(MessageBody):
