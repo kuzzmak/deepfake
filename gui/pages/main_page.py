@@ -13,7 +13,7 @@ from gui.templates.main_page import Ui_main_page
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
 
-from message.message import Message
+from message.message import Message, MessageBody
 
 from constants import (
     CONSOLE_FONT_NAME,
@@ -23,6 +23,7 @@ from constants import (
 )
 
 from enums import (
+    APP_STATUS,
     CONSOLE_COLORS,
     CONSOLE_MESSAGE_TYPE,
     SIGNAL_OWNER,
@@ -40,9 +41,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     show_console_sig = qtc.pyqtSignal(bool)
     show_toolbar_sig = qtc.pyqtSignal(bool)
     console_print_sig = qtc.pyqtSignal(Message)
+    job_progress_sig = qtc.pyqtSignal(int)
 
     # -- worker signals ---
     frame_extraction_worker_sig = qtc.pyqtSignal(Message)
+    io_worker_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -51,6 +54,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.show_console_sig.connect(self.show_console)
         self.show_toolbar_sig.connect(self.show_toolbar)
         self.console_print_sig.connect(self.console_print)
+        self.job_progress_sig.connect(self.set_job_progress_value)
 
         # -- setup workers --
         self.setup_io_worker()
@@ -73,6 +77,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.register_pages()
         self.init_menubar()
         self.init_toolbar()
+        self.init_statusbar()
 
         self.resize(PREFERRED_WIDTH, PREFERRED_HEIGHT)
 
@@ -94,8 +99,20 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.show_menubar(False)
 
+    def init_statusbar(self):
+        self.statusbar.addWidget(qwt.QLabel(text='Status: '))
+        self.app_status_label = qwt.QLabel(self, text=APP_STATUS.NO_JOB.value)
+        self.statusbar.addWidget(self.app_status_label)
+
+        self.job_progress = qwt.QProgressBar(self)
+        self.job_progress.setMinimum(0)
+        self.job_progress.setFormat(' %v/%m (%p%)')
+
+        self.statusbar.addWidget(self.job_progress)
+
     def setup_io_worker(self):
         self.io_worker_thread = IO_WorkerThread()
+        self.io_worker_sig.connect(self.io_worker_thread.worker.process)
         self.io_worker_thread.start()
 
     def setup_message_worker(self):
@@ -110,6 +127,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def setup_frame_extraction_worker(self):
         self.frame_extraction_worker_thread = FramesExtractionWorkerThread()
+        self.frame_extraction_worker_thread.worker.add_signal(
+            self.io_worker_sig,
+            SIGNAL_OWNER.IO_WORKER
+        )
         self.frame_extraction_worker_sig.connect(
             self.frame_extraction_worker_thread.worker.process)
         self.frame_extraction_worker_thread.start()
@@ -133,6 +154,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def register_pages(self):
         self.register_page(StartPage(self))
         self.register_page(MakeDeepfakePage(self))
+
+    @qtc.pyqtSlot(int)
+    def set_job_progress_value(self, value: int):
+        self.job_progress.setValue(value)
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
