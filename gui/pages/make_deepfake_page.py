@@ -170,9 +170,9 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             FrameExtractionMessageBody(
-                'vid_path',
-                'dest_dir',
-                'im_format'
+                self.video_path,
+                self.data_directory,
+                '.jpg'
             )
         )
         self.send_message_sig.emit(msg)
@@ -217,6 +217,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             options=options)
 
         if video_path:
+            self.video_path = video_path
+
             self.video_player.video_selection.emit(video_path)
             self.preview_widget.setCurrentWidget(self.central_widget)
 
