@@ -11,11 +11,21 @@ from gui.widgets.video_player import VideoPlayer
 from gui.widgets.picture_viewer import PictureViewer
 from gui.workers.face_extraction_worker import FaceExtractionWorker
 
-from message.message import ConsolePrintMessageBody, MESSAGE_TYPE, Message
+from message.message import (
+    ConsolePrintMessageBody,
+    FrameExtractionMessageBody,
+    Message,
+)
 
-from enums import CONSOLE_MESSAGE_TYPE
+from enums import (
+    CONSOLE_MESSAGE_TYPE,
+    MESSAGE_TYPE,
+)
 
-from names import MAKE_DEEPFAKE_PAGE_NAME, MAKE_DEEPFAKE_PAGE_TITLE
+from names import (
+    MAKE_DEEPFAKE_PAGE_NAME,
+    MAKE_DEEPFAKE_PAGE_TITLE,
+)
 
 from utils import get_file_paths_from_dir
 
@@ -30,15 +40,51 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
 
+        self.data_directory = ''
+
         self.setupUi(self)
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
         self.picture_viewer_tab_1 = PictureViewer()
         self.preview_widget.addWidget(self.picture_viewer_tab_1)
 
+        # --- video widget with faces folder selection ---
         self.video_player = VideoPlayer()
-        self.preview_widget.addWidget(self.video_player)
 
+        self.central_widget = qwt.QWidget()
+        central_layout = qwt.QHBoxLayout()
+        self.central_widget.setLayout(central_layout)
+        central_layout.addWidget(self.video_player)
+
+        self.frame_extraction_part = qwt.QWidget()
+        frame_extraction_part_layout = qwt.QVBoxLayout()
+        self.frame_extraction_part.setLayout(frame_extraction_part_layout)
+
+        frame_extraction_part_layout.addWidget(qwt.QLabel(
+            text='Select destination folder for\n' +
+            'extracted frames from video.'))
+
+        select_frames_folder = qwt.QPushButton(text='Select')
+        select_frames_folder.clicked.connect(self.select_frames_folder)
+        frame_extraction_part_layout.addWidget(select_frames_folder)
+
+        self.extract_frames_btn = qwt.QPushButton(text='Extract frames')
+        self.extract_frames_btn.clicked.connect(self.extract_frames)
+        self.enable_widget(self.extract_frames_btn, False)
+
+        frame_extraction_part_layout.addWidget(self.extract_frames_btn)
+
+        spacer = qwt.QSpacerItem(
+            40,
+            20,
+            qwt.QSizePolicy.Preferred,
+            qwt.QSizePolicy.MinimumExpanding)
+        frame_extraction_part_layout.addItem(spacer)
+
+        central_layout.addWidget(self.frame_extraction_part)
+        self.preview_widget.addWidget(self.central_widget)
+
+        # --- thread number selection ---
         cpus_num = os.cpu_count()
         init_cpus_num = cpus_num // 2
         self.number_of_threads_slider.setMaximum(cpus_num)
@@ -46,7 +92,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.number_of_threads_label.setText(str(init_cpus_num))
         self.number_of_threads_slider.sliderMoved.connect(self.slider_moved)
 
-        # until pictures or video is selected, page with face detection is disabled
+        # until pictures or video is selected, page with face detection
+        # is disabled
         self.enable_detection_algorithm_tab(False)
 
         self.face_extraction_progress.hide()
@@ -119,15 +166,60 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
     def enable_detection_algorithm_tab(self, enable: bool):
         self.tab_widget.setTabEnabled(1, enable)
 
+    def extract_frames(self):
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            FrameExtractionMessageBody(
+                'vid_path',
+                'dest_dir',
+                'im_format'
+            )
+        )
+        self.send_message_sig.emit(msg)
+
+    def select_frames_folder(self):
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self,
+            "getExistingDirectory",
+            "./")
+
+        if directory:
+            self.data_directory = directory
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.INFO,
+                    'Folder in which extracted frames will go ' +
+                    f'selected: {directory}.'
+                )
+            )
+
+            self.enable_widget(self.extract_frames_btn, True)
+
+        else:
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.WARNING,
+                    'No folder was selected.'))
+
+        self.send_message_sig.emit(msg)
+
     def select_video(self):
 
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
         video_path, _ = qwt.QFileDialog.getOpenFileName(
-            self, 'Select video file', "data/videos", "Video files (*.mp4)", options=options)
+            self,
+            'Select video file',
+            "data/videos",
+            "Video files (*.mp4)",
+            options=options)
+
         if video_path:
             self.video_player.video_selection.emit(video_path)
-            self.preview_widget.setCurrentWidget(self.video_player)
+            self.preview_widget.setCurrentWidget(self.central_widget)
+
             video_name = os.path.splitext(os.path.basename(video_path))[0]
 
             self.set_preview_label_text(
@@ -153,8 +245,12 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
     def select_pictures(self):
 
         directory = qwt.QFileDialog.getExistingDirectory(
-            self, "getExistingDirectory", "./")
+            self,
+            "getExistingDirectory",
+            "./")
+
         if directory:
+            self.data_directory = directory
             self.preview_widget.setCurrentWidget(self.picture_viewer_tab_1)
 
             image_paths = get_file_paths_from_dir(directory)
