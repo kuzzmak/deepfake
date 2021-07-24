@@ -12,9 +12,8 @@ class WorkerMeta(PyQt5.sip.wrappertype, abc.ABCMeta):
     ...
 
 
-class NewWorker(qtc.QObject, metaclass=WorkerMeta):
+class Worker(qtc.QObject, metaclass=WorkerMeta):
 
-    succesful_op = qtc.pyqtSignal(bool)
     signals = dict()
 
     def __init__(self, *args, **kwargs):
