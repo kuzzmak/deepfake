@@ -12,8 +12,13 @@ class MessageWorker(Worker):
     def process(self, msg: Message):
         if msg.type == MESSAGE_TYPE.REQUEST:
 
-            if msg.body.job_type == JOB_TYPE.CONSOLE_PRINT:
+            job_type = msg.body.job_type
+
+            if job_type == JOB_TYPE.CONSOLE_PRINT:
                 self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
 
-            elif msg.body.job_type == JOB_TYPE.FRAME_EXTRACTION:
+            elif job_type == JOB_TYPE.FRAME_EXTRACTION:
                 self.signals[SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER].emit(msg)
+
+            elif job_type == JOB_TYPE.IO_OPERATION:
+                self.signals[SIGNAL_OWNER.IO_WORKER].emit(msg)
