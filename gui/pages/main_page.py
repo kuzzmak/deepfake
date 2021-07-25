@@ -1,5 +1,5 @@
-from gui.workers.threads.frames_extraction_worker_thread \
-    import FramesExtractionWorkerThread
+from datetime import datetime
+
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -10,10 +10,12 @@ from gui.pages.make_deepfake_page import MakeDeepfakePage
 
 from gui.templates.main_page import Ui_main_page
 
+from gui.workers.threads.frames_extraction_worker_thread \
+    import FramesExtractionWorkerThread
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
 
-from message.message import Message
+from message.message import ConsolePrintMessageBody, Message
 
 from constants import (
     CONSOLE_FONT_NAME,
@@ -26,6 +28,7 @@ from enums import (
     APP_STATUS,
     CONSOLE_COLORS,
     CONSOLE_MESSAGE_TYPE,
+    MESSAGE_TYPE,
     SIGNAL_OWNER,
     WIDGET,
 )
@@ -207,6 +210,16 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             self.app_status_label_sig.emit(APP_STATUS.NO_JOB.value)
             self.job_progress_value = 0
 
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.LOG,
+                    'Frames extraction finished.'
+                )
+            )
+
+            self.console_print_sig.emit(msg)
+
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
         self.show_widget(self.console, show)
@@ -223,7 +236,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def console_print(self, message: Message):
         msg_type, msg = message.body.get_data()
         prefix = self._get_console_message_prefix(msg_type)
-        text = prefix + \
+        curr_time = datetime.now().strftime('%H:%M:%S')
+        text = prefix + '[' + curr_time + '] - ' + \
             console_message_template.format(
                 CONSOLE_TEXT_SIZE, CONSOLE_COLORS.BLACK.value, msg)
         self.console.append(text)
