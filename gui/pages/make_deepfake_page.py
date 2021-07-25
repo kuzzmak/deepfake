@@ -167,12 +167,22 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.tab_widget.setTabEnabled(1, enable)
 
     def extract_frames(self):
+
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            ConsolePrintMessageBody(
+                CONSOLE_MESSAGE_TYPE.LOG,
+                'Started frame extraction.'
+            )
+        )
+        self.send_message(msg)
+
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             FrameExtractionMessageBody(
                 self.video_path,
                 self.data_directory,
-                '.jpg'
+                'jpg'
             )
         )
         self.send_message(msg)
