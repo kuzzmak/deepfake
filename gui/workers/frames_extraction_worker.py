@@ -1,11 +1,21 @@
-from enums import IO_OP_TYPE, MESSAGE_TYPE, SIGNAL_OWNER
 import os
 
 import cv2 as cv
 
-from message.message import IO_OperationMessageBody, Message
-
 from gui.workers.worker import Worker
+
+from message.message import (
+    ConfigureWidgetMessageBody,
+    IO_OperationMessageBody,
+    Message,
+)
+
+from enums import (
+    IO_OP_TYPE,
+    MESSAGE_TYPE,
+    SIGNAL_OWNER,
+    WIDGET,
+)
 
 
 class FramesExtractionWorker(Worker):
@@ -21,6 +31,17 @@ class FramesExtractionWorker(Worker):
 
         total_frames = int(vidcap.get(cv.CAP_PROP_FRAME_COUNT))
 
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            ConfigureWidgetMessageBody(
+                WIDGET.JOB_PROGRESS,
+                'setMaximum',
+                [total_frames]
+            )
+        )
+
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+
         count = 0
         while success:
             im_path = os.path.join(dest_dir, f'frame_{count}.jpg')
@@ -32,10 +53,13 @@ class FramesExtractionWorker(Worker):
                     im_path,
                     None,
                     image,
+                    True,
+                    count + 1,
+                    total_frames,
                 )
             )
 
-            self.signals[SIGNAL_OWNER.IO_WORKER].emit(msg)
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
             success, image = vidcap.read()
             count += 1
