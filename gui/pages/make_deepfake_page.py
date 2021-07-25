@@ -175,13 +175,15 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 '.jpg'
             )
         )
-        self.send_message_sig.emit(msg)
+        self.send_message(msg)
 
     def select_frames_folder(self):
-        directory = qwt.QFileDialog.getExistingDirectory(
-            self,
-            "getExistingDirectory",
-            "./")
+        # directory = qwt.QFileDialog.getExistingDirectory(
+        #     self,
+        #     "getExistingDirectory",
+        #     "./")
+
+        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
 
         if directory:
             self.data_directory = directory
@@ -203,18 +205,20 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                     CONSOLE_MESSAGE_TYPE.WARNING,
                     'No folder was selected.'))
 
-        self.send_message_sig.emit(msg)
+        self.send_message(msg)
 
     def select_video(self):
 
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
-        video_path, _ = qwt.QFileDialog.getOpenFileName(
-            self,
-            'Select video file',
-            "data/videos",
-            "Video files (*.mp4)",
-            options=options)
+        # video_path, _ = qwt.QFileDialog.getOpenFileName(
+        #     self,
+        #     'Select video file',
+        #     "data/videos",
+        #     "Video files (*.mp4)",
+        #     options=options)
+
+        video_path = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\videos\\SampleVideo_1280x720_5mb.mp4"
 
         if video_path:
             self.video_path = video_path
@@ -242,7 +246,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                     CONSOLE_MESSAGE_TYPE.WARNING,
                     'No video folder was selected.'))
 
-        self.send_message_sig.emit(msg)
+        self.send_message(msg)
 
     def select_pictures(self):
 
@@ -284,4 +288,4 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                     CONSOLE_MESSAGE_TYPE.WARNING,
                     'No picture folder was selected.'))
 
-        self.send_message_sig.emit(msg)
+        self.send_message(msg)
