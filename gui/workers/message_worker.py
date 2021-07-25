@@ -10,9 +10,10 @@ class MessageWorker(Worker):
         super().__init__(*args, **kwargs)
 
     def process(self, msg: Message):
-        if msg.type == MESSAGE_TYPE.REQUEST:
 
-            job_type = msg.body.job_type
+        job_type = msg.body.job_type
+
+        if msg.type == MESSAGE_TYPE.REQUEST:
 
             if job_type == JOB_TYPE.CONSOLE_PRINT:
                 self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
@@ -22,3 +23,11 @@ class MessageWorker(Worker):
 
             elif job_type == JOB_TYPE.IO_OPERATION:
                 self.signals[SIGNAL_OWNER.IO_WORKER].emit(msg)
+
+            elif job_type == JOB_TYPE.WIDGET_CONFIGURATION:
+                self.signals[SIGNAL_OWNER.CONFIGURE_WIDGET].emit(msg)
+
+        elif msg.type == MESSAGE_TYPE.ANSWER:
+
+            if job_type == JOB_TYPE.IO_OPERATION:
+                self.signals[SIGNAL_OWNER.JOB_PROGRESS].emit(msg)
