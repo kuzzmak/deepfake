@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'make_deepfake_page_2.ui'
+# Form implementation generated from reading ui file 'make_deepfake_page.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.4
 #
@@ -105,23 +105,6 @@ class Ui_make_deepfake_page(object):
         self.start_detection_btn.setObjectName("start_detection_btn")
         self.horizontalLayout_2.addWidget(self.start_detection_btn)
         self.detection_algorithm_tab_layout.addWidget(self.available_algorithms_gb)
-        self.number_of_threads_gb = QtWidgets.QGroupBox(self.tab_2)
-        self.number_of_threads_gb.setObjectName("number_of_threads_gb")
-        self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.number_of_threads_gb)
-        self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-        self.number_of_threads_slider = QtWidgets.QSlider(self.number_of_threads_gb)
-        self.number_of_threads_slider.setMinimum(1)
-        self.number_of_threads_slider.setOrientation(QtCore.Qt.Horizontal)
-        self.number_of_threads_slider.setObjectName("number_of_threads_slider")
-        self.horizontalLayout_4.addWidget(self.number_of_threads_slider)
-        self.number_of_threads_label = QtWidgets.QLabel(self.number_of_threads_gb)
-        font = QtGui.QFont()
-        font.setPointSize(9)
-        self.number_of_threads_label.setFont(font)
-        self.number_of_threads_label.setText("")
-        self.number_of_threads_label.setObjectName("number_of_threads_label")
-        self.horizontalLayout_4.addWidget(self.number_of_threads_label)
-        self.detection_algorithm_tab_layout.addWidget(self.number_of_threads_gb)
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
         self.select_faces_folder_btn = QtWidgets.QPushButton(self.tab_2)
@@ -144,17 +127,13 @@ class Ui_make_deepfake_page(object):
         self.image_viewer_layout = QtWidgets.QVBoxLayout()
         self.image_viewer_layout.setObjectName("image_viewer_layout")
         self.detection_algorithm_tab_layout.addLayout(self.image_viewer_layout)
-        self.face_extraction_progress = QtWidgets.QProgressBar(self.tab_2)
-        self.face_extraction_progress.setProperty("value", 0)
-        self.face_extraction_progress.setObjectName("face_extraction_progress")
-        self.detection_algorithm_tab_layout.addWidget(self.face_extraction_progress)
         self.tab_widget.addTab(self.tab_2, "")
         self.verticalLayout_7.addWidget(self.tab_widget)
         spacerItem3 = QtWidgets.QSpacerItem(20, 1, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Ignored)
         self.verticalLayout_7.addItem(spacerItem3)
 
         self.retranslateUi(make_deepfake_page)
-        self.tab_widget.setCurrentIndex(0)
+        self.tab_widget.setCurrentIndex(1)
         self.preview_widget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(make_deepfake_page)
 
@@ -170,7 +149,6 @@ class Ui_make_deepfake_page(object):
         self.faceboxes_chk_btn.setText(_translate("make_deepfake_page", "FaceBoxes"))
         self.s3fd_chk_btn.setText(_translate("make_deepfake_page", "S3FD"))
         self.start_detection_btn.setText(_translate("make_deepfake_page", "Start detection"))
-        self.number_of_threads_gb.setTitle(_translate("make_deepfake_page", "Number of threads to use"))
         self.select_faces_folder_btn.setText(_translate("make_deepfake_page", "Select faces folder"))
         self.label_2.setText(_translate("make_deepfake_page", "Selected folder:"))
         self.selected_faces_folder_label.setText(_translate("make_deepfake_page", "NOTHING SELECTED"))
