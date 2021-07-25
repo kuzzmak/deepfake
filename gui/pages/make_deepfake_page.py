@@ -91,7 +91,9 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.start_detection_btn.clicked.connect(self.start_detection)
         self.start_detection_btn.setIcon(qtg.QIcon(qtg.QPixmap(':/play.svg')))
         self.enable_widget(self.start_detection_btn, False)
-        self.select_faces_folder_btn.clicked.connect(self.select_faces_folder)
+        self.select_faces_directory_btn.clicked.connect(
+            self.select_faces_folder
+        )
 
         self.picture_viewer_tab_2 = PictureViewer()
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
@@ -100,7 +102,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         directory = qwt.QFileDialog.getExistingDirectory(
             self, "getExistingDirectory", "./")
         if directory:
-            self.selected_faces_folder_label.setText(directory)
+            self.selected_faces_directory_label.setText(directory)
             self.enable_widget(self.start_detection_btn, True)
 
     def progress_value_changed(self, value: int):
