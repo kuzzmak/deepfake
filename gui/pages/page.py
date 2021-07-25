@@ -7,7 +7,6 @@ from message.message import Message
 class Page(qwt.QWidget):
 
     goto_sig = qtc.pyqtSignal(str)
-    send_message_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, main_page, page_name='page'):
         super().__init__()
@@ -15,8 +14,8 @@ class Page(qwt.QWidget):
         self.page_name = page_name
         self.main_page = main_page
 
-        self.send_message_sig.connect(
-            self.main_page.message_worker_thread.worker.process)
+    def send_message(self, msg: Message):
+        self.main_page.message_worker_sig.emit(msg)
 
     def show_menubar(self, show):
         self.main_page.show_menubar_sig.emit(show)
