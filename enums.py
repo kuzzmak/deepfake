@@ -39,6 +39,9 @@ class SIGNAL_OWNER(Enum):
     CONOSLE = 'console'
     FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
     IO_WORKER = 'io_worker'
+    JOB_PROGRESS = 'job_progress'
+    CONFIGURE_WIDGET = 'configure_widget'
+    MESSAGE_WORKER = 'message_worker'
 
 
 class MESSAGE_TYPE(Enum):
@@ -46,13 +49,23 @@ class MESSAGE_TYPE(Enum):
     ANSWER = 'answer'
 
 
+class MESSAGE_STATUS(Enum):
+    OK = 'ok'
+    FAILED = 'failed'
+
+
 class JOB_TYPE(Enum):
     IO_OPERATION = 'io_operation'
     CONSOLE_PRINT = 'console_print'
     FRAME_EXTRACTION = 'frame_extraction'
+    WIDGET_CONFIGURATION = 'widget_configuration'
     NO_JOB = 'no_job'
 
 
 class APP_STATUS(Enum):
     BUSY = 'BUSY'
     NO_JOB = 'NO JOB'
+
+
+class WIDGET(Enum):
+    JOB_PROGRESS = 'job_progress'
