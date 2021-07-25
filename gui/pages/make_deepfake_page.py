@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
@@ -9,7 +8,6 @@ from gui.pages.page import Page
 from gui.templates.make_deepfake_page import Ui_make_deepfake_page
 from gui.widgets.video_player import VideoPlayer
 from gui.widgets.picture_viewer import PictureViewer
-from gui.workers.face_extraction_worker import FaceExtractionWorker
 
 from message.message import (
     ConsolePrintMessageBody,
@@ -84,19 +82,9 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         central_layout.addWidget(self.frame_extraction_part)
         self.preview_widget.addWidget(self.central_widget)
 
-        # --- thread number selection ---
-        cpus_num = os.cpu_count()
-        init_cpus_num = cpus_num // 2
-        self.number_of_threads_slider.setMaximum(cpus_num)
-        self.number_of_threads_slider.setSliderPosition(init_cpus_num)
-        self.number_of_threads_label.setText(str(init_cpus_num))
-        self.number_of_threads_slider.sliderMoved.connect(self.slider_moved)
-
         # until pictures or video is selected, page with face detection
         # is disabled
         self.enable_detection_algorithm_tab(False)
-
-        self.face_extraction_progress.hide()
 
         self.select_pictures_btn.clicked.connect(self.select_pictures)
         self.select_video_btn.clicked.connect(self.select_video)
@@ -108,35 +96,12 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.picture_viewer_tab_2 = PictureViewer()
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
-        # self.worker = Worker()
-        # self.worker_thread = qtc.QThread()
-        # self.worker.incremented_val.connect(self.increment_progress)
-        # self.new_val_requested.connect(self.worker.increment_value)
-        # self.worker.moveToThread(self.worker_thread)
-        # self.worker_thread.start()
-
-        self.face_extraction_worker = FaceExtractionWorker()
-        self.face_extraction_worker_thread = qtc.QThread()
-        self.face_extraction_worker.new_images.connect(
-            self.add_new_faces_to_image_viewer)
-        self.faces_extraction_requested.connect(
-            self.face_extraction_worker.process_faces_folder)
-        self.face_extraction_worker.moveToThread(
-            self.face_extraction_worker_thread)
-        self.face_extraction_worker_thread.start()
-
-        self.face_extraction_progress.valueChanged.connect(
-            self.progress_value_changed)
-
     def select_faces_folder(self):
         directory = qwt.QFileDialog.getExistingDirectory(
             self, "getExistingDirectory", "./")
         if directory:
             self.selected_faces_folder_label.setText(directory)
             self.enable_widget(self.start_detection_btn, True)
-
-    def add_new_faces_to_image_viewer(self, image_paths: List[str]):
-        print('from fun: ', image_paths)
 
     def progress_value_changed(self, value: int):
         if value == 100:
@@ -152,13 +117,9 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.face_extraction_progress.setValue(new_val)
 
     def start_detection(self):
-        self.face_extraction_progress.show()
         self.new_val_requested.emit(0)
         self.faces_extraction_requested.emit(
             'C:/Users/tonkec/Documents/deepfake/dummy_pics')
-
-    def slider_moved(self, position: int):
-        self.number_of_threads_label.setText(str(position))
 
     def set_preview_label_text(self, text: str):
         self.preview_label.setText(text)
@@ -167,6 +128,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.tab_widget.setTabEnabled(1, enable)
 
     def extract_frames(self):
+        """Starts process of extracting frames from video.
+        """
 
         msg = Message(
             MESSAGE_TYPE.REQUEST,
@@ -188,6 +151,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.send_message(msg)
 
     def select_frames_folder(self):
+        """Select folder in which extracted frames from video will go.
+        """
         # directory = qwt.QFileDialog.getExistingDirectory(
         #     self,
         #     "getExistingDirectory",
@@ -213,11 +178,16 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 MESSAGE_TYPE.REQUEST,
                 ConsolePrintMessageBody(
                     CONSOLE_MESSAGE_TYPE.WARNING,
-                    'No folder was selected.'))
+                    'No folder was selected.'
+                )
+            )
 
         self.send_message(msg)
 
     def select_video(self):
+        """Select video from which individual frames would be extracted
+        and then these frames are used for face extraction process.
+        """
 
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
@@ -259,11 +229,15 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.send_message(msg)
 
     def select_pictures(self):
+        """Selecting folder with faces which would be used for face
+        extraction process.
+        """
 
         directory = qwt.QFileDialog.getExistingDirectory(
             self,
             "getExistingDirectory",
-            "./")
+            "./"
+        )
 
         if directory:
             self.data_directory = directory
@@ -275,7 +249,11 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                     MESSAGE_TYPE.REQUEST,
                     ConsolePrintMessageBody(
                         CONSOLE_MESSAGE_TYPE.WARNING,
-                        f'No images were found in: {directory}.'))
+                        f'No images were found in: {directory}.'
+                    )
+                )
+
+                self.enable_detection_algorithm_tab(False)
 
             else:
                 self.picture_viewer_tab_1.pictures_added_sig.emit(image_paths)
@@ -286,16 +264,23 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                         CONSOLE_MESSAGE_TYPE.INFO,
                         'Loaded: {} images from: {}.'.format(
                             len(image_paths),
-                            directory)))
+                            directory
+                        )
+                    )
+                )
 
                 self.set_preview_label_text(
                     'Preview of pictures in: ' + directory + ' folder.')
+
+                self.enable_detection_algorithm_tab(True)
 
         else:
             msg = Message(
                 MESSAGE_TYPE.REQUEST,
                 ConsolePrintMessageBody(
                     CONSOLE_MESSAGE_TYPE.WARNING,
-                    'No picture folder was selected.'))
+                    'No picture folder was selected.'
+                )
+            )
 
         self.send_message(msg)
