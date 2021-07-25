@@ -1,5 +1,5 @@
 import abc
-from typing import Optional
+from typing import Optional, List
 from dataclasses import dataclass
 
 import numpy as np
@@ -8,7 +8,9 @@ from enums import (
     CONSOLE_MESSAGE_TYPE,
     IO_OP_TYPE,
     JOB_TYPE,
-    MESSAGE_TYPE
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
+    WIDGET
 )
 
 
@@ -56,16 +58,58 @@ class IO_OperationMessageBody(MessageBody):
                  type: IO_OP_TYPE,
                  file_path: str,
                  new_file_path: Optional[str] = '',
-                 file: Optional[np.ndarray] = None):
+                 file: Optional[np.ndarray] = None,
+                 multipart: Optional[bool] = False,
+                 part: Optional[int] = None,
+                 total: Optional[int] = None):
         super().__init__(JOB_TYPE.IO_OPERATION)
 
         self.type = type
         self.file_path = file_path
         self.new_file_path = new_file_path
         self.file = file
+        self.multipart = multipart
+        self.part = part
+        self.total = total
 
     def get_data(self):
-        return self.type, self.file_path, self.new_file_path, self.file
+        return (
+            self.type,
+            self.file_path,
+            self.new_file_path,
+            self.file,
+            self.multipart,
+            self.part,
+            self.total,
+        )
+
+
+class ConfigureWidgetMessageBody(MessageBody):
+
+    def __init__(self,
+                 widget: WIDGET,
+                 widget_method: str,
+                 method_args: List):
+        super().__init__(JOB_TYPE.WIDGET_CONFIGURATION)
+
+        self.widget = widget
+        self.widget_method = widget_method
+        self.method_args = method_args
+
+    def get_data(self):
+        return self.widget, self.widget_method, self.method_args
+
+
+class AnswerBody(MessageBody):
+
+    def __init__(self, status: MESSAGE_STATUS, finished: bool):
+        super().__init__(JOB_TYPE.IO_OPERATION)
+
+        self.status = status
+        self.finished = finished
+
+    def get_data(self):
+        return self.status, self.finished
 
 
 @dataclass
