@@ -100,6 +100,17 @@ class ConfigureWidgetMessageBody(MessageBody):
         return self.widget, self.widget_method, self.method_args
 
 
+class FaceDetectionMessageBody(MessageBody):
+
+    def __init__(self, faces_directory: str):
+        super().__init__(JOB_TYPE.FACE_DETECTION)
+
+        self.faces_directory = faces_directory
+
+    def get_data(self):
+        return self.faces_directory
+
+
 class AnswerBody(MessageBody):
 
     def __init__(self, status: MESSAGE_STATUS, finished: bool):
