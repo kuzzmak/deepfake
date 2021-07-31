@@ -27,6 +27,9 @@ class MessageWorker(Worker):
             elif job_type == JOB_TYPE.WIDGET_CONFIGURATION:
                 self.signals[SIGNAL_OWNER.CONFIGURE_WIDGET].emit(msg)
 
+            elif job_type == JOB_TYPE.FACE_DETECTION:
+                self.signals[SIGNAL_OWNER.FACE_DETECTION_WORKER].emit(msg)
+
         elif msg.type == MESSAGE_TYPE.ANSWER:
 
             if job_type == JOB_TYPE.IO_OPERATION:
