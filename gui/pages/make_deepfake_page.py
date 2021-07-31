@@ -115,8 +115,11 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             msg.setStandardButtons(qwt.QMessageBox.Ok)
             msg.exec_()
 
-    def increment_progress(self, new_val: int):
-        self.face_extraction_progress.setValue(new_val)
+    def set_preview_label_text(self, text: str):
+        self.preview_label.setText(text)
+
+    def enable_detection_algorithm_tab(self, enable: bool):
+        self.tab_widget.setTabEnabled(1, enable)
 
     def start_detection(self):
         """Initiates process of face detection and extraction from
@@ -127,16 +130,11 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             MESSAGE_TYPE.REQUEST,
             FaceDetectionMessageBody(
                 self.faces_directory,
+                'C:\\Users\\tonkec\\Documents\\deepfake\\data\\weights\\s3fd\\s3fd.pth',
                 FACE_DETECTION_ALGORITHM.S3FD
             )
         )
         self.send_message(msg)
-
-    def set_preview_label_text(self, text: str):
-        self.preview_label.setText(text)
-
-    def enable_detection_algorithm_tab(self, enable: bool):
-        self.tab_widget.setTabEnabled(1, enable)
 
     def extract_frames(self):
         """Starts process of extracting frames from video.
