@@ -236,7 +236,7 @@
               <item alignment="Qt::AlignLeft">
                <widget class="QLabel" name="selected_faces_directory_label">
                 <property name="text">
-                 <string/>
+                 <string>NOTHING SELECTED</string>
                 </property>
                </widget>
               </item>
