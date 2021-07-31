@@ -105,15 +105,17 @@ class FaceDetectionMessageBody(MessageBody):
 
     def __init__(self,
                  faces_directory: str,
+                 model_path: str,
                  algorithm: Optional[FACE_DETECTION_ALGORITHM]
                  = FACE_DETECTION_ALGORITHM.S3FD):
         super().__init__(JOB_TYPE.FACE_DETECTION)
 
         self.faces_directory = faces_directory
+        self.model_path = model_path
         self.algorithm = algorithm
 
     def get_data(self):
-        return self.faces_directory, self.algorithm
+        return self.faces_directory, self.model_path, self.algorithm
 
 
 class AnswerBody(MessageBody):
