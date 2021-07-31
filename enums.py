@@ -71,3 +71,7 @@ class APP_STATUS(Enum):
 
 class WIDGET(Enum):
     JOB_PROGRESS = 'job_progress'
+
+
+class FACE_DETECTION_ALGORITHM(Enum):
+    S3FD = 's3fd'
