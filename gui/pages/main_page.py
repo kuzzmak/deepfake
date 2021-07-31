@@ -1,4 +1,6 @@
 from datetime import datetime
+from gui.workers.threads.face_detection_worker_thread \
+    import FaceDetectionWorkerThread
 
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
@@ -55,6 +57,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     message_worker_sig = qtc.pyqtSignal(Message)
     frame_extraction_worker_sig = qtc.pyqtSignal(Message)
     io_worker_sig = qtc.pyqtSignal(Message)
+    face_detection_worker_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -69,6 +72,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         # -- setup workers --
         self.setup_io_worker()
         self.setup_frame_extraction_worker()
+        self.setup_face_detection_worker()
         self.setup_message_worker()
 
         self.m_pages = {}
@@ -153,6 +157,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             self.job_progress_sig,
             SIGNAL_OWNER.JOB_PROGRESS,
         )
+        self.message_worker_thread.worker.add_signal(
+            self.face_detection_worker_sig,
+            SIGNAL_OWNER.FACE_DETECTION_WORKER
+        )
         self.message_worker_sig.connect(
             self.message_worker_thread.worker.process)
         self.message_worker_thread.start()
@@ -166,6 +174,17 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.frame_extraction_worker_sig.connect(
             self.frame_extraction_worker_thread.worker.process)
         self.frame_extraction_worker_thread.start()
+
+    def setup_face_detection_worker(self):
+        self.face_detection_worker_thread = FaceDetectionWorkerThread()
+        self.face_detection_worker_thread.worker.add_signal(
+            self.message_worker_sig,
+            SIGNAL_OWNER.MESSAGE_WORKER
+        )
+        self.face_detection_worker_sig.connect(
+            self.face_detection_worker_thread.worker.process
+        )
+        self.face_detection_worker_thread.start()
 
     def configure_widget(self, msg: Message):
         widget, widget_method, method_args = msg.body.get_data()
@@ -235,11 +254,13 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     @qtc.pyqtSlot(Message)
     def console_print(self, message: Message):
         msg_type, msg = message.body.get_data()
-        prefix = self._get_console_message_prefix(msg_type)
-        curr_time = datetime.now().strftime('%H:%M:%S')
-        text = prefix + '[' + curr_time + '] - ' + \
+        msg_type_prefix = self._get_console_message_prefix(msg_type)
+        curr_time_prefix = '[' + datetime.now().strftime('%H:%M:%S') + '] - '
+        text = msg_type_prefix + \
             console_message_template.format(
-                CONSOLE_TEXT_SIZE, CONSOLE_COLORS.BLACK.value, msg)
+                CONSOLE_TEXT_SIZE,
+                CONSOLE_COLORS.BLACK.value,
+                curr_time_prefix + msg)
         self.console.append(text)
 
     @qtc.pyqtSlot(str)
