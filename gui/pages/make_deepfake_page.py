@@ -11,6 +11,7 @@ from gui.widgets.picture_viewer import PictureViewer
 
 from message.message import (
     ConsolePrintMessageBody,
+    FaceDetectionMessageBody,
     FrameExtractionMessageBody,
     Message,
 )
@@ -29,16 +30,22 @@ from utils import get_file_paths_from_dir
 
 from resources.icons import icons
 
+no_foler_selected_msg = Message(
+    MESSAGE_TYPE.REQUEST,
+    ConsolePrintMessageBody(
+        CONSOLE_MESSAGE_TYPE.WARNING,
+        'No folder was selected.'
+    )
+)
+
 
 class MakeDeepfakePage(Page, Ui_make_deepfake_page):
-
-    new_val_requested = qtc.pyqtSignal(int)
-    faces_extraction_requested = qtc.pyqtSignal(str)
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
 
         self.data_directory = ''
+        self.faces_directory = ''
 
         self.setupUi(self)
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
@@ -54,13 +61,12 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.central_widget.setLayout(central_layout)
         central_layout.addWidget(self.video_player)
 
-        self.frame_extraction_part = qwt.QWidget()
-        frame_extraction_part_layout = qwt.QVBoxLayout()
-        self.frame_extraction_part.setLayout(frame_extraction_part_layout)
+        self.frame_extraction_gb = qwt.QGroupBox()
+        self.frame_extraction_gb.setTitle('Select destination folder ' +
+                                          'for extracted frames from video')
 
-        frame_extraction_part_layout.addWidget(qwt.QLabel(
-            text='Select destination folder for\n' +
-            'extracted frames from video.'))
+        frame_extraction_part_layout = qwt.QVBoxLayout(
+            self.frame_extraction_gb)
 
         select_frames_folder = qwt.QPushButton(text='Select')
         select_frames_folder.clicked.connect(self.select_frames_folder)
@@ -79,7 +85,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             qwt.QSizePolicy.MinimumExpanding)
         frame_extraction_part_layout.addItem(spacer)
 
-        central_layout.addWidget(self.frame_extraction_part)
+        central_layout.addWidget(self.frame_extraction_gb)
         self.preview_widget.addWidget(self.central_widget)
 
         # until pictures or video is selected, page with face detection
@@ -98,13 +104,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.picture_viewer_tab_2 = PictureViewer()
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
-    def select_faces_folder(self):
-        directory = qwt.QFileDialog.getExistingDirectory(
-            self, "getExistingDirectory", "./")
-        if directory:
-            self.selected_faces_directory_label.setText(directory)
-            self.enable_widget(self.start_detection_btn, True)
-
     def progress_value_changed(self, value: int):
         if value == 100:
             msg = qwt.QMessageBox(self)
@@ -119,9 +118,11 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.face_extraction_progress.setValue(new_val)
 
     def start_detection(self):
-        self.new_val_requested.emit(0)
-        self.faces_extraction_requested.emit(
-            'C:/Users/tonkec/Documents/deepfake/dummy_pics')
+
+        msg = Message(MESSAGE_TYPE.REQUEST,
+                      FaceDetectionMessageBody(self.faces_directory))
+
+        self.send_message(msg)
 
     def set_preview_label_text(self, text: str):
         self.preview_label.setText(text)
@@ -152,6 +153,30 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         )
         self.send_message(msg)
 
+    def select_faces_folder(self):
+        # directory = qwt.QFileDialog.getExistingDirectory(
+        #     self, "getExistingDirectory", "./")
+        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
+        if directory:
+            self.selected_faces_directory_label.setText(directory)
+            self.enable_widget(self.start_detection_btn, True)
+
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.INFO,
+                    f'Selected folder for extracted faces: {directory}.'
+                )
+            )
+
+            self.faces_directory = directory
+
+        else:
+
+            msg = no_foler_selected_msg
+
+        self.send_message(msg)
+
     def select_frames_folder(self):
         """Select folder in which extracted frames from video will go.
         """
@@ -176,13 +201,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             self.enable_widget(self.extract_frames_btn, True)
 
         else:
-            msg = Message(
-                MESSAGE_TYPE.REQUEST,
-                ConsolePrintMessageBody(
-                    CONSOLE_MESSAGE_TYPE.WARNING,
-                    'No folder was selected.'
-                )
-            )
+            msg = no_foler_selected_msg
 
         self.send_message(msg)
 
@@ -222,11 +241,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             self.enable_detection_algorithm_tab(True)
 
         else:
-            msg = Message(
-                MESSAGE_TYPE.REQUEST,
-                ConsolePrintMessageBody(
-                    CONSOLE_MESSAGE_TYPE.WARNING,
-                    'No video folder was selected.'))
+            msg = no_foler_selected_msg
 
         self.send_message(msg)
 
@@ -235,11 +250,13 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         extraction process.
         """
 
-        directory = qwt.QFileDialog.getExistingDirectory(
-            self,
-            "getExistingDirectory",
-            "./"
-        )
+        # directory = qwt.QFileDialog.getExistingDirectory(
+        #     self,
+        #     "getExistingDirectory",
+        #     "./"
+        # )
+
+        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\dummy_pics"
 
         if directory:
             self.data_directory = directory
@@ -277,12 +294,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 self.enable_detection_algorithm_tab(True)
 
         else:
-            msg = Message(
-                MESSAGE_TYPE.REQUEST,
-                ConsolePrintMessageBody(
-                    CONSOLE_MESSAGE_TYPE.WARNING,
-                    'No picture folder was selected.'
-                )
-            )
+
+            msg = no_foler_selected_msg
 
         self.send_message(msg)
