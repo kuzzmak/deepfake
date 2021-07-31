@@ -18,6 +18,7 @@ from message.message import (
 
 from enums import (
     CONSOLE_MESSAGE_TYPE,
+    FACE_DETECTION_ALGORITHM,
     MESSAGE_TYPE,
 )
 
@@ -118,10 +119,17 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.face_extraction_progress.setValue(new_val)
 
     def start_detection(self):
+        """Initiates process of face detection and extraction from
+        selected folder.
+        """
 
-        msg = Message(MESSAGE_TYPE.REQUEST,
-                      FaceDetectionMessageBody(self.faces_directory))
-
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            FaceDetectionMessageBody(
+                self.faces_directory,
+                FACE_DETECTION_ALGORITHM.S3FD
+            )
+        )
         self.send_message(msg)
 
     def set_preview_label_text(self, text: str):
