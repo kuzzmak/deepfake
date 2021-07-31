@@ -42,6 +42,7 @@ class SIGNAL_OWNER(Enum):
     JOB_PROGRESS = 'job_progress'
     CONFIGURE_WIDGET = 'configure_widget'
     MESSAGE_WORKER = 'message_worker'
+    FACE_DETECTION_WORKER = 'face_detection_worker'
 
 
 class MESSAGE_TYPE(Enum):
@@ -59,6 +60,7 @@ class JOB_TYPE(Enum):
     CONSOLE_PRINT = 'console_print'
     FRAME_EXTRACTION = 'frame_extraction'
     WIDGET_CONFIGURATION = 'widget_configuration'
+    FACE_DETECTION = 'face_detection'
     NO_JOB = 'no_job'
 
 
