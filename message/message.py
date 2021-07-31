@@ -6,6 +6,7 @@ import numpy as np
 
 from enums import (
     CONSOLE_MESSAGE_TYPE,
+    FACE_DETECTION_ALGORITHM,
     IO_OP_TYPE,
     JOB_TYPE,
     MESSAGE_STATUS,
@@ -102,13 +103,17 @@ class ConfigureWidgetMessageBody(MessageBody):
 
 class FaceDetectionMessageBody(MessageBody):
 
-    def __init__(self, faces_directory: str):
+    def __init__(self,
+                 faces_directory: str,
+                 algorithm: Optional[FACE_DETECTION_ALGORITHM]
+                 = FACE_DETECTION_ALGORITHM.S3FD):
         super().__init__(JOB_TYPE.FACE_DETECTION)
 
         self.faces_directory = faces_directory
+        self.algorithm = algorithm
 
     def get_data(self):
-        return self.faces_directory
+        return self.faces_directory, self.algorithm
 
 
 class AnswerBody(MessageBody):
