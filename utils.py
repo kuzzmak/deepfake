@@ -3,6 +3,8 @@ from typing import List
 
 import numpy as np
 
+import cv2 as cv
+
 import PyQt5.QtGui as qtg
 
 
@@ -68,3 +70,31 @@ def np_array_to_qicon(image: np.ndarray) -> qtg.QIcon:
         qtg.QImage.Format_RGB888)
     image = qtg.QIcon(qtg.QPixmap(image))
     return image
+
+
+def resize_image_retain_aspect_ratio(image: np.ndarray,
+                                     max_img_size_per_dim: int) -> np.ndarray:
+    """Resizes image retaining aspect ratio.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        image to resize
+    max_img_size_per_dim : int
+        maximal height or maximal width of the image
+
+    Returns
+    -------
+    np.ndarray
+        resized image
+    """
+    height, width, _ = image.shape
+    bigger_size = max(height, width)
+
+    scale = max_img_size_per_dim / bigger_size
+
+    width = int(image.shape[1] * scale)
+    height = int(image.shape[0] * scale)
+    dim = (width, height)
+
+    return cv.resize(image, dim, interpolation=cv.INTER_AREA)
