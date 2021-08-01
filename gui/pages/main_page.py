@@ -6,6 +6,8 @@ import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
+from config import APP_CONFIG
+
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
 from gui.pages.make_deepfake_page import MakeDeepfakePage
@@ -18,13 +20,6 @@ from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
 
 from message.message import ConsolePrintMessageBody, Message
-
-from constants import (
-    CONSOLE_FONT_NAME,
-    CONSOLE_TEXT_SIZE,
-    PREFERRED_HEIGHT,
-    PREFERRED_WIDTH,
-)
 
 from enums import (
     APP_STATUS,
@@ -84,7 +79,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def init_ui(self):
         self.setupUi(self)
 
-        font = qtg.QFont(CONSOLE_FONT_NAME)
+        font = qtg.QFont(APP_CONFIG.app.console.font_name)
         self.console.setFont(font)
         self.show_console(False)
 
@@ -93,7 +88,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.init_toolbar()
         self.init_statusbar()
 
-        self.resize(PREFERRED_WIDTH, PREFERRED_HEIGHT)
+        self.resize(APP_CONFIG.app.window.preferred_width,
+                    APP_CONFIG.app.window.preferred_height)
 
     def init_toolbar(self):
         self.toolbar = qwt.QToolBar(self)
@@ -258,7 +254,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         curr_time_prefix = '[' + datetime.now().strftime('%H:%M:%S') + '] - '
         text = msg_type_prefix + \
             console_message_template.format(
-                CONSOLE_TEXT_SIZE,
+                APP_CONFIG.app.console.text_size,
                 CONSOLE_COLORS.BLACK.value,
                 curr_time_prefix + msg)
         self.console.append(text)
@@ -281,5 +277,5 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         prefix_color = message_type.value.prefix_color.value
         prefix = message_type.value.prefix
         prefix = console_message_template.format(
-            CONSOLE_TEXT_SIZE, prefix_color, f'{prefix: <11}')
+            APP_CONFIG.app.console.text_size, prefix_color, f'{prefix: <11}')
         return prefix
