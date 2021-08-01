@@ -47,6 +47,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
         self.data_directory = ''
         self.faces_directory = ''
+        self.biggest_frame_dim_value = None
 
         self.setupUi(self)
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
@@ -65,6 +66,10 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.frame_extraction_gb = qwt.QGroupBox()
         self.frame_extraction_gb.setTitle('Select destination folder ' +
                                           'for extracted frames from video')
+        size_policy = qwt.QSizePolicy(
+            qwt.QSizePolicy.Maximum, qwt.QSizePolicy.Minimum)
+        self.frame_extraction_gb.setSizePolicy(size_policy)
+        # self.frame_extraction_gb.setMaximumWidth(200)
 
         frame_extraction_part_layout = qwt.QVBoxLayout(
             self.frame_extraction_gb)
@@ -72,6 +77,21 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         select_frames_folder = qwt.QPushButton(text='Select')
         select_frames_folder.clicked.connect(self.select_frames_folder)
         frame_extraction_part_layout.addWidget(select_frames_folder)
+
+        # --- resize frames part of the window ---
+        resize_frames_chk = qwt.QCheckBox(text='Resize frames')
+        resize_frames_chk.stateChanged.connect(self.resize_frames_chk_changed)
+        frame_extraction_part_layout.addWidget(resize_frames_chk)
+        self.dim_wgt = qwt.QWidget()
+        self.enable_widget(self.dim_wgt, False)
+        dim_wgt_layout = qwt.QHBoxLayout()
+        self.dim_wgt.setLayout(dim_wgt_layout)
+        dim_wgt_layout.addWidget(qwt.QLabel(text='Biggest frame dimension: '))
+        self.biggest_frame_dim_input = qwt.QLineEdit()
+        self.biggest_frame_dim_input.textChanged.connect(
+            self.biggest_frame_dim_input_text_changed)
+        dim_wgt_layout.addWidget(self.biggest_frame_dim_input)
+        frame_extraction_part_layout.addWidget(self.dim_wgt)
 
         self.extract_frames_btn = qwt.QPushButton(text='Extract frames')
         self.extract_frames_btn.clicked.connect(self.extract_frames)
@@ -105,6 +125,48 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.picture_viewer_tab_2 = PictureViewer()
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
+    @qtc.pyqtSlot(int)
+    def resize_frames_chk_changed(self, value: int):
+        """Enables widget for biggest frame dimension input when is checked.
+
+        Parameters
+        ----------
+        value : int
+            new checkbox value
+        """
+        if value == 2:  # checkbox checked value
+            # enable widget with dimension input
+            self.enable_widget(self.dim_wgt, True)
+            # in order to be able to start frames extraction, folder
+            # must be selected and some valid value for resized frame
+            # dimension must be inputed
+            if self.data_directory != '' and \
+                    self.biggest_frame_dim_value is not None:
+                self.enable_widget(self.extract_frames_btn, True)
+            else:
+                self.enable_widget(self.extract_frames_btn, False)
+        else:
+            self.enable_widget(self.dim_wgt, False)
+            self.enable_widget(self.extract_frames_btn, True)
+
+    @qtc.pyqtSlot(str)
+    def biggest_frame_dim_input_text_changed(self, text: str):
+        """Input for biggest picture dimension if user wants to resize
+        frames extracted from video.
+
+        Parameters
+        ----------
+        text : str
+            user input
+        """
+        try:
+            num = int(text)
+            self.biggest_frame_dim_value = num
+            self.enable_widget(self.extract_frames_btn, True)
+        except ValueError:
+            self.biggest_frame_dim_value = None
+            self.enable_widget(self.extract_frames_btn, False)
+
     def progress_value_changed(self, value: int):
         if value == 100:
             msg = qwt.QMessageBox(self)
@@ -125,7 +187,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         """Initiates process of face detection and extraction from
         selected folder.
         """
-
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             FaceDetectionMessageBody(
@@ -139,7 +200,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
     def extract_frames(self):
         """Starts process of extracting frames from video.
         """
-
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             ConsolePrintMessageBody(
@@ -154,6 +214,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
             FrameExtractionMessageBody(
                 self.video_path,
                 self.data_directory,
+                True,
+                self.biggest_frame_dim_input,
                 'jpg'
             )
         )
@@ -215,7 +277,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         """Select video from which individual frames would be extracted
         and then these frames are used for face extraction process.
         """
-
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
         # video_path, _ = qwt.QFileDialog.getOpenFileName(
@@ -225,7 +286,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         #     "Video files (*.mp4)",
         #     options=options)
 
-        video_path = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\videos\\SampleVideo_1280x720_5mb.mp4"
+        video_path = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\videos\\interview_woman.mp4"
 
         if video_path:
             self.video_path = video_path
@@ -255,7 +316,6 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         """Selecting folder with faces which would be used for face
         extraction process.
         """
-
         # directory = qwt.QFileDialog.getExistingDirectory(
         #     self,
         #     "getExistingDirectory",
