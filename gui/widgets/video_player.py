@@ -1,4 +1,3 @@
-from constants import MIN_VIDEO_HEIGHT, MIN_VIDEO_WIDTH
 import PyQt5.QtWidgets as qwt
 from PyQt5 import QtCore as qtc
 from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
@@ -12,84 +11,67 @@ class VideoPlayer(qwt.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.mediaPlayer = QMediaPlayer(
-            None, QMediaPlayer.VideoSurface)
+        self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
 
-        videoWidget = QVideoWidget()
+        video_widget = QVideoWidget()
 
-        self.playButton = qwt.QPushButton()
-        self.playButton.setEnabled(False)
-        self.playButton.setIcon(
+        self.play_button = qwt.QPushButton()
+        self.play_button.setEnabled(False)
+        self.play_button.setIcon(
             self.style().standardIcon(qwt.QStyle.SP_MediaPlay))
-        self.playButton.clicked.connect(self.play)
+        self.play_button.clicked.connect(self.play)
 
-        self.positionSlider = qwt.QSlider(qtc.Qt.Horizontal)
-        self.positionSlider.setRange(0, 0)
-        self.positionSlider.sliderMoved.connect(self.setPosition)
+        self.position_slider = qwt.QSlider(qtc.Qt.Horizontal)
+        self.position_slider.setRange(0, 0)
+        self.position_slider.sliderMoved.connect(self.set_position)
 
-        # wid = qwt.QWidget(self)
-
-        controlLayout = qwt.QHBoxLayout()
-        controlLayout.setContentsMargins(0, 0, 0, 0)
-        controlLayout.addWidget(self.playButton)
-        controlLayout.addWidget(self.positionSlider)
+        control_layout = qwt.QHBoxLayout()
+        control_layout.setContentsMargins(0, 0, 0, 0)
+        control_layout.addWidget(self.play_button)
+        control_layout.addWidget(self.position_slider)
 
         layout = qwt.QVBoxLayout()
-        # layout.addWidget(qwt.QLabel(text='labela'))  # izbrisati
-        layout.addWidget(videoWidget)
-        layout.addLayout(controlLayout)
-        # spacerItem1 = qwt.QSpacerItem(
-        #     20, 40, qwt.QSizePolicy.Expanding, qwt.QSizePolicy.Expanding)
-        # layout.addItem(spacerItem1)
-
-        # lay = qwt.QHBoxLayout()
-        # lay.addLayout(layout)
-        # spacerItem2 = qwt.QSpacerItem(
-        #     20, 40, qwt.QSizePolicy.Expanding, qwt.QSizePolicy.Expanding)
-        # lay.addItem(spacerItem2)
-        # # lay.addWidget(qwt.QPushButton(text='pritisni'))
-
-        # self.setLayout(lay)
+        layout.addWidget(video_widget)
+        layout.addLayout(control_layout)
 
         self.setLayout(layout)
 
-        self.mediaPlayer.setVideoOutput(videoWidget)
-        self.mediaPlayer.stateChanged.connect(self.mediaStateChanged)
-        self.mediaPlayer.positionChanged.connect(self.positionChanged)
-        self.mediaPlayer.durationChanged.connect(self.durationChanged)
+        self.media_player.setVideoOutput(video_widget)
+        self.media_player.stateChanged.connect(self.media_state_changed)
+        self.media_player.positionChanged.connect(self.position_changed)
+        self.media_player.durationChanged.connect(self.duration_changed)
 
-        sizePolicy = qwt.QSizePolicy(
+        size_policy = qwt.QSizePolicy(
             qwt.QSizePolicy.Expanding, qwt.QSizePolicy.Expanding)
-        self.setSizePolicy(sizePolicy)
-        videoWidget.setMinimumSize(MIN_VIDEO_WIDTH, 250)
+        self.setSizePolicy(size_policy)
 
         self.video_selection.connect(self.video_selected)
 
     @qtc.pyqtSlot(str)
     def video_selected(self, video_path: str):
-        self.mediaPlayer.setMedia(
+        self.media_player.setMedia(
             QMediaContent(qtc.QUrl.fromLocalFile(video_path)))
-        self.playButton.setEnabled(True)
+        self.play_button.setEnabled(True)
 
     def play(self):
-        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
-            self.mediaPlayer.pause()
+        if self.media_player.state() == QMediaPlayer.PlayingState:
+            self.media_player.pause()
         else:
-            self.mediaPlayer.play()
+            self.media_player.play()
 
-    def mediaStateChanged(self, state):
-        if self.mediaPlayer.state() == QMediaPlayer.PlayingState:
-            self.playButton.setIcon(
+    def media_state_changed(self, state):
+        if self.media_player.state() == QMediaPlayer.PlayingState:
+            self.play_button.setIcon(
                 self.style().standardIcon(qwt.QStyle.SP_MediaPause))
         else:
-            self.playButton.setIcon(
+            self.play_button.setIcon(
                 self.style().standardIcon(qwt.QStyle.SP_MediaPlay))
 
-    def positionChanged(self, position):
-        self.positionSlider.setValue(position)
+    def position_changed(self, position):
+        self.position_slider.setValue(position)
 
-    def durationChanged(self, duration):
-        self.positionSlider.setRange(0, duration)
+    def duration_changed(self, duration):
+        self.position_slider.setRange(0, duration)
 
-    def setPosition(self, position):
-        self.mediaPlayer.setPosition(position)
+    def set_position(self, position):
+        self.media_player.setPosition(position)
