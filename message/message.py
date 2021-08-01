@@ -1,6 +1,6 @@
 import abc
 from typing import Optional, List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -42,15 +42,19 @@ class FrameExtractionMessageBody(MessageBody):
     def __init__(self,
                  video_path: str,
                  destination_directory: str,
+                 resize: bool,
+                 new_size: int,
                  image_format: str):
         super().__init__(JOB_TYPE.FRAME_EXTRACTION)
 
         self.video_path = video_path
         self.destination_directory = destination_directory
+        self.resize = resize
+        self.new_size = new_size
         self.image_format = image_format
 
     def get_data(self):
-        return self.video_path, self.destination_directory, self.image_format
+        return self.video_path, self.destination_directory, self.resize, self.new_size, self.image_format
 
 
 class IO_OperationMessageBody(MessageBody):
@@ -128,6 +132,18 @@ class AnswerBody(MessageBody):
 
     def get_data(self):
         return self.status, self.finished
+
+
+@dataclass
+class AnswerBody2(MessageBody):
+
+    status: MESSAGE_STATUS
+    job_type: Optional[JOB_TYPE] = JOB_TYPE.NO_JOB
+    finished: Optional[bool] = False
+    data: Optional[dict] = field(default_factory=dict)
+
+    def get_data(self):
+        return super().get_data()
 
 
 @dataclass
