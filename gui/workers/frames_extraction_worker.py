@@ -24,7 +24,7 @@ class FramesExtractionWorker(Worker):
         super().__init__(*args, **kwargs)
 
     def process(self, msg: Message):
-        video_path, dest_dir, image_format = msg.body.get_data()
+        video_path, dest_dir, resize, new_size, image_format = msg.body.get_data()
 
         vidcap = cv.VideoCapture(video_path)
         success, image = vidcap.read()
