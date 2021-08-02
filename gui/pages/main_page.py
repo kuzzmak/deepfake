@@ -205,8 +205,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             page.goto_sig.connect(self.goto)
 
     def register_pages(self):
-        self.register_page(StartPage(self))
-        self.register_page(MakeDeepfakePage(self))
+        for page in [StartPage, MakeDeepfakePage]:
+            p = page(self)
+            p.add_signal(self.console_print_sig, SIGNAL_OWNER.CONOSLE)
+            self.register_page(p)
 
     @qtc.pyqtSlot(Message)
     def job_progress(self, msg: Message):
