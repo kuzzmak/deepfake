@@ -10,7 +10,7 @@ from config import APP_CONFIG
 
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
-from gui.pages.make_deepfake_page import MakeDeepfakePage
+from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 
 from gui.templates.main_page import Ui_main_page
 
