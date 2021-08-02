@@ -22,6 +22,7 @@ from enums import (
     CONSOLE_MESSAGE_TYPE,
     FACE_DETECTION_ALGORITHM,
     MESSAGE_TYPE,
+    SIGNAL_OWNER,
 )
 
 from names import (
@@ -57,7 +58,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.picture_viewer_tab_1 = PictureViewer()
         self.preview_widget.addWidget(self.picture_viewer_tab_1)
 
-        # --- video widget with faces folder selection ---
+        # --- video widget with faces directory selection ---
         self.video_player = VideoPlayer()
 
         self.central_widget = qwt.QWidget()
@@ -66,7 +67,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         central_layout.addWidget(self.video_player)
 
         self.frame_extraction_gb = qwt.QGroupBox()
-        self.frame_extraction_gb.setTitle('Select destination folder ' +
+        self.frame_extraction_gb.setTitle('Select destination directory ' +
                                           'for extracted frames from video')
         size_policy = qwt.QSizePolicy(
             qwt.QSizePolicy.Maximum, qwt.QSizePolicy.Minimum)
@@ -76,9 +77,9 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         frame_extraction_part_layout = qwt.QVBoxLayout(
             self.frame_extraction_gb)
 
-        select_frames_folder = qwt.QPushButton(text='Select')
-        select_frames_folder.clicked.connect(self.select_frames_folder)
-        frame_extraction_part_layout.addWidget(select_frames_folder)
+        select_frames_directory = qwt.QPushButton(text='Select')
+        select_frames_directory.clicked.connect(self.select_frames_directory)
+        frame_extraction_part_layout.addWidget(select_frames_directory)
 
         # --- resize frames part of the window ---
         resize_frames_chk = qwt.QCheckBox(text='Resize frames')
@@ -121,13 +122,16 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.start_detection_btn.setIcon(qtg.QIcon(qtg.QPixmap(':/play.svg')))
         self.enable_widget(self.start_detection_btn, False)
         self.select_faces_directory_btn.clicked.connect(
-            self.select_faces_folder
+            self.select_faces_directory
         )
 
         self.picture_viewer_tab_2 = PictureViewer()
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
-        self.tab_widget.addTab(DataTab(), 'Data')
+        data_tab = DataTab()
+        data_tab.add_signal(
+            self.signals[SIGNAL_OWNER.CONOSLE], SIGNAL_OWNER.CONOSLE)
+        self.tab_widget.addTab(data_tab, 'Data')
         self.tab_widget.addTab(DetectionAlgorithmTab(), 'Detection algorithm')
 
     @qtc.pyqtSlot(int)
@@ -142,7 +146,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         if value == 2:  # checkbox checked value
             # enable widget with dimension input
             self.enable_widget(self.dim_wgt, True)
-            # in order to be able to start frames extraction, folder
+            # in order to be able to start frames extraction, directory
             # must be selected and some valid value for resized frame
             # dimension must be inputed
             if self.data_directory != '' and \
@@ -190,7 +194,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
     def start_detection(self):
         """Initiates process of face detection and extraction from
-        selected folder.
+        selected directory.
         """
         msg = Message(
             MESSAGE_TYPE.REQUEST,
@@ -226,7 +230,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         )
         self.send_message(msg)
 
-    def select_faces_folder(self):
+    def select_faces_directory(self):
         # directory = qwt.QFileDialog.getExistingDirectory(
         #     self, "getExistingDirectory", "./")
         directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
@@ -238,7 +242,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 MESSAGE_TYPE.REQUEST,
                 ConsolePrintMessageBody(
                     CONSOLE_MESSAGE_TYPE.INFO,
-                    f'Selected folder for extracted faces: {directory}.'
+                    f'Selected directory for extracted faces: {directory}.'
                 )
             )
 
@@ -250,8 +254,8 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
         self.send_message(msg)
 
-    def select_frames_folder(self):
-        """Select folder in which extracted frames from video will go.
+    def select_frames_directory(self):
+        """Select directory in which extracted frames from video will go.
         """
         # directory = qwt.QFileDialog.getExistingDirectory(
         #     self,
@@ -266,7 +270,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 MESSAGE_TYPE.REQUEST,
                 ConsolePrintMessageBody(
                     CONSOLE_MESSAGE_TYPE.INFO,
-                    'Folder in which extracted frames will go ' +
+                    'Directory in which extracted frames will go ' +
                     f'selected: {directory}.'
                 )
             )
@@ -318,7 +322,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.send_message(msg)
 
     def select_pictures(self):
-        """Selecting folder with faces which would be used for face
+        """Selecting directory with faces which would be used for face
         extraction process.
         """
         # directory = qwt.QFileDialog.getExistingDirectory(
@@ -360,7 +364,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 )
 
                 self.set_preview_label_text(
-                    'Preview of pictures in: ' + directory + ' folder.')
+                    'Preview of pictures in: ' + directory + ' directory.')
 
                 self.enable_detection_algorithm_tab(True)
 

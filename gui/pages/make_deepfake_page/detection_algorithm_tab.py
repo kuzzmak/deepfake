@@ -54,7 +54,7 @@ class DetectionAlgorithmTab(qwt.QWidget):
 
         layout.addWidget(algorithm_selection_wgt, 0, qtc.Qt.AlignTop)
 
-        self.group_box = qwt.QGroupBox(title='Folder which will be used ' +
+        self.group_box = qwt.QGroupBox(title='Directory which will be used ' +
                                        'for storing extracted frames')
 
         layout.addWidget(self.group_box)
