@@ -64,6 +64,8 @@ class IO_OperationMessageBody(MessageBody):
                  file_path: str,
                  new_file_path: Optional[str] = '',
                  file: Optional[np.ndarray] = None,
+                 resize: bool = False,
+                 new_size: int = None,
                  multipart: Optional[bool] = False,
                  part: Optional[int] = None,
                  total: Optional[int] = None):
@@ -73,6 +75,8 @@ class IO_OperationMessageBody(MessageBody):
         self.file_path = file_path
         self.new_file_path = new_file_path
         self.file = file
+        self.resize = resize
+        self.new_size = new_size
         self.multipart = multipart
         self.part = part
         self.total = total
@@ -83,6 +87,8 @@ class IO_OperationMessageBody(MessageBody):
             self.file_path,
             self.new_file_path,
             self.file,
+            self.resize,
+            self.new_size,
             self.multipart,
             self.part,
             self.total,
@@ -132,6 +138,16 @@ class AnswerBody(MessageBody):
 
     def get_data(self):
         return self.status, self.finished
+
+
+@dataclass
+class RequestBody(MessageBody):
+
+    job_type: JOB_TYPE
+    data: dict = field(default_factory=dict)
+
+    def get_data(self):
+        return super().get_data()
 
 
 @dataclass
