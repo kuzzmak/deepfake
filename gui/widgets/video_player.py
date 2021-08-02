@@ -41,10 +41,6 @@ class VideoPlayer(qwt.QWidget):
         self.media_player.positionChanged.connect(self.position_changed)
         self.media_player.durationChanged.connect(self.duration_changed)
 
-        size_policy = qwt.QSizePolicy(
-            qwt.QSizePolicy.Expanding, qwt.QSizePolicy.Expanding)
-        self.setSizePolicy(size_policy)
-
         self.video_selection.connect(self.video_selected)
 
     @qtc.pyqtSlot(str)
