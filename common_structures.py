@@ -1,7 +1,26 @@
 from functools import partial
 from dataclasses import dataclass
 
-from enums import DIALOG_MESSAGE_ICON, DIALOG_MESSAGE_TYPE, IO_OP_TYPE
+from message.message import (
+    ConsolePrintMessageBody,
+    Message,
+)
+
+from enums import (
+    CONSOLE_MESSAGE_TYPE,
+    DIALOG_MESSAGE_ICON,
+    DIALOG_MESSAGE_TYPE,
+    IO_OP_TYPE,
+    MESSAGE_TYPE,
+)
+
+DIRECTORY_NOT_SELECTED_MESSAGE = Message(
+    MESSAGE_TYPE.REQUEST,
+    ConsolePrintMessageBody(
+        CONSOLE_MESSAGE_TYPE.WARNING,
+        'No directory selected.'
+    )
+)
 
 
 @dataclass
