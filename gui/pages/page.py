@@ -1,10 +1,12 @@
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
+from gui.widgets.base_widget import BaseWidget
+
 from message.message import Message
 
 
-class Page(qwt.QWidget):
+class Page(BaseWidget):
 
     goto_sig = qtc.pyqtSignal(str)
 
