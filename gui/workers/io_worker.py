@@ -6,6 +6,8 @@ from gui.workers.worker import Worker
 
 from enums import IO_OP_TYPE, MESSAGE_STATUS, MESSAGE_TYPE, SIGNAL_OWNER
 
+from utils import resize_image_retain_aspect_ratio
+
 
 class IO_Worker(Worker):
 
@@ -14,10 +16,23 @@ class IO_Worker(Worker):
 
     def process(self, msg: Message):
 
-        op_type, file_path, new_file_path, file, multipart, part, total = msg.body.get_data()
+        op_type, \
+            file_path, \
+            new_file_path, \
+            file, \
+            resize, \
+            max_img_size_per_dim, \
+            multipart, \
+            part, \
+            total = msg.body.get_data()
 
         if op_type == IO_OP_TYPE.SAVE:
             if file is not None:
+
+                if resize:
+                    file = resize_image_retain_aspect_ratio(
+                        file, max_img_size_per_dim)
+
                 cv.imwrite(file_path, file)
                 if multipart:
                     msg = Message(
