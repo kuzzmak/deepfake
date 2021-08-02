@@ -53,6 +53,8 @@ class FramesExtractionWorker(Worker):
                     im_path,
                     None,
                     image,
+                    resize,
+                    new_size,
                     True,
                     count + 1,
                     total_frames,
