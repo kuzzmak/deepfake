@@ -215,7 +215,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
                 self.video_path,
                 self.data_directory,
                 True,
-                self.biggest_frame_dim_input,
+                self.biggest_frame_dim_value,
                 'jpg'
             )
         )
