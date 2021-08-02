@@ -75,3 +75,5 @@ class WIDGET(Enum):
 
 class FACE_DETECTION_ALGORITHM(Enum):
     S3FD = 's3fd'
+    MTCNN = 'mtcnn'
+    FACEBOXES = 'faceboxes'
