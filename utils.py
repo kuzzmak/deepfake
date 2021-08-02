@@ -93,8 +93,8 @@ def resize_image_retain_aspect_ratio(image: np.ndarray,
 
     scale = max_img_size_per_dim / bigger_size
 
-    width = int(image.shape[1] * scale)
-    height = int(image.shape[0] * scale)
+    width = int(width * scale)
+    height = int(height * scale)
     dim = (width, height)
 
     return cv.resize(image, dim, interpolation=cv.INTER_AREA)
