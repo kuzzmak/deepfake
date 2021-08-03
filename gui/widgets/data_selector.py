@@ -63,7 +63,8 @@ class DataSelector(BaseWidget):
         self.preview_label = qwt.QLabel()
 
         self.frame_extraction_gb = qwt.QGroupBox()
-        self.frame_extraction_gb.setTitle('Destination directory for extracted frames')
+        self.frame_extraction_gb.setTitle(
+            'Destination directory for extracted frames')
         size_policy = qwt.QSizePolicy(
             qwt.QSizePolicy.Minimum, qwt.QSizePolicy.Maximum)
         self.frame_extraction_gb.setSizePolicy(size_policy)
@@ -75,7 +76,8 @@ class DataSelector(BaseWidget):
         left_part_layout = qwt.QVBoxLayout()
         left_part_wgt.setLayout(left_part_layout)
         select_frames_directory_btn = qwt.QPushButton(text='Select')
-        select_frames_directory_btn.clicked.connect(self.select_data_directory)
+        select_frames_directory_btn.clicked.connect(
+            self.select_frames_directory)
         left_part_layout.addWidget(select_frames_directory_btn)
 
         right_part_wgt = qwt.QWidget()
@@ -131,8 +133,7 @@ class DataSelector(BaseWidget):
 
             self.video_player.video_selection.emit(video_path)
             video_name = video_path.split(os.sep)[-1]
-            self.preview_label.setText(
-                f'Preview of the: {video_name}')
+            self.preview_label.setText(f'Preview of the: {video_name}')
             self.preview_widget.setCurrentWidget(self.video_player_wgt)
 
         else:
@@ -172,15 +173,22 @@ class DataSelector(BaseWidget):
                     MESSAGE_TYPE.REQUEST,
                     ConsolePrintMessageBody(
                         CONSOLE_MESSAGE_TYPE.INFO,
-                        'Loaded: {} images from: {}.'.format(
-                            len(image_paths),
-                            directory
-                        )
+                        f'Selected {self.data_type.lower()} data directory: ' +
+                        f'{directory} with {len(image_paths)} pictures.'
                     )
                 )
 
                 self.preview_label.setText(
                     f'Preview of pictures in {directory} directory.')
+
+                if self.data_type == 'Input':
+                    self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
+                        directory
+                    )
+                else:
+                    self.signals[SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY].emit(
+                        directory
+                    )
 
         else:
 
@@ -188,7 +196,7 @@ class DataSelector(BaseWidget):
 
         self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
 
-    def select_data_directory(self):
+    def select_frames_directory(self):
         # directory = qwt.QFileDialog.getExistingDirectory(
         #     self, "getExistingDirectory", "./")
         directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
@@ -198,9 +206,19 @@ class DataSelector(BaseWidget):
                 MESSAGE_TYPE.REQUEST,
                 ConsolePrintMessageBody(
                     CONSOLE_MESSAGE_TYPE.INFO,
-                    f'Selected {self.data_type.lower()} directory for extracted faces: {directory}.'
+                    f'Selected {self.data_type.lower()} directory: ' +
+                    f'{directory} for extracted frames.'
                 )
             )
+
+            if self.data_type == 'Input':
+                self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
+                    directory
+                )
+            else:
+                self.signals[SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY].emit(
+                    directory
+                )
 
         else:
 
