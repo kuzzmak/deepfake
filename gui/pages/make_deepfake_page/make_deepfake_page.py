@@ -61,6 +61,9 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.faces_directory = ''
         self.biggest_frame_dim_value = None
 
+        self.input_data_directory_sig.connect(self.input_data_directory_selected)
+        self.output_data_directory_sig.connect(self.output_data_directory_selected)
+
         self.setupUi(self)
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
@@ -140,23 +143,20 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         data_tab_signals = {
             SIGNAL_OWNER.CONOSLE: self.signals[SIGNAL_OWNER.CONOSLE],
             SIGNAL_OWNER.INPUT_DATA_DIRECTORY: self.input_data_directory_sig,
-            SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY: self.input_data_directory_sig,
+            SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY: self.output_data_directory_sig,
         }
         data_tab = DataTab(data_tab_signals)
-        # data_tab.add_signal(
-        #     self.signals[SIGNAL_OWNER.CONOSLE],
-        #     SIGNAL_OWNER.CONOSLE
-        # )
-        # data_tab.add_signal(
-        #     self.input_data_directory_sig,
-        #     SIGNAL_OWNER.INPUT_DATA_DIRECTORY
-        # )
-        # data_tab.add_signal(
-        #     self.output_data_directory_sig,
-        #     SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY
-        # )
+
         self.tab_widget.addTab(data_tab, 'Data')
         self.tab_widget.addTab(DetectionAlgorithmTab(), 'Detection algorithm')
+
+    @qtc.pyqtSlot(str)
+    def input_data_directory_selected(self, directory: str):
+        print('new input dir: ', directory)
+
+    @qtc.pyqtSlot(str)
+    def output_data_directory_selected(self, directory: str):
+        print('new output dir: ', directory)
 
     @qtc.pyqtSlot(int)
     def resize_frames_chk_changed(self, value: int):
