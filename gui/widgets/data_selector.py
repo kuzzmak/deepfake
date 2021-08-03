@@ -6,6 +6,8 @@ import PyQt5.QtWidgets as qwt
 
 from enums import (
     CONSOLE_MESSAGE_TYPE,
+    DATA_TYPE,
+    IMAGE_FORMATS,
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
@@ -31,12 +33,13 @@ class DataSelector(BaseWidget):
     selected_pictures_directory = qtc.pyqtSignal(str)
 
     def __init__(self,
-                 data_type: str,
+                 data_type: DATA_TYPE,
                  signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
         super().__init__(signals)
 
         self.data_type = data_type
         self.data_directory = None
+        self.video_path = None
         self.biggest_frame_dim_value = None
 
         self.init_ui()
@@ -46,7 +49,7 @@ class DataSelector(BaseWidget):
         self.main_layout = qwt.QVBoxLayout()
 
         self.main_layout.addWidget(qwt.QLabel(
-            text=f'Select {self.data_type} data'))
+            text=f'Select {self.data_type.value} data'))
 
         button_wgt = qwt.QWidget()
         button_layout = qwt.QHBoxLayout()
@@ -95,15 +98,25 @@ class DataSelector(BaseWidget):
         right_part_wgt = qwt.QWidget()
         right_part_layout = qwt.QHBoxLayout()
         right_part_wgt.setLayout(right_part_layout)
+
         self.resize_frames_chk = qwt.QCheckBox(text='Resize frames')
         self.resize_frames_chk.stateChanged.connect(
             self.resize_frames_chk_changed)
         right_part_layout.addWidget(self.resize_frames_chk)
+
         self.biggest_frame_dim_input = qwt.QLineEdit()
         self.biggest_frame_dim_input.textChanged.connect(
             self.biggest_frame_dim_input_text_changed)
+        self.biggest_frame_dim_input.setText(str(640))
         self.enable_widget(self.biggest_frame_dim_input, False)
         right_part_layout.addWidget(self.biggest_frame_dim_input)
+
+        right_part_layout.addWidget(qwt.QLabel(text='Format: '))
+
+        image_format_dropdown = qwt.QComboBox()
+        image_format_dropdown.addItem(IMAGE_FORMATS.JPG.value)
+        image_format_dropdown.addItem(IMAGE_FORMATS.JPG.value)
+        right_part_layout.addWidget(image_format_dropdown)
 
         row = qwt.QWidget()
         row_layout = qwt.QHBoxLayout()
@@ -142,13 +155,14 @@ class DataSelector(BaseWidget):
         if video_path:
             msg = Messages.CONSOLE_PRINT(
                 CONSOLE_MESSAGE_TYPE.LOG,
-                f'{self.data_type} video selected from: {video_path}'
+                f'{self.data_type.value} video selected from: {video_path}'
             )
 
             self.video_player.video_selection.emit(video_path)
             video_name = video_path.split(os.sep)[-1]
             self.preview_label.setText(f'Preview of the: {video_name}')
             self.preview_widget.setCurrentWidget(self.video_player_wgt)
+            self.video_path = video_path
 
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED
@@ -167,7 +181,7 @@ class DataSelector(BaseWidget):
         directory = "C:\\Users\\tonkec\\Documents\\deepfake\\dummy_pics"
 
         if directory:
-            self.data_directory = directory
+
             self.preview_widget.setCurrentWidget(self.picture_viewer)
 
             image_paths = get_file_paths_from_dir(directory)
@@ -179,7 +193,7 @@ class DataSelector(BaseWidget):
 
                 msg = Messages.CONSOLE_PRINT(
                     CONSOLE_MESSAGE_TYPE.INFO,
-                    f'Selected {self.data_type.lower()} data directory: ' +
+                    f'Selected {self.data_type.value.lower()} data directory: ' +
                     f'{directory} with {len(image_paths)} pictures.'
                 )
 
@@ -188,7 +202,7 @@ class DataSelector(BaseWidget):
 
                 self.data_directory = directory
 
-                if self.data_type == 'Input':
+                if self.data_type == DATA_TYPE.INPUT:
                     self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
                         directory
                     )
@@ -211,7 +225,7 @@ class DataSelector(BaseWidget):
         if directory:
             msg = Messages.CONSOLE_PRINT(
                 CONSOLE_MESSAGE_TYPE.INFO,
-                f'Selected {self.data_type.lower()} ' +
+                f'Selected {self.data_type.value.lower()} ' +
                 f'directory: {directory} for extracted frames.'
             )
 
@@ -223,7 +237,7 @@ class DataSelector(BaseWidget):
 
             self.data_directory = directory
 
-            if self.data_type == 'Input':
+            if self.data_type == DATA_TYPE.INPUT:
                 self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
                     directory
                 )
@@ -257,11 +271,13 @@ class DataSelector(BaseWidget):
             self.enable_widget(self.extract_frames_btn, False)
 
     def extract_frames(self):
-        """Sends signal to MakeDeepfakePage to start frames extraction 
+        """Sends signal to MakeDeepfakePage to start frames extraction
         process for input or output data.
         """
         body_data = {
-            'resize': False
+            'resize': False,
+            'data_type': self.data_type,
+            'video_path': self.video_path,
         }
         if self.resize_frames_chk.isChecked():
             body_data['resize'] = True
@@ -289,7 +305,8 @@ class DataSelector(BaseWidget):
         """
         if value == 2:  # checkbox checked value
             self.enable_widget(self.biggest_frame_dim_input, True)
-            self.enable_widget(self.extract_frames_btn, False)
+            if self.biggest_frame_dim_input.text() == '':
+                self.enable_widget(self.extract_frames_btn, False)
         else:
             self.enable_widget(self.biggest_frame_dim_input, False)
             self.enable_widget(self.extract_frames_btn, True)
