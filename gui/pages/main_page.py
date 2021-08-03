@@ -206,8 +206,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def register_pages(self):
         for page in [StartPage, MakeDeepfakePage]:
-            p = page(self)
-            p.add_signal(self.console_print_sig, SIGNAL_OWNER.CONOSLE)
+            page_signals = {
+                SIGNAL_OWNER.CONOSLE: self.console_print_sig
+            }
+            p = page(self, page_signals)
             self.register_page(p)
 
     @qtc.pyqtSlot(Message)
