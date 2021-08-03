@@ -1,4 +1,5 @@
 import os
+from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -21,8 +22,8 @@ class DataSelector(BaseWidget):
     selected_video = qtc.pyqtSignal(str)
     selected_pictures_directory = qtc.pyqtSignal(str)
 
-    def __init__(self, data_type: str):
-        super().__init__()
+    def __init__(self, data_type: str, signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
+        super().__init__(signals)
 
         self.data_type = data_type
 
@@ -74,6 +75,7 @@ class DataSelector(BaseWidget):
         left_part_layout = qwt.QVBoxLayout()
         left_part_wgt.setLayout(left_part_layout)
         select_frames_directory_btn = qwt.QPushButton(text='Select')
+        select_frames_directory_btn.clicked.connect(self.select_data_directory)
         left_part_layout.addWidget(select_frames_directory_btn)
 
         right_part_wgt = qwt.QWidget()
@@ -128,7 +130,7 @@ class DataSelector(BaseWidget):
             )
 
             self.video_player.video_selection.emit(video_path)
-            video_name = os.path.splitext(os.path.basename(video_path))[0]
+            video_name = video_path.split(os.sep)[-1]
             self.preview_label.setText(
                 f'Preview of the: {video_name}')
             self.preview_widget.setCurrentWidget(self.video_player_wgt)
@@ -179,6 +181,26 @@ class DataSelector(BaseWidget):
 
                 self.preview_label.setText(
                     f'Preview of pictures in {directory} directory.')
+
+        else:
+
+            msg = DIRECTORY_NOT_SELECTED_MESSAGE
+
+        self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
+
+    def select_data_directory(self):
+        # directory = qwt.QFileDialog.getExistingDirectory(
+        #     self, "getExistingDirectory", "./")
+        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
+        if directory:
+
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                ConsolePrintMessageBody(
+                    CONSOLE_MESSAGE_TYPE.INFO,
+                    f'Selected {self.data_type.lower()} directory for extracted faces: {directory}.'
+                )
+            )
 
         else:
 
