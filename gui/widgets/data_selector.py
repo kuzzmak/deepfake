@@ -4,15 +4,13 @@ from typing import Dict, Optional
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
-from common_structures import DIRECTORY_NOT_SELECTED_MESSAGE
-
-from enums import CONSOLE_MESSAGE_TYPE, MESSAGE_TYPE, SIGNAL_OWNER
+from enums import CONSOLE_MESSAGE_TYPE, SIGNAL_OWNER
 
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.picture_viewer import PictureViewer
 from gui.widgets.video_player import VideoPlayer
 
-from message.message import ConsolePrintMessageBody, Message
+from message.message import Messages
 
 from utils import get_file_paths_from_dir
 
@@ -22,10 +20,14 @@ class DataSelector(BaseWidget):
     selected_video = qtc.pyqtSignal(str)
     selected_pictures_directory = qtc.pyqtSignal(str)
 
-    def __init__(self, data_type: str, signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
+    def __init__(self,
+                 data_type: str,
+                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
         super().__init__(signals)
 
         self.data_type = data_type
+        self.data_directory = None
+        self.biggest_frame_dim_value = None
 
         self.init_ui()
 
@@ -83,11 +85,14 @@ class DataSelector(BaseWidget):
         right_part_wgt = qwt.QWidget()
         right_part_layout = qwt.QHBoxLayout()
         right_part_wgt.setLayout(right_part_layout)
-        resize_frames_chk = qwt.QCheckBox(text='Resize frames')
-        resize_frames_chk.stateChanged.connect(self.resize_frames_chk_changed)
-        right_part_layout.addWidget(resize_frames_chk)
+        self.resize_frames_chk = qwt.QCheckBox(text='Resize frames')
+        self.resize_frames_chk.stateChanged.connect(
+            self.resize_frames_chk_changed)
+        right_part_layout.addWidget(self.resize_frames_chk)
         self.biggest_frame_dim_input = qwt.QLineEdit()
-        self.biggest_frame_dim_input.setEnabled(False)
+        self.biggest_frame_dim_input.textChanged.connect(
+            self.biggest_frame_dim_input_text_changed)
+        self.enable_widget(self.biggest_frame_dim_input, False)
         right_part_layout.addWidget(self.biggest_frame_dim_input)
 
         row = qwt.QWidget()
@@ -97,8 +102,10 @@ class DataSelector(BaseWidget):
         row_layout.addWidget(right_part_wgt, 0, qtc.Qt.AlignTop)
         box_group_layout.addWidget(row)
 
-        extract_frames_btn = qwt.QPushButton(text='Extract frames')
-        box_group_layout.addWidget(extract_frames_btn)
+        self.extract_frames_btn = qwt.QPushButton(text='Extract frames')
+        self.extract_frames_btn.clicked.connect(self.extract_frames)
+        self.enable_widget(self.extract_frames_btn, False)
+        box_group_layout.addWidget(self.extract_frames_btn)
 
         video_player_wgt_layout.addWidget(self.frame_extraction_gb)
 
@@ -112,23 +119,20 @@ class DataSelector(BaseWidget):
         """Select video from which individual frames would be extracted
         and then these frames will be used for face extraction process.
         """
-        video_path = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\videos\\interview_woman.mp4"
-        # options = qwt.QFileDialog.Options()
-        # options |= qwt.QFileDialog.DontUseNativeDialog
-        # video_path, _ = qwt.QFileDialog.getOpenFileName(
-        #     self,
-        #     'Select video file',
-        #     "data/videos",
-        #     "Video files (*.mp4)",
-        #     options=options)
+        # video_path = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\videos\\interview_woman.mp4"
+        options = qwt.QFileDialog.Options()
+        options |= qwt.QFileDialog.DontUseNativeDialog
+        video_path, _ = qwt.QFileDialog.getOpenFileName(
+            self,
+            'Select video file',
+            "data/videos",
+            "Video files (*.mp4)",
+            options=options)
 
         if video_path:
-            msg = Message(
-                MESSAGE_TYPE.REQUEST,
-                ConsolePrintMessageBody(
-                    CONSOLE_MESSAGE_TYPE.LOG,
-                    f'{self.data_type} video selected from: {video_path}'
-                )
+            msg = Messages.CONSOLE_PRINT(
+                CONSOLE_MESSAGE_TYPE.LOG,
+                f'{self.data_type} video selected from: {video_path}'
             )
 
             self.video_player.video_selection.emit(video_path)
@@ -137,7 +141,7 @@ class DataSelector(BaseWidget):
             self.preview_widget.setCurrentWidget(self.video_player_wgt)
 
         else:
-            msg = DIRECTORY_NOT_SELECTED_MESSAGE
+            msg = Messages.DIRECTORY_NOT_SELECTED
 
         self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
 
@@ -158,28 +162,21 @@ class DataSelector(BaseWidget):
 
             image_paths = get_file_paths_from_dir(directory)
             if len(image_paths) == 0:
-                msg = Message(
-                    MESSAGE_TYPE.REQUEST,
-                    ConsolePrintMessageBody(
-                        CONSOLE_MESSAGE_TYPE.WARNING,
-                        f'No images were found in: {directory}.'
-                    )
-                )
+                msg = Messages.NO_IMAGES_FOUND
 
             else:
                 self.picture_viewer.pictures_added_sig.emit(image_paths)
 
-                msg = Message(
-                    MESSAGE_TYPE.REQUEST,
-                    ConsolePrintMessageBody(
-                        CONSOLE_MESSAGE_TYPE.INFO,
-                        f'Selected {self.data_type.lower()} data directory: ' +
-                        f'{directory} with {len(image_paths)} pictures.'
-                    )
+                msg = Messages.CONSOLE_PRINT(
+                    CONSOLE_MESSAGE_TYPE.INFO,
+                    f'Selected {self.data_type.lower()} data directory: ' +
+                    f'{directory} with {len(image_paths)} pictures.'
                 )
 
                 self.preview_label.setText(
                     f'Preview of pictures in {directory} directory.')
+
+                self.data_directory = directory
 
                 if self.data_type == 'Input':
                     self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
@@ -191,25 +188,30 @@ class DataSelector(BaseWidget):
                     )
 
         else:
-
-            msg = DIRECTORY_NOT_SELECTED_MESSAGE
+            msg = Messages.DIRECTORY_NOT_SELECTED
 
         self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
 
     def select_frames_directory(self):
+        """Selects where extracted frames from video will go.
+        """
         # directory = qwt.QFileDialog.getExistingDirectory(
         #     self, "getExistingDirectory", "./")
         directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
         if directory:
-
-            msg = Message(
-                MESSAGE_TYPE.REQUEST,
-                ConsolePrintMessageBody(
-                    CONSOLE_MESSAGE_TYPE.INFO,
-                    f'Selected {self.data_type.lower()} directory: ' +
-                    f'{directory} for extracted frames.'
-                )
+            msg = Messages.CONSOLE_PRINT(
+                CONSOLE_MESSAGE_TYPE.INFO,
+                f'Selected {self.data_type.lower()} ' +
+                f'directory: {directory} for extracted frames.'
             )
+
+            if self.resize_frames_chk.isChecked():
+                if self.biggest_frame_dim_value is not None:
+                    self.enable_widget(self.extract_frames_btn, True)
+            else:
+                self.enable_widget(self.extract_frames_btn, True)
+
+            self.data_directory = directory
 
             if self.data_type == 'Input':
                 self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
@@ -221,10 +223,31 @@ class DataSelector(BaseWidget):
                 )
 
         else:
-
-            msg = DIRECTORY_NOT_SELECTED_MESSAGE
+            msg = Messages.DIRECTORY_NOT_SELECTED()
 
         self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
+
+    @qtc.pyqtSlot(str)
+    def biggest_frame_dim_input_text_changed(self, text: str):
+        """Input for biggest picture dimension if user wants to resize
+        frames extracted from video.
+
+        Parameters
+        ----------
+        text : str
+            user input
+        """
+        try:
+            num = int(text)
+            self.biggest_frame_dim_value = num
+            if self.data_directory is not None:
+                self.enable_widget(self.extract_frames_btn, True)
+        except ValueError:
+            self.biggest_frame_dim_value = None
+            self.enable_widget(self.extract_frames_btn, False)
+
+    def extract_frames(self):
+        ...
 
     @qtc.pyqtSlot(int)
     def resize_frames_chk_changed(self, value: int):
@@ -236,6 +259,8 @@ class DataSelector(BaseWidget):
             new checkbox value
         """
         if value == 2:  # checkbox checked value
-            self.biggest_frame_dim_input.setEnabled(True)
+            self.enable_widget(self.biggest_frame_dim_input, True)
+            self.enable_widget(self.extract_frames_btn, False)
         else:
-            self.biggest_frame_dim_input.setEnabled(False)
+            self.enable_widget(self.biggest_frame_dim_input, False)
+            self.enable_widget(self.extract_frames_btn, True)
