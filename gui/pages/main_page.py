@@ -19,7 +19,7 @@ from gui.workers.threads.frames_extraction_worker_thread \
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
 
-from message.message import ConsolePrintMessageBody, Message
+from message.message import Message
 
 from enums import (
     APP_STATUS,
@@ -229,15 +229,15 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             self.app_status_label_sig.emit(APP_STATUS.NO_JOB.value)
             self.job_progress_value = 0
 
-            msg = Message(
-                MESSAGE_TYPE.REQUEST,
-                ConsolePrintMessageBody(
-                    CONSOLE_MESSAGE_TYPE.LOG,
-                    'Frames extraction finished.'
-                )
-            )
+            # msg = Message(
+            #     MESSAGE_TYPE.REQUEST,
+            #     ConsolePrintMessageBody(
+            #         CONSOLE_MESSAGE_TYPE.LOG,
+            #         'Frames extraction finished.'
+            #     )
+            # )
 
-            self.console_print_sig.emit(msg)
+            # self.console_print_sig.emit(msg)
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
@@ -253,7 +253,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     @qtc.pyqtSlot(Message)
     def console_print(self, message: Message):
-        msg_type, msg = message.body.get_data()
+        data = message.body.data
+        msg_type = data['console_message_type']
+        msg = data['message']
+
         msg_type_prefix = self._get_console_message_prefix(msg_type)
         curr_time_prefix = '[' + datetime.now().strftime('%H:%M:%S') + '] - '
         text = msg_type_prefix + \
