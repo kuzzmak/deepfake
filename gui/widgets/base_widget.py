@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -8,26 +8,14 @@ from enums import SIGNAL_OWNER
 
 class BaseWidget(qwt.QWidget):
 
-    _signals: Dict[SIGNAL_OWNER, qtc.pyqtSignal] = dict()
+    _signals: Dict[SIGNAL_OWNER, qtc.pyqtSignal]
 
-    def __init__(self):
+    def __init__(self, signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
         """Base widget class. Contains dictionary of signals
         where one could add signal for any kind of work.
         """
         super().__init__()
-
-    def add_signal(self, sig: qtc.pyqtSignal, sig_owner: SIGNAL_OWNER):
-        """Adds signal to a widget dictionary.
-
-        Parameters
-        ----------
-        sig : qtc.pyqtSignal
-            signal to add
-        sig_owner : SIGNAL_OWNER
-            widget, worker or some other objects which will to something
-            when signal is received
-        """
-        self._signals[sig_owner] = sig
+        self._signals = signals
 
     @property
     def signals(self) -> Dict[SIGNAL_OWNER, qtc.pyqtSignal]:
