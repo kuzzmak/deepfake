@@ -39,6 +39,7 @@ class SIGNAL_OWNER(Enum):
     CONOSLE = 'console'
     JOB_PROGRESS = 'job_progress'
     CONFIGURE_WIDGET = 'configure_widget'
+    FRAMES_EXTRACTION = 'frames_extraction'
     INPUT_DATA_DIRECTORY = 'input_data_directory'
     OUTPUT_DATA_DIRECTORY = 'output_data_directory'
 
@@ -56,6 +57,16 @@ class MESSAGE_TYPE(Enum):
 class MESSAGE_STATUS(Enum):
     OK = 'ok'
     FAILED = 'failed'
+
+
+class DATA_TYPE(Enum):
+    INPUT = 'Input'
+    OUTPUT = 'Output'
+
+
+class IMAGE_FORMATS(Enum):
+    PNG = 'png'
+    JPG = 'jpg'
 
 
 class JOB_TYPE(Enum):
