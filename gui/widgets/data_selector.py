@@ -4,13 +4,23 @@ from typing import Dict, Optional
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
-from enums import CONSOLE_MESSAGE_TYPE, SIGNAL_OWNER
+from enums import (
+    CONSOLE_MESSAGE_TYPE,
+    JOB_TYPE,
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
+    SIGNAL_OWNER,
+)
 
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.picture_viewer import PictureViewer
 from gui.widgets.video_player import VideoPlayer
 
-from message.message import Messages
+from message.message import (
+    Body,
+    Message,
+    Messages,
+)
 
 from utils import get_file_paths_from_dir
 
@@ -247,7 +257,26 @@ class DataSelector(BaseWidget):
             self.enable_widget(self.extract_frames_btn, False)
 
     def extract_frames(self):
-        ...
+        """Sends signal to MakeDeepfakePage to start frames extraction 
+        process for input or output data.
+        """
+        body_data = {
+            'resize': False
+        }
+        if self.resize_frames_chk.isChecked():
+            body_data['resize'] = True
+            body_data['biggest_frame_dim'] = self.biggest_frame_dim_value
+
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            MESSAGE_STATUS.OK,
+            Body(
+                JOB_TYPE.FRAME_EXTRACTION,
+                body_data,
+            )
+        )
+
+        self.signals[SIGNAL_OWNER.FRAMES_EXTRACTION].emit(msg)
 
     @qtc.pyqtSlot(int)
     def resize_frames_chk_changed(self, value: int):
