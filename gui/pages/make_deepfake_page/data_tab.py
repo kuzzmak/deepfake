@@ -11,7 +11,8 @@ from gui.widgets.data_selector import DataSelector
 
 class DataTab(BaseWidget):
 
-    def __init__(self, signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
+    def __init__(self,
+                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
         super().__init__(signals)
 
         self.init_ui()
