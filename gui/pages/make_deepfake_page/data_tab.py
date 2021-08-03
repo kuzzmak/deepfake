@@ -29,6 +29,9 @@ class DataTab(BaseWidget):
             SIGNAL_OWNER.CONOSLE: self.signals[SIGNAL_OWNER.CONOSLE],
             SIGNAL_OWNER.INPUT_DATA_DIRECTORY: self.signals[
                 SIGNAL_OWNER.INPUT_DATA_DIRECTORY
+            ],
+            SIGNAL_OWNER.FRAMES_EXTRACTION: self.signals[
+                SIGNAL_OWNER.FRAMES_EXTRACTION
             ]
         }
         input_wgt = DataSelector('Input', input_wgt_signals)
@@ -43,6 +46,9 @@ class DataTab(BaseWidget):
             SIGNAL_OWNER.CONOSLE: self.signals[SIGNAL_OWNER.CONOSLE],
             SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY: self.signals[
                 SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY
+            ],
+            SIGNAL_OWNER.FRAMES_EXTRACTION: self.signals[
+                SIGNAL_OWNER.FRAMES_EXTRACTION
             ]
         }
         output_wgt = DataSelector('Output', output_wgt_signals)
