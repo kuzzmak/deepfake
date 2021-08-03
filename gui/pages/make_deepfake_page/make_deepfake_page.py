@@ -1,12 +1,14 @@
-from gui.pages.make_deepfake_page.data_tab import DataTab
-from gui.pages.make_deepfake_page.detection_algorithm_tab import DetectionAlgorithmTab
 import os
+from typing import Dict, Optional
 
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from gui.pages.page import Page
+from gui.pages.make_deepfake_page.data_tab import DataTab
+from gui.pages.make_deepfake_page.detection_algorithm_tab \
+    import DetectionAlgorithmTab
 from gui.templates.make_deepfake_page import Ui_make_deepfake_page
 from gui.widgets.video_player import VideoPlayer
 from gui.widgets.picture_viewer import PictureViewer
@@ -45,8 +47,15 @@ no_foler_selected_msg = Message(
 
 class MakeDeepfakePage(Page, Ui_make_deepfake_page):
 
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
+    input_data_directory_sig = qtc.pyqtSignal(str)
+    output_data_directory_sig = qtc.pyqtSignal(str)
+
+    def __init__(self,
+                 parent,
+                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+                 * args,
+                 **kwargs):
+        super().__init__(parent, signals, page_name=MAKE_DEEPFAKE_PAGE_NAME, *args, **kwargs)
 
         self.data_directory = ''
         self.faces_directory = ''
@@ -128,9 +137,24 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.picture_viewer_tab_2 = PictureViewer()
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
-        data_tab = DataTab()
-        data_tab.add_signal(
-            self.signals[SIGNAL_OWNER.CONOSLE], SIGNAL_OWNER.CONOSLE)
+        data_tab_signals = {
+            SIGNAL_OWNER.CONOSLE: self.signals[SIGNAL_OWNER.CONOSLE],
+            SIGNAL_OWNER.INPUT_DATA_DIRECTORY: self.input_data_directory_sig,
+            SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY: self.input_data_directory_sig,
+        }
+        data_tab = DataTab(data_tab_signals)
+        # data_tab.add_signal(
+        #     self.signals[SIGNAL_OWNER.CONOSLE],
+        #     SIGNAL_OWNER.CONOSLE
+        # )
+        # data_tab.add_signal(
+        #     self.input_data_directory_sig,
+        #     SIGNAL_OWNER.INPUT_DATA_DIRECTORY
+        # )
+        # data_tab.add_signal(
+        #     self.output_data_directory_sig,
+        #     SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY
+        # )
         self.tab_widget.addTab(data_tab, 'Data')
         self.tab_widget.addTab(DetectionAlgorithmTab(), 'Detection algorithm')
 
