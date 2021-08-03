@@ -3,7 +3,7 @@ from typing import Optional, Dict
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
-from enums import SIGNAL_OWNER
+from enums import DATA_TYPE, SIGNAL_OWNER
 
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.data_selector import DataSelector
@@ -34,7 +34,7 @@ class DataTab(BaseWidget):
                 SIGNAL_OWNER.FRAMES_EXTRACTION
             ]
         }
-        input_wgt = DataSelector('Input', input_wgt_signals)
+        input_wgt = DataSelector(DATA_TYPE.INPUT, input_wgt_signals)
         central_layout.addWidget(input_wgt)
 
         line = qwt.QFrame()
@@ -51,7 +51,7 @@ class DataTab(BaseWidget):
                 SIGNAL_OWNER.FRAMES_EXTRACTION
             ]
         }
-        output_wgt = DataSelector('Output', output_wgt_signals)
+        output_wgt = DataSelector(DATA_TYPE.OUTPUT, output_wgt_signals)
 
         central_layout.addWidget(output_wgt)
 
