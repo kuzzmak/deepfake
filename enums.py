@@ -37,12 +37,15 @@ class DIALOG_MESSAGE_TYPE(Enum):
 
 class SIGNAL_OWNER(Enum):
     CONOSLE = 'console'
-    FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
-    IO_WORKER = 'io_worker'
     JOB_PROGRESS = 'job_progress'
     CONFIGURE_WIDGET = 'configure_widget'
+    INPUT_DATA_DIRECTORY = 'input_data_directory'
+    OUTPUT_DATA_DIRECTORY = 'output_data_directory'
+
+    IO_WORKER = 'io_worker'
     MESSAGE_WORKER = 'message_worker'
     FACE_DETECTION_WORKER = 'face_detection_worker'
+    FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
 
 
 class MESSAGE_TYPE(Enum):
