@@ -1,16 +1,18 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import NewType, Optional
 
 import numpy as np
 
 from enums import (
     CONSOLE_MESSAGE_TYPE,
     FACE_DETECTION_ALGORITHM,
-    IO_OP_TYPE,
+    FILE_TYPE,
+    IO_OPERATION_TYPE,
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
-    WIDGET
+    WIDGET,
+    BODY_KEY,
 )
 
 
@@ -168,3 +170,33 @@ class Messages:
         CONSOLE_MESSAGE_TYPE.WARNING,
         'No images found in directory.'
     )
+
+
+class IOOperationBody(Body):
+
+    def __init__(self,
+                 io_operation_type: IO_OPERATION_TYPE,
+                 file_path: str,
+                 new_file_path: Optional[str] = None,
+                 file: Optional[np.ndarray] = None,
+                 file_type: Optional[FILE_TYPE] = None,
+                 resize: Optional[bool] = False,
+                 new_size: Optional[int] = None,
+                 multipart: Optional[bool] = False,
+                 part: Optional[int] = None,
+                 total: Optional[int] = None,
+                 ):
+        super().__init__(JOB_TYPE.IO_OPERATION,
+                         {
+                             BODY_KEY.IO_OPERATION_TYPE: io_operation_type,
+                             BODY_KEY.FILE_PATH: file_path,
+                             BODY_KEY.NEW_FILE_PATH: new_file_path,
+                             BODY_KEY.FILE: file,
+                             BODY_KEY.FILE_TYPE: file_type,
+                             BODY_KEY.RESIZE: resize,
+                             BODY_KEY.NEW_SIZE: new_size,
+                             BODY_KEY.MULTIPART: multipart,
+                             BODY_KEY.PART: part,
+                             BODY_KEY.TOTAL: total,
+                         }
+                         )
