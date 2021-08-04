@@ -164,34 +164,15 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
     def extract_frames(self, msg: Message):
         """Starts process of extracting frames from video.
         """
-
         if msg.body.data[BODY_KEY.DATA_TYPE] == DATA_TYPE.INPUT:
             msg.body.data[BODY_KEY.DATA_DIRECTORY] = self.input_data_directory
         else:
             msg.body.data[BODY_KEY.DATA_DIRECTORY] = self.output_data_directory
 
+        msg.sender = SIGNAL_OWNER.FRAMES_EXTRACTION
+        msg.recipient = SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER
+
         self.send_message(msg)
-
-        # msg = Message(
-        #     MESSAGE_TYPE.REQUEST,
-        #     ConsolePrintMessageBody(
-        #         CONSOLE_MESSAGE_TYPE.LOG,
-        #         'Started frame extraction.'
-        #     )
-        # )
-        # self.send_message(msg)
-
-        # msg = Message(
-        #     MESSAGE_TYPE.REQUEST,
-        #     FrameExtractionMessageBody(
-        #         self.video_path,
-        #         self.data_directory,
-        #         True,
-        #         self.biggest_frame_dim_value,
-        #         'jpg'
-        #     )
-        # )
-        # self.send_message(msg)
 
     def select_faces_directory(self):
         # directory = qwt.QFileDialog.getExistingDirectory(
