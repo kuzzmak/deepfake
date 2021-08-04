@@ -51,10 +51,7 @@ class MakeDeepfakePage(Page):
         self.init_ui()
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
-        # self.start_detection_btn.setIcon(qtg.QIcon(qtg.QPixmap(':/play.svg')))
-
     def init_ui(self):
-
         layout = qwt.QVBoxLayout()
 
         self.tab_wgt = qwt.QTabWidget()
@@ -105,3 +102,6 @@ class MakeDeepfakePage(Page):
         msg.recipient = SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER
 
         self.send_message(msg)
+
+    def detect_faces(self, msg: Message):
+        ...
