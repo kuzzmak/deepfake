@@ -28,7 +28,6 @@ class FramesExtractionWorker(Worker):
         super().__init__(*args, **kwargs)
 
     def process(self, msg: Message):
-
         data = msg.body.data
         video_path = data[BODY_KEY.VIDEO_PATH]
         data_directory = data[BODY_KEY.DATA_DIRECTORY]
