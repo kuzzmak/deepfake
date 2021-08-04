@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enums import (
     DIALOG_MESSAGE_ICON,
     DIALOG_MESSAGE_TYPE,
-    IO_OP_TYPE,
+    IO_OPERATION_TYPE,
 )
 
 
@@ -54,5 +54,5 @@ class IO_OP:
     """Describes one IO operation which has a type and
     path to a file on which this operation should be executed.
     """
-    type: IO_OP_TYPE
+    type: IO_OPERATION_TYPE
     value: str
