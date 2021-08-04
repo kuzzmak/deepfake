@@ -168,7 +168,7 @@ class DataSelector(BaseWidget):
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED
 
-        self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
+        self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
 
     def select_pictures(self):
         """Select directory with faces which would be used for face
@@ -215,7 +215,7 @@ class DataSelector(BaseWidget):
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED
 
-        self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
+        self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
 
     def select_frames_directory(self):
         """Selects where extracted frames from video will go.
@@ -250,7 +250,7 @@ class DataSelector(BaseWidget):
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED()
 
-        self.signals[SIGNAL_OWNER.CONOSLE].emit(msg)
+        self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
 
     @qtc.pyqtSlot(str)
     def biggest_frame_dim_input_text_changed(self, text: str):

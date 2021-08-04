@@ -136,7 +136,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.message_worker_thread = MessageWorkerThread()
         self.message_worker_thread.worker.add_signal(
             self.console_print_sig,
-            SIGNAL_OWNER.CONOSLE,
+            SIGNAL_OWNER.CONSOLE,
         )
         self.message_worker_thread.worker.add_signal(
             self.io_worker_sig,
@@ -212,7 +212,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def register_pages(self):
         for page in [StartPage, MakeDeepfakePage]:
             page_signals = {
-                SIGNAL_OWNER.CONOSLE: self.console_print_sig
+                SIGNAL_OWNER.CONSOLE: self.console_print_sig
             }
             p = page(self, page_signals)
             self.register_page(p)
@@ -257,8 +257,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     @qtc.pyqtSlot(Message)
     def console_print(self, message: Message):
         data = message.body.data
-        msg_type = data['console_message_type']
-        msg = data['message']
+        msg_type = data[BODY_KEY.CONSOLE_MESSAGE_TYPE]
+        msg = data[BODY_KEY.MESSAGE]
 
         msg_type_prefix = self._get_console_message_prefix(msg_type)
         curr_time_prefix = '[' + datetime.now().strftime('%H:%M:%S') + '] - '

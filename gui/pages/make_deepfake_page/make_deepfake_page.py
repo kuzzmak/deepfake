@@ -114,7 +114,7 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         self.image_viewer_layout.addWidget(self.picture_viewer_tab_2)
 
         data_tab_signals = {
-            SIGNAL_OWNER.CONOSLE: self.signals[SIGNAL_OWNER.CONOSLE],
+            SIGNAL_OWNER.CONSOLE: self.signals[SIGNAL_OWNER.CONSOLE],
             SIGNAL_OWNER.INPUT_DATA_DIRECTORY: self.input_data_directory_sig,
             SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY: self.output_data_directory_sig,
             SIGNAL_OWNER.FRAMES_EXTRACTION: self.extract_frames_sig,
