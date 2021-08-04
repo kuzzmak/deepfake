@@ -156,12 +156,12 @@ class Messages:
             MESSAGE_TYPE.REQUEST,
             MESSAGE_STATUS.OK,
             SIGNAL_OWNER.NO_OWNER,
-            SIGNAL_OWNER.CONOSLE,
+            SIGNAL_OWNER.CONSOLE,
             Body(
                 JOB_TYPE.CONSOLE_PRINT,
                 {
-                    'console_message_type': msg_type,
-                    'message': message
+                    BODY_KEY.CONSOLE_MESSAGE_TYPE: msg_type,
+                    BODY_KEY.MESSAGE: message
                 }
             )
         )
