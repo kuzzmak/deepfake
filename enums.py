@@ -38,7 +38,7 @@ class DIALOG_MESSAGE_TYPE(Enum):
 class SIGNAL_OWNER(Enum):
     NO_OWNER = 'no_owner'
     DATA_SELECTOR = 'data_selector'
-    CONOSLE = 'console'
+    CONSOLE = 'console'
     JOB_PROGRESS = 'job_progress'
     CONFIGURE_WIDGET = 'configure_widget'
     FRAMES_EXTRACTION = 'frames_extraction'
@@ -116,3 +116,5 @@ class BODY_KEY(Enum):
     WIDGET = 'widget'
     METHOD = 'method'
     ARGS = 'args'
+    CONSOLE_MESSAGE_TYPE = 'console_message_type'
+    MESSAGE = 'message'
