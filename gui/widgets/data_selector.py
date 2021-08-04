@@ -287,6 +287,8 @@ class DataSelector(BaseWidget):
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.DATA_SELECTOR,
+            SIGNAL_OWNER.FRAMES_EXTRACTION,
             Body(
                 JOB_TYPE.FRAME_EXTRACTION,
                 body_data,
