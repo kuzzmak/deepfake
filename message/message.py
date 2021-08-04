@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import NewType, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -11,6 +11,7 @@ from enums import (
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
+    SIGNAL_OWNER,
     WIDGET,
     BODY_KEY,
 )
@@ -143,6 +144,8 @@ class Message:
 
     type: MESSAGE_TYPE
     status: MESSAGE_STATUS
+    sender: SIGNAL_OWNER
+    recipient: SIGNAL_OWNER
     body: Optional[Body] = Body()
 
 
@@ -152,6 +155,8 @@ class Messages:
         return Message(
             MESSAGE_TYPE.REQUEST,
             MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.NO_OWNER,
+            SIGNAL_OWNER.CONOSLE,
             Body(
                 JOB_TYPE.CONSOLE_PRINT,
                 {
