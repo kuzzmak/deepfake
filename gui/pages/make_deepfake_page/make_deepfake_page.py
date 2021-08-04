@@ -16,6 +16,7 @@ from message.message import Message
 
 
 from enums import (
+    BODY_KEY,
     CONSOLE_MESSAGE_TYPE,
     DATA_TYPE,
     FACE_DETECTION_ALGORITHM,
@@ -164,10 +165,10 @@ class MakeDeepfakePage(Page, Ui_make_deepfake_page):
         """Starts process of extracting frames from video.
         """
 
-        if msg.body.data['data_type'] == DATA_TYPE.INPUT:
-            msg.body.data['data_directory'] = self.input_data_directory
+        if msg.body.data[BODY_KEY.DATA_TYPE] == DATA_TYPE.INPUT:
+            msg.body.data[BODY_KEY.DATA_DIRECTORY] = self.input_data_directory
         else:
-            msg.body.data['data_directory'] = self.output_data_directory
+            msg.body.data[BODY_KEY.DATA_DIRECTORY] = self.output_data_directory
 
         self.send_message(msg)
 
