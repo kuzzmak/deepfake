@@ -13,7 +13,7 @@ from utils import np_array_to_qicon, qicon_from_path
 
 from common_structures import DialogMessages, IO_OP
 
-from enums import IO_OP_TYPE
+from enums import IO_OPERATION_TYPE
 
 DEFAULT_ROLE = qtc.Qt.UserRole + 1
 
@@ -160,7 +160,7 @@ class PictureViewer(qwt.QWidget):
         def remove_fn(remove: bool):
             if remove:
                 self.remove_item_from_viewer(index.row())
-                op = IO_OP(IO_OP_TYPE.DELETE, path)
+                op = IO_OP(IO_OPERATION_TYPE.DELETE, path)
                 # self.app.io_op_sig.emit(op)
 
         dialog_msg = DialogMessages.DELETE(
