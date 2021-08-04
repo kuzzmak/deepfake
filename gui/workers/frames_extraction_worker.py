@@ -5,8 +5,6 @@ import cv2 as cv
 from gui.workers.worker import Worker
 
 from message.message import (
-    # ConfigureWidgetMessageBody,
-    # IO_OperationMessageBody,
     Body,
     IOOperationBody,
     Message,
@@ -16,6 +14,7 @@ from enums import (
     BODY_KEY,
     FILE_TYPE,
     IO_OPERATION_TYPE,
+    JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
     SIGNAL_OWNER,
@@ -40,16 +39,21 @@ class FramesExtractionWorker(Worker):
 
         total_frames = int(vidcap.get(cv.CAP_PROP_FRAME_COUNT))
 
-        # msg = Message(
-        #     MESSAGE_TYPE.REQUEST,
-        #     ConfigureWidgetMessageBody(
-        #         WIDGET.JOB_PROGRESS,
-        #         'setMaximum',
-        #         [total_frames]
-        #     )
-        # )
-
-        # self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
+            SIGNAL_OWNER.CONFIGURE_WIDGET,
+            Body(
+                JOB_TYPE.WIDGET_CONFIGURATION,
+                {
+                    BODY_KEY.WIDGET: WIDGET.JOB_PROGRESS,
+                    BODY_KEY.METHOD: 'setMaximum',
+                    BODY_KEY.ARGS: [total_frames],
+                }
+            )
+        )
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
         count = 0
         while success:
@@ -58,6 +62,8 @@ class FramesExtractionWorker(Worker):
             msg = Message(
                 MESSAGE_TYPE.REQUEST,
                 MESSAGE_STATUS.OK,
+                SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
+                SIGNAL_OWNER.IO_WORKER,
                 IOOperationBody(
                     io_operation_type=IO_OPERATION_TYPE.SAVE,
                     file_path=im_path,
