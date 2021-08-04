@@ -17,7 +17,7 @@ class CONSOLE_MESSAGE_TYPE(Enum):
     WARNING = ConsolePrefix('[WARNING]', CONSOLE_COLORS.ORANGE)
 
 
-class IO_OP_TYPE(Enum):
+class IO_OPERATION_TYPE(Enum):
     DELETE = 'delete'
     RENAME = 'rename'
     SAVE = 'save'
@@ -91,3 +91,23 @@ class FACE_DETECTION_ALGORITHM(Enum):
     S3FD = 's3fd'
     MTCNN = 'mtcnn'
     FACEBOXES = 'faceboxes'
+
+
+class FILE_TYPE(Enum):
+    IMAGE = 'image'
+
+
+class BODY_KEY(Enum):
+    IO_OPERATION_TYPE = 'io_operation_type'
+    FILE_PATH = 'file_path'
+    NEW_FILE_PATH = 'new_file_path'
+    FILE = 'file'
+    FILE_TYPE = 'file_type'
+    RESIZE = 'resize'
+    NEW_SIZE = 'new_size'
+    MULTIPART = 'multipart'
+    PART = 'part'
+    TOTAL = 'total'
+    VIDEO_PATH = 'video_path'
+    DATA_DIRECTORY = 'data_directory'
+    DATA_TYPE = 'data_type'
