@@ -19,14 +19,13 @@ from gui.workers.threads.frames_extraction_worker_thread \
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
 
-from message.message import Message
+from message.message import Message, Messages
 
 from enums import (
     APP_STATUS,
     BODY_KEY,
     CONSOLE_COLORS,
     CONSOLE_MESSAGE_TYPE,
-    MESSAGE_TYPE,
     SIGNAL_OWNER,
     WIDGET,
 )
@@ -232,15 +231,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             self.app_status_label_sig.emit(APP_STATUS.NO_JOB.value)
             self.job_progress_value = 0
 
-            # msg = Message(
-            #     MESSAGE_TYPE.REQUEST,
-            #     ConsolePrintMessageBody(
-            #         CONSOLE_MESSAGE_TYPE.LOG,
-            #         'Frames extraction finished.'
-            #     )
-            # )
-
-            # self.console_print_sig.emit(msg)
+            msg = Messages.CONSOLE_PRINT(
+                CONSOLE_MESSAGE_TYPE.LOG,
+                'Frames extraction finished.'
+            )
+            self.console_print_sig.emit(msg)
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
