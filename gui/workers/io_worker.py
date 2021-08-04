@@ -1,6 +1,14 @@
 import cv2 as cv
 
-from enums import BODY_KEY, FILE_TYPE, IO_OPERATION_TYPE, JOB_TYPE, MESSAGE_STATUS, MESSAGE_TYPE, SIGNAL_OWNER
+from enums import (
+    BODY_KEY,
+    FILE_TYPE,
+    IO_OPERATION_TYPE,
+    JOB_TYPE,
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
+    SIGNAL_OWNER,
+)
 
 from gui.workers.worker import Worker
 
@@ -39,6 +47,7 @@ class IO_Worker(Worker):
         if multipart:
             part = data[BODY_KEY.PART]
             total = data[BODY_KEY.TOTAL]
+
             msg = Message(
                 MESSAGE_TYPE.ANSWER,
                 MESSAGE_STATUS.OK,
@@ -53,39 +62,4 @@ class IO_Worker(Worker):
                     part == total,
                 )
             )
-
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
-        #     print(str(part) + '/' + str(total))
-
-        
-
-        # op_type, \
-        #     file_path, \
-        #     new_file_path, \
-        #     file, \
-        #     resize, \
-        #     max_img_size_per_dim, \
-        #     multipart, \
-        #     part, \
-        #     total = msg.body.get_data()
-
-        ...
-        # if op_type == IO_OP_TYPE.SAVE:
-        #     if file is not None:
-
-        #         if resize:
-        #             file = resize_image_retain_aspect_ratio(
-        #                 file, max_img_size_per_dim)
-
-        #         cv.imwrite(file_path, file)
-        #         if multipart:
-        #             msg = Message(
-        #                 MESSAGE_TYPE.ANSWER,
-        #                 AnswerBody(
-        #                     MESSAGE_STATUS.OK,
-        #                     part == total,
-        #                 )
-        #             )
-        #             self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
-        #         else:
-        #             ...
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
