@@ -23,6 +23,7 @@ from message.message import Message
 
 from enums import (
     APP_STATUS,
+    BODY_KEY,
     CONSOLE_COLORS,
     CONSOLE_MESSAGE_TYPE,
     MESSAGE_TYPE,
@@ -183,7 +184,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.face_detection_worker_thread.start()
 
     def configure_widget(self, msg: Message):
-        widget, widget_method, method_args = msg.body.get_data()
+        data = msg.body.data
+        widget = data[BODY_KEY.WIDGET]
+        widget_method = data[BODY_KEY.METHOD]
+        method_args = data[BODY_KEY.ARGS]
+
         if widget == WIDGET.JOB_PROGRESS:
             method = getattr(self.job_progressbar, widget_method)
             method(*method_args)
@@ -214,9 +219,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     @qtc.pyqtSlot(Message)
     def job_progress(self, msg: Message):
-
-        _, finished = msg.body.get_data()
-
         if self.job_progress_value == 0:
             self.show_widget(self.job_progressbar, True)
             self.app_status_label_sig.emit(APP_STATUS.BUSY.value)
@@ -224,6 +226,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.job_progress_value += 1
         self.job_progressbar_value_sig.emit(self.job_progress_value)
 
+        finished = msg.body.finished
         if finished:
             self.show_widget(self.job_progressbar, False)
             self.app_status_label_sig.emit(APP_STATUS.NO_JOB.value)
@@ -263,7 +266,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             console_message_template.format(
                 APP_CONFIG.app.console.text_size,
                 CONSOLE_COLORS.BLACK.value,
-                curr_time_prefix + msg)
+                curr_time_prefix + msg
+            )
         self.console.append(text)
 
     @qtc.pyqtSlot(str)
