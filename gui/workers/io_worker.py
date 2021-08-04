@@ -1,10 +1,10 @@
 import cv2 as cv
 
-from message.message import Message
+from enums import BODY_KEY, FILE_TYPE, IO_OPERATION_TYPE, JOB_TYPE, MESSAGE_STATUS, MESSAGE_TYPE, SIGNAL_OWNER
 
 from gui.workers.worker import Worker
 
-from enums import BODY_KEY, FILE_TYPE, IO_OPERATION_TYPE, MESSAGE_STATUS, MESSAGE_TYPE, SIGNAL_OWNER
+from message.message import Body, Message
 
 from utils import resize_image_retain_aspect_ratio
 
@@ -30,9 +30,7 @@ class IO_Worker(Worker):
                 resize = data[BODY_KEY.RESIZE]
 
                 if resize:
-
                     new_size = data[BODY_KEY.NEW_SIZE]
-
                     file = resize_image_retain_aspect_ratio(file, new_size)
 
                 cv.imwrite(file_path, file)
@@ -41,7 +39,25 @@ class IO_Worker(Worker):
         if multipart:
             part = data[BODY_KEY.PART]
             total = data[BODY_KEY.TOTAL]
-            print(str(part) + '/' + str(total))
+            msg = Message(
+                MESSAGE_TYPE.ANSWER,
+                MESSAGE_STATUS.OK,
+                SIGNAL_OWNER.IO_WORKER,
+                SIGNAL_OWNER.JOB_PROGRESS,
+                Body(
+                    JOB_TYPE.IO_OPERATION,
+                    {
+                        BODY_KEY.PART: part,
+                        BODY_KEY.TOTAL: total,
+                    },
+                    part == total,
+                )
+            )
+
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        #     print(str(part) + '/' + str(total))
+
+        
 
         # op_type, \
         #     file_path, \
