@@ -12,6 +12,7 @@ from enums import (
     MESSAGE_STATUS,
     MESSAGE_TYPE,
     SIGNAL_OWNER,
+    BODY_KEY,
 )
 
 from gui.widgets.base_widget import BaseWidget
@@ -275,13 +276,13 @@ class DataSelector(BaseWidget):
         process for input or output data.
         """
         body_data = {
-            'resize': False,
-            'data_type': self.data_type,
-            'video_path': self.video_path,
+            BODY_KEY.RESIZE: False,
+            BODY_KEY.DATA_TYPE: self.data_type,
+            BODY_KEY.VIDEO_PATH: self.video_path,
         }
         if self.resize_frames_chk.isChecked():
-            body_data['resize'] = True
-            body_data['biggest_frame_dim'] = self.biggest_frame_dim_value
+            body_data[BODY_KEY.RESIZE] = True
+            body_data[BODY_KEY.NEW_SIZE] = self.biggest_frame_dim_value
 
         msg = Message(
             MESSAGE_TYPE.REQUEST,
