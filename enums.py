@@ -36,6 +36,8 @@ class DIALOG_MESSAGE_TYPE(Enum):
 
 
 class SIGNAL_OWNER(Enum):
+    NO_OWNER = 'no_owner'
+    DATA_SELECTOR = 'data_selector'
     CONOSLE = 'console'
     JOB_PROGRESS = 'job_progress'
     CONFIGURE_WIDGET = 'configure_widget'
@@ -111,3 +113,6 @@ class BODY_KEY(Enum):
     VIDEO_PATH = 'video_path'
     DATA_DIRECTORY = 'data_directory'
     DATA_TYPE = 'data_type'
+    WIDGET = 'widget'
+    METHOD = 'method'
+    ARGS = 'args'
