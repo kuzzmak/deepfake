@@ -176,6 +176,9 @@ class DetectionAlgorithmTab(BaseWidget):
         self.setLayout(layout)
 
     def add_picture_viewer_signals(self):
+        """Adds input picture viewer and output picture viewer signals
+        to message worker so detected faces can be shown in gui.
+        """
         # message for input picture viewer
         msg = Message(
             MESSAGE_TYPE.REQUEST,
@@ -194,25 +197,57 @@ class DetectionAlgorithmTab(BaseWidget):
         self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
         # message for output picture viewer
-        # msg.body.data[BODY_KEY.SIGNAL_OWNER] = \
-        #     SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER
-        # msg.body.data[BODY_KEY.SIGNAL] = self.output_picture_added_sig,
-        # self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.DETECTION_ALGORITHM_TAB,
+            SIGNAL_OWNER.MESSAGE_WORKER,
+            Body(
+                JOB_TYPE.ADD_SIGNAL,
+                {
+                    BODY_KEY.SIGNAL_OWNER:
+                    SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER,
+                    BODY_KEY.SIGNAL: self.output_picture_added_sig,
+                }
+            )
+        )
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
     @qtc.pyqtSlot(Message)
     def input_picture_added(self, msg: Message):
+        """New face pictures added to input picture viewer.
+
+        Parameters
+        ----------
+        msg : Message
+            message containing faces
+        """
         data = msg.body.data
         image = data[BODY_KEY.FILE]
         self.input_picture_viewer.pictures_added_sig.emit([image])
 
     @qtc.pyqtSlot(Message)
     def output_picture_added(self, msg: Message):
+        """New face pictures added to output picture viewer.
+
+        Parameters
+        ----------
+        msg : Message
+            message containing faces
+        """
         data = msg.body.data
         image = data[BODY_KEY.FILE]
         self.output_picture_viewer.pictures_added_sig.emit([image])
 
     @qtc.pyqtSlot(int)
     def algorithm_selected(self, id: int):
+        """Face detection algorithm selection changed.
+
+        Parameters
+        ----------
+        id : int
+            if of the button selected
+        """
         if id == -2:
             self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.MTCNN
         elif id == -3:
@@ -221,6 +256,13 @@ class DetectionAlgorithmTab(BaseWidget):
             self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.S3FD
 
     def select_faces_directory(self, data_type: DATA_TYPE):
+        """Selects input or output faces directory.
+
+        Parameters
+        ----------
+        data_type : DATA_TYPE
+            input or output data directory
+        """
         directory = qwt.QFileDialog.getExistingDirectory(
             self, 'getExistingDirectory', './')
         if directory:
@@ -241,6 +283,8 @@ class DetectionAlgorithmTab(BaseWidget):
         self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
 
     def select_model_path(self):
+        """Selects where model for face detection is located.
+        """
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
         model_path, _ = qwt.QFileDialog.getOpenFileName(
@@ -249,8 +293,19 @@ class DetectionAlgorithmTab(BaseWidget):
             "data/weights",
             "Model file (*.pth)",
             options=options)
+
         if model_path:
             self.model_path = model_path
+
+            msg = Messages.CONSOLE_PRINT(
+                CONSOLE_MESSAGE_TYPE.LOG,
+                f'Selected model: {model_path}.'
+            )
+
+        else:
+            msg = Messages.FILE_NOT_SELECTED()
+
+        self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
 
     def start_detection(self):
         msg = Message(
