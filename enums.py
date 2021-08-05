@@ -37,14 +37,24 @@ class DIALOG_MESSAGE_TYPE(Enum):
 
 class SIGNAL_OWNER(Enum):
     NO_OWNER = 'no_owner'
-    DATA_SELECTOR = 'data_selector'
-    CONSOLE = 'console'
-    JOB_PROGRESS = 'job_progress'
+
+    # action signals
     CONFIGURE_WIDGET = 'configure_widget'
     FRAMES_EXTRACTION = 'frames_extraction'
     INPUT_DATA_DIRECTORY = 'input_data_directory'
     OUTPUT_DATA_DIRECTORY = 'output_data_directory'
 
+    # specific widget signals
+    CONSOLE = 'console'
+    JOB_PROGRESS = 'job_progress'
+    DATA_SELECTOR = 'data_selector'
+    DETECTION_ALGORITHM_TAB = 'detection_algorithm_tab'
+    DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER = \
+        'detection_algorithm_tab_input_picture_viewer'
+    DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER = \
+        'detection_algorithm_tab_output_picture_viewer'
+
+    # worker signals
     IO_WORKER = 'io_worker'
     MESSAGE_WORKER = 'message_worker'
     FACE_DETECTION_WORKER = 'face_detection_worker'
@@ -77,6 +87,8 @@ class JOB_TYPE(Enum):
     FRAME_EXTRACTION = 'frame_extraction'
     WIDGET_CONFIGURATION = 'widget_configuration'
     FACE_DETECTION = 'face_detection'
+    IMAGE_DISPLAY = 'image_display'
+    ADD_SIGNAL = 'add_dignal'
     NO_JOB = 'no_job'
 
 
@@ -101,6 +113,8 @@ class FILE_TYPE(Enum):
 
 class BODY_KEY(Enum):
     IO_OPERATION_TYPE = 'io_operation_type'
+    INPUT_DATA_DIRECTORY = 'input_data_directory'
+    OUTPUT_DATA_DIRECTORY = 'output_data_directory'
     FILE_PATH = 'file_path'
     NEW_FILE_PATH = 'new_file_path'
     FILE = 'file'
@@ -118,3 +132,7 @@ class BODY_KEY(Enum):
     ARGS = 'args'
     CONSOLE_MESSAGE_TYPE = 'console_message_type'
     MESSAGE = 'message'
+    SIGNAL = 'signal'
+    SIGNAL_OWNER = 'signal_owner'
+    MODEL_PATH = 'model_path'
+    ALGORITHM = 'algorithm'
