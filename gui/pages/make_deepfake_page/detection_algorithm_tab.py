@@ -41,7 +41,7 @@ class DetectionAlgorithmTab(BaseWidget):
         self.output_picture_added_sig.connect(self.output_picture_added)
 
         self.init_ui()
-        self.add_picture_viewer_signals()
+        self.add_signals()
 
     def init_ui(self):
         layout = qwt.QHBoxLayout()
@@ -175,7 +175,7 @@ class DetectionAlgorithmTab(BaseWidget):
 
         self.setLayout(layout)
 
-    def add_picture_viewer_signals(self):
+    def add_signals(self):
         """Adds input picture viewer and output picture viewer signals
         to message worker so detected faces can be shown in gui.
         """
@@ -312,12 +312,12 @@ class DetectionAlgorithmTab(BaseWidget):
             MESSAGE_TYPE.REQUEST,
             MESSAGE_STATUS.OK,
             SIGNAL_OWNER.DETECTION_ALGORITHM_TAB,
-            SIGNAL_OWNER.FACE_DETECTION_WORKER,
+            SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE_DETECT_FACES,
             Body(
                 JOB_TYPE.FACE_DETECTION,
                 {
-                    BODY_KEY.DATA_TYPE: DATA_TYPE.INPUT,
-                    BODY_KEY.INPUT_DATA_DIRECTORY: self.input_faces_directory,
+                    BODY_KEY.INPUT_FACES_DIRECTORY: self.input_faces_directory,
+                    BODY_KEY.OUTPUT_FACES_DIRECTORY: self.output_faces_directory,
                     BODY_KEY.MODEL_PATH: self.model_path,
                     BODY_KEY.ALGORITHM: self.algorithm_selected_value,
                 }
