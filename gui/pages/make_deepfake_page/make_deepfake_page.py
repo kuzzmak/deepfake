@@ -63,9 +63,15 @@ class MakeDeepfakePage(Page):
             SIGNAL_OWNER.FRAMES_EXTRACTION: self.extract_frames_sig,
         }
         data_tab = DataTab(data_tab_signals)
-
         self.tab_wgt.addTab(data_tab, 'Data')
-        self.tab_wgt.addTab(DetectionAlgorithmTab(), 'Detection algorithm')
+
+        detection_algorithm_tab_signals = {
+            SIGNAL_OWNER.CONSOLE: self.signals[SIGNAL_OWNER.CONSOLE],
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+        }
+        detection_algorithm_tab = DetectionAlgorithmTab(
+            detection_algorithm_tab_signals)
+        self.tab_wgt.addTab(detection_algorithm_tab, 'Detection algorithm')
 
         layout.addWidget(self.tab_wgt)
 
