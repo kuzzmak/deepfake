@@ -115,7 +115,7 @@ class DataSelector(BaseWidget):
         right_part_layout.addWidget(qwt.QLabel(text='Format: '))
 
         image_format_dropdown = qwt.QComboBox()
-        image_format_dropdown.addItem(IMAGE_FORMATS.JPG.value)
+        image_format_dropdown.addItem(IMAGE_FORMATS.PNG.value)
         image_format_dropdown.addItem(IMAGE_FORMATS.JPG.value)
         right_part_layout.addWidget(image_format_dropdown)
 
