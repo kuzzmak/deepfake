@@ -8,11 +8,14 @@ from gui.pages.make_deepfake_page.data_tab import DataTab
 from gui.pages.make_deepfake_page.detection_algorithm_tab \
     import DetectionAlgorithmTab
 
-from message.message import Message
+from message.message import Body, Message
 
 from enums import (
     BODY_KEY,
     DATA_TYPE,
+    JOB_TYPE,
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
     SIGNAL_OWNER,
 )
 
@@ -27,6 +30,7 @@ class MakeDeepfakePage(Page):
     input_data_directory_sig = qtc.pyqtSignal(str)
     output_data_directory_sig = qtc.pyqtSignal(str)
     extract_frames_sig = qtc.pyqtSignal(Message)
+    detect_faces_sig = qtc.pyqtSignal(Message)
 
     def __init__(self,
                  parent,
@@ -47,8 +51,10 @@ class MakeDeepfakePage(Page):
         self.output_data_directory_sig.connect(
             self.output_data_directory_selected)
         self.extract_frames_sig.connect(self.extract_frames)
+        self.detect_faces_sig.connect(self.detect_faces)
 
         self.init_ui()
+        self.add_signals()
         self.setWindowTitle(MAKE_DEEPFAKE_PAGE_TITLE)
 
     def init_ui(self):
@@ -76,6 +82,23 @@ class MakeDeepfakePage(Page):
         layout.addWidget(self.tab_wgt)
 
         self.setLayout(layout)
+
+    def add_signals(self):
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE,
+            SIGNAL_OWNER.MESSAGE_WORKER,
+            Body(
+                JOB_TYPE.ADD_SIGNAL,
+                {
+                    BODY_KEY.SIGNAL_OWNER:
+                    SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE_DETECT_FACES,
+                    BODY_KEY.SIGNAL: self.detect_faces_sig,
+                }
+            )
+        )
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
     @qtc.pyqtSlot(str)
     def input_data_directory_selected(self, directory: str):
@@ -110,4 +133,10 @@ class MakeDeepfakePage(Page):
         self.send_message(msg)
 
     def detect_faces(self, msg: Message):
-        ...
+        msg.body.data[BODY_KEY.INPUT_DATA_DIRECTORY] = self.input_data_directory
+        msg.body.data[BODY_KEY.OUTPUT_DATA_DIRECTORY] = self.output_data_directory
+        
+        msg.sender = SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE
+        msg.recipient = SIGNAL_OWNER.FACE_DETECTION_WORKER
+        
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
