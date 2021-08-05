@@ -211,7 +211,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def register_pages(self):
         for page in [StartPage, MakeDeepfakePage]:
             page_signals = {
-                SIGNAL_OWNER.CONSOLE: self.console_print_sig
+                SIGNAL_OWNER.CONSOLE: self.console_print_sig,
+                SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
             }
             p = page(self, page_signals)
             self.register_page(p)
