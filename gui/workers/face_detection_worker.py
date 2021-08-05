@@ -6,7 +6,7 @@ import cv2 as cv
 
 from PIL import Image
 
-from enums import FACE_DETECTION_ALGORITHM, JOB_TYPE, MESSAGE_STATUS, MESSAGE_TYPE
+from enums import BODY_KEY, DATA_TYPE, FACE_DETECTION_ALGORITHM, JOB_TYPE, MESSAGE_STATUS, MESSAGE_TYPE, SIGNAL_OWNER
 
 from core.face_detection.algorithms.s3fd.data.config import cfg
 from core.face_detection.algorithms.s3fd.s3fd import build_s3fd
@@ -14,7 +14,7 @@ from core.face_detection.algorithms.s3fd.utils.augmentations import to_chw_bgr
 
 from gui.workers.worker import Worker
 
-from message.message import Message, MessageBody, AnswerBody2
+from message.message import Body, Message
 
 from utils import get_file_paths_from_dir
 
@@ -32,16 +32,21 @@ class FaceDetectionWorker(Worker):
         super().__init__(*args, **kwargs)
 
     def process(self, msg: Message):
+        data = msg.body.data
 
-        faces_directory, model_path, algorithm = msg.body.get_data()
+        data_type = data[BODY_KEY.DATA_TYPE]
+
+        if data_type == DATA_TYPE.INPUT:
+            faces_directory = data[BODY_KEY.INPUT_DATA_DIRECTORY]
+        else:
+            faces_directory = data[BODY_KEY.OUTPUT_DATA_DIRECTORY]
+
+        algorithm = data[BODY_KEY.ALGORITHM]
+        model_path = data[BODY_KEY.MODEL_PATH]
+
         picture_paths = get_file_paths_from_dir(faces_directory)
 
-        print(faces_directory)
-        print(model_path)
-        print(algorithm)
-
         if algorithm == FACE_DETECTION_ALGORITHM.S3FD:
-
             net = build_s3fd('test', cfg.NUM_CLASSES)
             net.load_state_dict(torch.load(
                 model_path, map_location=torch.device('cpu')))
@@ -52,17 +57,20 @@ class FaceDetectionWorker(Worker):
 
             extraced_faces = detect(net, img_path, thresh)
 
-            msg = Message(
-                MESSAGE_TYPE.ANSWER,
-                AnswerBody2(
-                    status=MESSAGE_STATUS.OK,
-                    job_type=JOB_TYPE.FACE_DETECTION,
-                    finished=False,
-                    data={
-                        'faces': extraced_faces,
-                    }
+            for face in extraced_faces:
+                msg = Message(
+                    MESSAGE_TYPE.REQUEST,
+                    MESSAGE_STATUS.OK,
+                    SIGNAL_OWNER.FACE_DETECTION_WORKER,
+                    SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER,
+                    Body(
+                        JOB_TYPE.IMAGE_DISPLAY,
+                        {
+                            BODY_KEY.FILE: face,
+                        }
+                    )
                 )
-            )
+                self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
 
 def detect(net, img_path, thresh):
@@ -104,7 +112,7 @@ def detect(net, img_path, thresh):
             left_up, right_down = (int(pt[0]), int(
                 pt[1])), (int(pt[2]), int(pt[3]))
             j += 1
-            faces.append((left_up, right_down))
+            faces.append((*left_up, *right_down))
 
     extracted_faces = extract_faces(faces, img)
     return extracted_faces
@@ -121,11 +129,10 @@ def detect(net, img_path, thresh):
 
 
 def extract_faces(faces, img):
-
     extracted_faces = []
 
     for face in faces:
         x1, y1, x2, y2 = face
         extracted_faces.append(img[y1: y2, x1: x2])
 
-    return extract_faces
+    return extracted_faces
