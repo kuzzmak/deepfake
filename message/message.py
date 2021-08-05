@@ -171,6 +171,11 @@ class Messages:
         'No directory selected.'
     )
 
+    FILE_NOT_SELECTED = CONSOLE_PRINT(
+        CONSOLE_MESSAGE_TYPE.WARNING,
+        'No file selected.'
+    )
+
     NO_IMAGES_FOUND = CONSOLE_PRINT(
         CONSOLE_MESSAGE_TYPE.WARNING,
         'No images found in directory.'
