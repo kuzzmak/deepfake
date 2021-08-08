@@ -1,6 +1,6 @@
 from datetime import datetime
-from gui.workers.threads.face_detection_worker_thread \
-    import FaceDetectionWorkerThread
+
+import torch
 
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
@@ -14,6 +14,8 @@ from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 
 from gui.templates.main_page import Ui_main_page
 
+from gui.workers.threads.face_detection_worker_thread \
+    import FaceDetectionWorkerThread
 from gui.workers.threads.frames_extraction_worker_thread \
     import FramesExtractionWorkerThread
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
@@ -194,13 +196,52 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def settings(self):
         settings_window = qwt.QMainWindow(self)
-        cw = qwt.QWidget()
-        layout = qwt.QVBoxLayout()
-        btn_ok = qwt.QPushButton(text='ok')
-        layout.addWidget(btn_ok)
-        cw.setLayout(layout)
-        settings_window.setCentralWidget(cw)
+        settings_window.setWindowTitle('Settings')
+        settings_window.setFixedSize(500, 200)
+
+        central_wgt = qwt.QWidget()
+        central_wgt_layout = qwt.QVBoxLayout()
+        central_wgt.setLayout(central_wgt_layout)
+
+        device_row = qwt.QWidget()
+        device_row_layout = qwt.QHBoxLayout()
+        device_row.setLayout(device_row_layout)
+        device_row_layout.addWidget(qwt.QLabel(text='Device'))
+        self.devices_dropdown = qwt.QComboBox()
+        self.devices_dropdown.addItem('cpu')
+
+        if torch.cuda.device_count() > 0:
+            self.devices_dropdown.addItem('cuda')
+
+        device_row_layout.addWidget(self.devices_dropdown)
+
+        central_wgt_layout.addWidget(device_row)
+
+        button_row = qwt.QWidget()
+        button_row_layout = qwt.QHBoxLayout()
+        button_row.setLayout(button_row_layout)
+
+        spacer = qwt.QSpacerItem(
+            1, 1, qwt.QSizePolicy.MinimumExpanding, qwt.QSizePolicy.Fixed)
+        button_row_layout.addItem(spacer)
+
+        ok_btn = qwt.QPushButton(text='Ok')
+        ok_btn.setFixedWidth(120)
+        ok_btn.clicked.connect(self.save_settings)
+        button_row_layout.addWidget(ok_btn)
+
+        cancel_btn = qwt.QPushButton(text='Cancel')
+        cancel_btn.setFixedWidth(120)
+        cancel_btn.clicked.connect(settings_window.close)
+        button_row_layout.addWidget(cancel_btn)
+
+        central_wgt_layout.addWidget(button_row)
+
+        settings_window.setCentralWidget(central_wgt)
         settings_window.show()
+
+    def save_settings(self):
+        print(self.devices_dropdown.currentText())
 
     def register_page(self, page: Page):
         self.m_pages[page.page_name] = page
