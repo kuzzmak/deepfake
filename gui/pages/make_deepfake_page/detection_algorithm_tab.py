@@ -308,6 +308,8 @@ class DetectionAlgorithmTab(BaseWidget):
         self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
 
     def start_detection(self):
+        """Sends message with faces directories to make deepfake page.
+        """
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             MESSAGE_STATUS.OK,
