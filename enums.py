@@ -44,6 +44,11 @@ class SIGNAL_OWNER(Enum):
     INPUT_DATA_DIRECTORY = 'input_data_directory'
     OUTPUT_DATA_DIRECTORY = 'output_data_directory'
 
+    MAKE_DEEPFAKE_PAGE_DETECT_FACES = 'make_deepfake_page_detect_faces'
+
+    # pages
+    MAKE_DEEPFAKE_PAGE = 'make_deepfake_page'
+
     # specific widget signals
     CONSOLE = 'console'
     JOB_PROGRESS = 'job_progress'
@@ -115,6 +120,8 @@ class BODY_KEY(Enum):
     IO_OPERATION_TYPE = 'io_operation_type'
     INPUT_DATA_DIRECTORY = 'input_data_directory'
     OUTPUT_DATA_DIRECTORY = 'output_data_directory'
+    INPUT_FACES_DIRECTORY = 'input_faces_directory'
+    OUTPUT_FACES_DIRECTORY = 'output_faces_directory'
     FILE_PATH = 'file_path'
     NEW_FILE_PATH = 'new_file_path'
     FILE = 'file'
