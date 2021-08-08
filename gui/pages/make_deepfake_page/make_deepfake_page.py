@@ -133,10 +133,19 @@ class MakeDeepfakePage(Page):
         self.send_message(msg)
 
     def detect_faces(self, msg: Message):
+        """Receives signal from detection algorithm tab which contains
+        faces directories, algorithm and model path. Adds input and output
+        directories and forwards received message to face detection worker.
+
+        Parameters
+        ----------
+        msg : Message
+            message from detection algorithm tab
+        """
         msg.body.data[BODY_KEY.INPUT_DATA_DIRECTORY] = self.input_data_directory
         msg.body.data[BODY_KEY.OUTPUT_DATA_DIRECTORY] = self.output_data_directory
-        
+
         msg.sender = SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE
         msg.recipient = SIGNAL_OWNER.FACE_DETECTION_WORKER
-        
+
         self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
