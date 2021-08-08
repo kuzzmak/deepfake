@@ -6,7 +6,14 @@ import cv2 as cv
 
 from PIL import Image
 
-from enums import BODY_KEY, DATA_TYPE, FACE_DETECTION_ALGORITHM, JOB_TYPE, MESSAGE_STATUS, MESSAGE_TYPE, SIGNAL_OWNER
+from enums import (
+    BODY_KEY,
+    FACE_DETECTION_ALGORITHM,
+    JOB_TYPE,
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
+    SIGNAL_OWNER,
+)
 
 from core.face_detection.algorithms.s3fd.data.config import cfg
 from core.face_detection.algorithms.s3fd.s3fd import build_s3fd
@@ -34,28 +41,24 @@ class FaceDetectionWorker(Worker):
     def process(self, msg: Message):
         data = msg.body.data
 
-        data_type = data[BODY_KEY.DATA_TYPE]
-
-        if data_type == DATA_TYPE.INPUT:
-            faces_directory = data[BODY_KEY.INPUT_DATA_DIRECTORY]
-        else:
-            faces_directory = data[BODY_KEY.OUTPUT_DATA_DIRECTORY]
-
+        input_data_directory = data[BODY_KEY.INPUT_DATA_DIRECTORY]
+        output_data_directory = data[BODY_KEY.OUTPUT_DATA_DIRECTORY]
+        input_faces_directory = data[BODY_KEY.INPUT_FACES_DIRECTORY]
+        output_faces_directory = data[BODY_KEY.OUTPUT_FACES_DIRECTORY]
         algorithm = data[BODY_KEY.ALGORITHM]
         model_path = data[BODY_KEY.MODEL_PATH]
 
-        picture_paths = get_file_paths_from_dir(faces_directory)
+        input_images = get_file_paths_from_dir(input_data_directory)
 
         if algorithm == FACE_DETECTION_ALGORITHM.S3FD:
             net = build_s3fd('test', cfg.NUM_CLASSES)
             net.load_state_dict(torch.load(
                 model_path, map_location=torch.device('cpu')))
             net.eval()
-            thresh = 0.6
 
-            img_path = 'C:\\Users\\tonkec\\Documents\\deepfake\\core\\face_detection\\algorithms\\s3fd\\img\\test3.jpg'
+        for img_path in input_images:
 
-            extraced_faces = detect(net, img_path, thresh)
+            extraced_faces = detect(net, img_path, 0.6)
 
             for face in extraced_faces:
                 msg = Message(
