@@ -179,7 +179,7 @@ class DataSelector(BaseWidget):
         #     "getExistingDirectory",
         #     "./"
         # )
-        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\dummy_pics"
+        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
 
         if directory:
 
