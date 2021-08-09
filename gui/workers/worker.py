@@ -1,11 +1,12 @@
-# import time
 import abc
+from typing import Dict, Optional
+
 import PyQt5
 import PyQt5.QtCore as qtc
 
-from message.message import Message
-
 from enums import SIGNAL_OWNER
+
+from message.message import Message
 
 
 class WorkerMeta(PyQt5.sip.wrappertype, abc.ABCMeta):
@@ -16,11 +17,14 @@ class Worker(qtc.QObject, metaclass=WorkerMeta):
 
     signals = dict()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
-
-    def add_signal(self, sig: qtc.pyqtSignal, sig_owner: SIGNAL_OWNER):
-        self.signals[sig_owner] = sig
+        self.signals = signals
 
     @abc.abstractclassmethod
     @qtc.pyqtSlot(Message)
