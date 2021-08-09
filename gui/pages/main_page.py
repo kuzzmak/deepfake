@@ -1,7 +1,5 @@
 from datetime import datetime
 
-import torch
-
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -195,9 +193,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             method(*method_args)
 
     def settings(self):
-        settings_window = qwt.QMainWindow(self)
-        settings_window.setWindowTitle('Settings')
-        settings_window.setFixedSize(500, 200)
+        """App settings window.
+        """
+        self.settings_window = qwt.QMainWindow(self)
+        self.settings_window.setWindowTitle('Settings')
+        self.settings_window.setFixedSize(500, 200)
 
         central_wgt = qwt.QWidget()
         central_wgt_layout = qwt.QVBoxLayout()
@@ -206,13 +206,12 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         device_row = qwt.QWidget()
         device_row_layout = qwt.QHBoxLayout()
         device_row.setLayout(device_row_layout)
+
         device_row_layout.addWidget(qwt.QLabel(text='Device'))
+
         self.devices_dropdown = qwt.QComboBox()
-        self.devices_dropdown.addItem('cpu')
-
-        if torch.cuda.device_count() > 0:
-            self.devices_dropdown.addItem('cuda')
-
+        for device in APP_CONFIG.app.core.devices:
+            self.devices_dropdown.addItem(device.value, device)
         device_row_layout.addWidget(self.devices_dropdown)
 
         central_wgt_layout.addWidget(device_row)
@@ -232,16 +231,20 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         cancel_btn = qwt.QPushButton(text='Cancel')
         cancel_btn.setFixedWidth(120)
-        cancel_btn.clicked.connect(settings_window.close)
+        cancel_btn.clicked.connect(self.settings_window.close)
         button_row_layout.addWidget(cancel_btn)
 
         central_wgt_layout.addWidget(button_row)
 
-        settings_window.setCentralWidget(central_wgt)
-        settings_window.show()
+        self.settings_window.setCentralWidget(central_wgt)
+        self.settings_window.show()
 
     def save_settings(self):
-        print(self.devices_dropdown.currentText())
+        """Updates current app setting with new ones.
+        """
+        current_device = self.devices_dropdown.currentData()
+        APP_CONFIG.app.core.current_device = current_device
+        self.settings_window.close()
 
     def register_page(self, page: Page):
         self.m_pages[page.page_name] = page
