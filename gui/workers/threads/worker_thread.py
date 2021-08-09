@@ -16,7 +16,10 @@ class WorkerThread(qtc.QThread):
         ----------
         worker : Worker
             Worker class which should be in it's separate thread
-            so gui doesn't freeze
+            so gui doesn't freeze, does some work
+        worker_signal : qtc.pyqtSignal
+            signal to which someone emits Message for worker to
+            do some work
         """
         super().__init__(*args, **kwargs)
 
