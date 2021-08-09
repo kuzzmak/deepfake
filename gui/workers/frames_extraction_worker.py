@@ -1,4 +1,7 @@
 import os
+from typing import Dict, Optional
+
+import PyQt5.QtCore as qtc
 
 import cv2 as cv
 
@@ -24,8 +27,13 @@ from enums import (
 
 class FramesExtractionWorker(Worker):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+            self,
+            signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+            *args,
+            **kwargs
+    ):
+        super().__init__(signals, *args, **kwargs)
 
     def process(self, msg: Message):
         data = msg.body.data
@@ -82,3 +90,11 @@ class FramesExtractionWorker(Worker):
 
             success, image = vidcap.read()
             count += 1
+            # print('from frams')
+            # print(self.signals)
+            # print('conf widget')
+            # print(self.signals[SIGNAL_OWNER.CONFIGURE_WIDGET])
+
+            # wait for sigal from io worker that it saved picture
+            if success:
+                _ = self.wait_queue.get()
