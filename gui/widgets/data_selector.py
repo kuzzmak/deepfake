@@ -248,7 +248,7 @@ class DataSelector(BaseWidget):
                 )
 
         else:
-            msg = Messages.DIRECTORY_NOT_SELECTED()
+            msg = Messages.DIRECTORY_NOT_SELECTED
 
         self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
 
