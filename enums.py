@@ -116,6 +116,11 @@ class FILE_TYPE(Enum):
     IMAGE = 'image'
 
 
+class DEVICE(Enum):
+    CPU = 'cpu'
+    CUDA = 'cuda'
+
+
 class BODY_KEY(Enum):
     IO_OPERATION_TYPE = 'io_operation_type'
     INPUT_DATA_DIRECTORY = 'input_data_directory'
