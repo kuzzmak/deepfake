@@ -5,7 +5,11 @@ from gui.workers.worker import Worker
 
 class WorkerThread(qtc.QThread):
 
-    def __init__(self, worker: Worker, *args, **kwargs):
+    def __init__(self,
+                 worker: Worker,
+                 worker_signal: qtc.pyqtSignal,
+                 *args,
+                 **kwargs):
         """Base class for any worker related threads.
 
         Parameters
@@ -17,7 +21,5 @@ class WorkerThread(qtc.QThread):
         super().__init__(*args, **kwargs)
 
         self.worker = worker
+        worker_signal.connect(self.worker.process)
         self.worker.moveToThread(self)
-
-    def run(self) -> None:
-        return super().run()
