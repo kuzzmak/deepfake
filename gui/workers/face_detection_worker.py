@@ -1,3 +1,7 @@
+from typing import Dict, Optional
+
+import PyQt5.QtCore as qtc
+
 import torch
 
 import numpy as np
@@ -35,8 +39,13 @@ else:
 
 class FaceDetectionWorker(Worker):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+            self,
+            signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+            *args,
+            **kwargs
+    ):
+        super().__init__(signals, *args, **kwargs)
 
     def process(self, msg: Message):
         data = msg.body.data
