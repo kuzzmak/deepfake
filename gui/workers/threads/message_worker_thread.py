@@ -8,6 +8,15 @@ from gui.workers.message_worker import MessageWorker
 
 
 class MessageWorkerThread(WorkerThread):
+    """Worker for sending messages throughout the app. Everybody
+    sends messages to this thread and then this thread redirects
+    them to the correct recipient.
+
+    Parameters
+    ----------
+    WorkerThread : WorkerThread
+        base worker thread class
+    """
 
     def __init__(
         self,
