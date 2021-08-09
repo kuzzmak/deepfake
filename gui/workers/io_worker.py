@@ -1,3 +1,7 @@
+from typing import Dict, Optional
+
+import PyQt5.QtCore as qtc
+
 import cv2 as cv
 
 from enums import (
@@ -19,8 +23,13 @@ from utils import resize_image_retain_aspect_ratio
 
 class IO_Worker(Worker):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        *args,
+        **kwargs
+    ):
+        super().__init__(signals, *args, **kwargs)
 
     def process(self, msg: Message):
 
@@ -63,3 +72,19 @@ class IO_Worker(Worker):
                 )
             )
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+
+        # message for next frame
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.IO_WORKER,
+            SIGNAL_OWNER.NEXT_ELEMENT_WORKER,
+            Body(
+                JOB_TYPE.NEXT_ELEMENT,
+                {
+                    BODY_KEY.SIGNAL_OWNER:
+                    SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
+                }
+            )
+        )
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
