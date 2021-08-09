@@ -1,4 +1,12 @@
+from enums import DEVICE
 from easydict import EasyDict
+
+import torch
+
+devices = [DEVICE.CPU]
+if torch.cuda.device_count() > 0:
+    devices.append(DEVICE.CUDA)
+
 
 _C = EasyDict()
 APP_CONFIG = _C
@@ -14,6 +22,8 @@ _C.app.window.preferred_width = 1280
 _C.app.window.preferred_height = 720
 
 _C.app.core = EasyDict()
+_C.app.core.devices = devices
+_C.app.core.current_device = DEVICE.CPU
 
 _C.app.core.face_detection = EasyDict()
 
