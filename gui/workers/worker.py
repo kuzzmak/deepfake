@@ -23,6 +23,13 @@ class Worker(qtc.QObject, metaclass=WorkerMeta):
         *args,
         **kwargs
     ):
+        """Base class for any worker object.
+
+        Parameters
+        ----------
+        signals : Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]], optional
+            signals to which worker should have access to, by default dict()
+        """
         super().__init__(*args, **kwargs)
         self.signals = signals
 
