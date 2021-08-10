@@ -162,3 +162,4 @@ class BODY_KEY(Enum):
     MODEL_PATH = 'model_path'
     ALGORITHM = 'algorithm'
     WORKER = 'worker'
+    DEVICE = 'device'
