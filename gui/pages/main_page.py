@@ -45,18 +45,21 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     show_menubar_sig = qtc.pyqtSignal(bool)
     show_console_sig = qtc.pyqtSignal(bool)
     show_toolbar_sig = qtc.pyqtSignal(bool)
-    console_print_sig = qtc.pyqtSignal(Message)
     job_progress_sig = qtc.pyqtSignal(Message)
-    job_progressbar_value_sig = qtc.pyqtSignal(int)
     app_status_label_sig = qtc.pyqtSignal(str)
+    console_print_sig = qtc.pyqtSignal(Message)
     configure_widget_sig = qtc.pyqtSignal(Message)
+    job_progressbar_value_sig = qtc.pyqtSignal(int)
 
     # -- worker signals ---
     io_worker_sig = qtc.pyqtSignal(Message)
-    frame_extraction_worker_sig = qtc.pyqtSignal(Message)
-    face_detection_worker_sig = qtc.pyqtSignal(Message)
     message_worker_sig = qtc.pyqtSignal(Message)
-    # next_element_worker_sig = qtc.pyqtSignal(Message)
+    next_element_worker_sig = qtc.pyqtSignal(Message)
+    face_detection_worker_sig = qtc.pyqtSignal(Message)
+    frames_extraction_worker_sig = qtc.pyqtSignal(Message)
+
+    # -- next element signals ---
+    frames_extraction_worker_next_element_sig = qtc.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -64,8 +67,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.show_menubar_sig.connect(self.show_menubar)
         self.show_console_sig.connect(self.show_console)
         self.show_toolbar_sig.connect(self.show_toolbar)
-        self.console_print_sig.connect(self.console_print)
         self.job_progress_sig.connect(self.job_progress)
+        self.console_print_sig.connect(self.console_print)
         self.configure_widget_sig.connect(self.configure_widget)
 
         self.job_info_window = JobInfoWindow(self)
@@ -74,7 +77,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.setup_io_worker()
         self.setup_frame_extraction_worker()
         self.setup_face_detection_worker()
-        # self.setup_next_element_worker()
+        self.setup_next_element_worker()
         self.setup_message_worker()
 
         self.m_pages = {}
@@ -161,7 +164,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             SIGNAL_OWNER.IO_WORKER: self.io_worker_sig,
             SIGNAL_OWNER.FACE_DETECTION_WORKER: self.face_detection_worker_sig,
             SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER:
-            self.frame_extraction_worker_sig,
+            self.frames_extraction_worker_sig,
+            SIGNAL_OWNER.NEXT_ELEMENT_WORKER: self.next_element_worker_sig,
             SIGNAL_OWNER.JOB_PROGRESS: self.job_progress_sig,
             SIGNAL_OWNER.CONFIGURE_WIDGET: self.configure_widget_sig,
             SIGNAL_OWNER.CONSOLE: self.console_print_sig,
@@ -177,8 +181,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
         }
         self.frames_extraction_worker_thread = FramesExtractionWorkerThread(
-            self.frame_extraction_worker_sig,
+            self.frames_extraction_worker_sig,
             frames_extraction_worker_signals,
+            self.frames_extraction_worker_next_element_sig,
         )
         self.frames_extraction_worker_thread.start()
 
@@ -193,17 +198,14 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.face_detection_worker_thread.start()
 
     def setup_next_element_worker(self):
-        self.next_element_worker_thread = NextElementWorkerThread()
-        self.next_element_worker_thread.worker.add_signal(
-            self.message_worker_sig,
-            SIGNAL_OWNER.MESSAGE_WORKER
-        )
-        self.next_element_worker_thread.worker.add_signal(
-            self.frame_extraction_worker_thread.worker.next_element_sig,
-            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
-        )
-        self.next_element_worker_sig.connect(
-            self.next_element_worker_thread.worker.process
+        next_element_worker_signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
+            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT:
+            self.frames_extraction_worker_next_element_sig,
+        }
+        self.next_element_worker_thread = NextElementWorkerThread(
+            self.next_element_worker_sig,
+            next_element_worker_signals,
         )
         self.next_element_worker_thread.start()
 
