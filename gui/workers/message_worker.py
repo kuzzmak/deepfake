@@ -6,8 +6,8 @@ from message.message import Message
 
 class MessageWorker(Worker):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, signals, *args, **kwargs):
+        super().__init__(signals, *args, **kwargs)
 
     def process(self, msg: Message):
 
@@ -16,6 +16,6 @@ class MessageWorker(Worker):
                 data = msg.body.data
                 signal_owner = data[BODY_KEY.SIGNAL_OWNER]
                 signal = data[BODY_KEY.SIGNAL]
-                self.add_signal(signal, signal_owner)
+                self.signals[signal_owner] = signal
         else:
             self.signals[msg.recipient].emit(msg)
