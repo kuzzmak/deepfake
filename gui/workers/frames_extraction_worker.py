@@ -90,11 +90,7 @@ class FramesExtractionWorker(Worker):
 
             success, image = vidcap.read()
             count += 1
-            # print('from frams')
-            # print(self.signals)
-            # print('conf widget')
-            # print(self.signals[SIGNAL_OWNER.CONFIGURE_WIDGET])
 
             # wait for sigal from io worker that it saved picture
             if success:
-                _ = self.wait_queue.get()
+                _ = self.wait_for_element()
