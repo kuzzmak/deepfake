@@ -1,7 +1,6 @@
 from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
 
 from enums import SIGNAL_OWNER
 
@@ -14,10 +13,12 @@ class Page(BaseWidget):
 
     goto_sig = qtc.pyqtSignal(str)
 
-    def __init__(self,
-                 main_page,
-                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
-                 page_name='page'):
+    def __init__(
+        self,
+        main_page,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        page_name='page',
+    ):
         super().__init__(signals)
 
         self.page_name = page_name
@@ -42,6 +43,3 @@ class Page(BaseWidget):
 
     def goto(self, name):
         self.goto_sig.emit(name)
-
-    def enable_widget(self, widget: qwt.QWidget, enabled: bool):
-        widget.setEnabled(enabled)
