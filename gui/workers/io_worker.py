@@ -73,17 +73,17 @@ class IO_Worker(Worker):
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
         # message for next frame
-        # msg = Message(
-        #     MESSAGE_TYPE.REQUEST,
-        #     MESSAGE_STATUS.OK,
-        #     SIGNAL_OWNER.IO_WORKER,
-        #     SIGNAL_OWNER.NEXT_ELEMENT_WORKER,
-        #     Body(
-        #         JOB_TYPE.NEXT_ELEMENT,
-        #         {
-        #             BODY_KEY.SIGNAL_OWNER:
-        #             SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
-        #         }
-        #     )
-        # )
-        # self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        msg = Message(
+            MESSAGE_TYPE.REQUEST,
+            MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.IO_WORKER,
+            SIGNAL_OWNER.NEXT_ELEMENT_WORKER,
+            Body(
+                JOB_TYPE.NEXT_ELEMENT,
+                {
+                    BODY_KEY.SIGNAL_OWNER:
+                    SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
+                }
+            )
+        )
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
