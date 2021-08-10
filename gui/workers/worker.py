@@ -1,5 +1,6 @@
 import abc
 from typing import Dict, Optional
+import queue
 
 import PyQt5
 import PyQt5.QtCore as qtc
@@ -16,10 +17,13 @@ class WorkerMeta(PyQt5.sip.wrappertype, abc.ABCMeta):
 class Worker(qtc.QObject, metaclass=WorkerMeta):
 
     signals = dict()
+    next_element_sig = qtc.pyqtSignal(bool)
+    wait_queue = queue.Queue()
 
     def __init__(
         self,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        wait_queue: Optional[queue.Queue] = None,
         *args,
         **kwargs
     ):
@@ -32,6 +36,16 @@ class Worker(qtc.QObject, metaclass=WorkerMeta):
         """
         super().__init__(*args, **kwargs)
         self.signals = signals
+        self.wait_queue = wait_queue
+
+    def wait_for_element(self):
+        while True:
+            try:
+                elem = self.wait_queue.get(timeout=0.1)
+                if elem:
+                    return elem
+            except queue.Empty:
+                ...
 
     @abc.abstractclassmethod
     @qtc.pyqtSlot(Message)
