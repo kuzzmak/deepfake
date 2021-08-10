@@ -32,24 +32,30 @@ class MakeDeepfakePage(Page):
     extract_frames_sig = qtc.pyqtSignal(Message)
     detect_faces_sig = qtc.pyqtSignal(Message)
 
-    def __init__(self,
-                 parent,
-                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
-                 * args,
-                 **kwargs):
-        super().__init__(parent,
-                         signals,
-                         page_name=MAKE_DEEPFAKE_PAGE_NAME,
-                         *args,
-                         **kwargs)
+    def __init__(
+        self,
+        parent,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        * args,
+        **kwargs
+    ):
+        super().__init__(
+            parent,
+            signals,
+            page_name=MAKE_DEEPFAKE_PAGE_NAME,
+            *args,
+            **kwargs,
+        )
 
         self.input_data_directory = None
         self.output_data_directory = None
 
         self.input_data_directory_sig.connect(
-            self.input_data_directory_selected)
+            self.input_data_directory_selected,
+        )
         self.output_data_directory_sig.connect(
-            self.output_data_directory_selected)
+            self.output_data_directory_selected,
+        )
         self.extract_frames_sig.connect(self.extract_frames)
         self.detect_faces_sig.connect(self.detect_faces)
 
@@ -63,7 +69,9 @@ class MakeDeepfakePage(Page):
         self.tab_wgt = qwt.QTabWidget()
 
         data_tab_signals = {
-            SIGNAL_OWNER.CONSOLE: self.signals[SIGNAL_OWNER.CONSOLE],
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER
+            ],
             SIGNAL_OWNER.INPUT_DATA_DIRECTORY: self.input_data_directory_sig,
             SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY: self.output_data_directory_sig,
             SIGNAL_OWNER.FRAMES_EXTRACTION: self.extract_frames_sig,
@@ -72,8 +80,9 @@ class MakeDeepfakePage(Page):
         self.tab_wgt.addTab(data_tab, 'Data')
 
         detection_algorithm_tab_signals = {
-            SIGNAL_OWNER.CONSOLE: self.signals[SIGNAL_OWNER.CONSOLE],
-            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER
+            ],
         }
         detection_algorithm_tab = DetectionAlgorithmTab(
             detection_algorithm_tab_signals)
@@ -142,8 +151,10 @@ class MakeDeepfakePage(Page):
         msg : Message
             message from detection algorithm tab
         """
-        msg.body.data[BODY_KEY.INPUT_DATA_DIRECTORY] = self.input_data_directory
-        msg.body.data[BODY_KEY.OUTPUT_DATA_DIRECTORY] = self.output_data_directory
+        msg.body.data[BODY_KEY.INPUT_DATA_DIRECTORY] = \
+            self.input_data_directory
+        msg.body.data[BODY_KEY.OUTPUT_DATA_DIRECTORY] = \
+            self.output_data_directory
 
         msg.sender = SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE
         msg.recipient = SIGNAL_OWNER.FACE_DETECTION_WORKER
