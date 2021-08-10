@@ -4,5 +4,6 @@
 	<file>delete.svg</file>
 	<file>rename.svg</file>
 	<file>warning.svg</file>
+	<file>job_info.svg</file>
 </qresource>
 </RCC>
