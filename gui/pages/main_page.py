@@ -1,4 +1,5 @@
 from datetime import datetime
+from gui.widgets.job_info_window import JobInfoWindow
 
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
@@ -67,6 +68,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.job_progress_sig.connect(self.job_progress)
         self.configure_widget_sig.connect(self.configure_widget)
 
+        self.job_info_window = JobInfoWindow(self)
+
         # -- setup workers --
         self.setup_io_worker()
         self.setup_frame_extraction_worker()
@@ -102,8 +105,18 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.addToolBar(qtc.Qt.LeftToolBarArea, self.toolbar)
         self.toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
         icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_ArrowLeft)
-        self.toolbar.addAction(icon, 'back')
+        back_action = self.toolbar.addAction(icon, 'back')
+        back_action.triggered.connect(self.test)
+
+        job_info = self.toolbar.addAction('job info')
+        job_info.triggered.connect(self.open_job_info)
         self.show_toolbar(False)
+
+    def test(self):
+        print('ok')
+
+    def open_job_info(self):
+        self.job_info_window.show()
 
     def init_menubar(self):
         file_menu = self.menubar.addMenu('File')
