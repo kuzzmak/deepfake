@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import PyQt5.QtCore as qtc
 
@@ -61,8 +61,12 @@ class FaceDetectionWorker(Worker):
 
         if algorithm == FACE_DETECTION_ALGORITHM.S3FD:
             net = build_s3fd('test', cfg.NUM_CLASSES)
-            net.load_state_dict(torch.load(
-                model_path, map_location=torch.device('cpu')))
+            net.load_state_dict(
+                torch.load(
+                    model_path,
+                    map_location=torch.device('cpu')
+                )
+            )
             net.eval()
 
         for img_path in input_images:
@@ -85,13 +89,8 @@ class FaceDetectionWorker(Worker):
                 self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
 
-def detect(net, img_path, thresh):
-    # img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-    img = Image.open(img_path)
-    if img.mode == 'L':
-        img = img.convert('RGB')
-
-    img = np.array(img)
+def detect(net, img_path: str, thresh: float):
+    img = cv.imread(img_path, cv.IMREAD_COLOR)
     height, width, _ = img.shape
     max_im_shrink = np.sqrt(
         1700 * 1200 / (img.shape[0] * img.shape[1]))
@@ -109,8 +108,7 @@ def detect(net, img_path, thresh):
 
     y = net(x)
     detections = y.data
-    scale = torch.Tensor([img.shape[1], img.shape[0],
-                          img.shape[1], img.shape[0]])
+    scale = torch.Tensor([width, height, width, height])
 
     img = cv.imread(img_path, cv.IMREAD_COLOR)
 
@@ -119,28 +117,14 @@ def detect(net, img_path, thresh):
     for i in range(detections.size(1)):
         j = 0
         while detections[0, i, j, 0] >= thresh:
-            # score = detections[0, i, j, 0]
             pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
-            left_up, right_down = (int(pt[0]), int(
-                pt[1])), (int(pt[2]), int(pt[3]))
             j += 1
-            faces.append((*left_up, *right_down))
+            faces.append((int(pt[0]), int(pt[1]), int(pt[2])), int(pt[3]))
 
-    extracted_faces = extract_faces(faces, img)
-    return extracted_faces
-
-    # cv.rectangle(img, left_up, right_bottom, (0, 0, 255), 2)
-    # conf = "{:.3f}".format(score)
-    # point = (int(left_up[0]), int(left_up[1] - 5))
-    # cv2.putText(img, conf, point, cv2.FONT_HERSHEY_COMPLEX, 0.6, (0, 255, 0), 1)
-
-    # t2 = time.time()
-    # print('detect:{} timer:{}'.format(img_path, t2 - t1))
-
-    # cv2.imwrite(os.path.join(args.save_dir, os.path.basename(img_path)), img)
+    return extract_faces(faces, img)
 
 
-def extract_faces(faces, img):
+def extract_faces(faces: List[tuple], img: np.ndarray):
     extracted_faces = []
 
     for face in faces:
