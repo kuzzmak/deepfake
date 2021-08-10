@@ -9,6 +9,13 @@ from gui.workers.next_element_worker import NextElementWorker
 
 
 class NextElementWorkerThread(WorkerThread):
+    """Thread for passing signal for next element to some worker.
+
+    Parameters
+    ----------
+    WorkerThread : WorkerThread
+        base worker thread class
+    """
 
     def __init__(
         self,
