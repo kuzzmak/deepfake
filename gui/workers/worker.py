@@ -44,7 +44,7 @@ class Worker(qtc.QObject, metaclass=WorkerMeta):
     def wait_for_element(self):
         while True:
             try:
-                elem = self.wait_queue.get(timeout=0.1)
+                elem = self.wait_queue.get(timeout=0.001)
                 if elem:
                     return elem
             except queue.Empty:
