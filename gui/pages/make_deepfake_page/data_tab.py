@@ -26,7 +26,8 @@ class DataTab(BaseWidget):
         center_wgt.setLayout(central_layout)
 
         input_wgt_signals = {
-            SIGNAL_OWNER.CONSOLE: self.signals[SIGNAL_OWNER.CONSOLE],
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER],
             SIGNAL_OWNER.INPUT_DATA_DIRECTORY: self.signals[
                 SIGNAL_OWNER.INPUT_DATA_DIRECTORY
             ],
@@ -43,7 +44,9 @@ class DataTab(BaseWidget):
         central_layout.addWidget(line)
 
         output_wgt_signals = {
-            SIGNAL_OWNER.CONSOLE: self.signals[SIGNAL_OWNER.CONSOLE],
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER
+            ],
             SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY: self.signals[
                 SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY
             ],
