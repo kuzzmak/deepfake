@@ -6,6 +6,15 @@ import PyQt5.QtWidgets as qwt
 
 from config import APP_CONFIG
 
+from enums import (
+    APP_STATUS,
+    BODY_KEY,
+    CONSOLE_COLORS,
+    CONSOLE_MESSAGE_TYPE,
+    SIGNAL_OWNER,
+    WIDGET,
+)
+
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
 from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
@@ -18,17 +27,10 @@ from gui.workers.threads.frames_extraction_worker_thread \
     import FramesExtractionWorkerThread
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
+from gui.workers.threads.next_element_worker_thread \
+    import NextElementWorkerThread
 
 from message.message import Message, Messages
-
-from enums import (
-    APP_STATUS,
-    BODY_KEY,
-    CONSOLE_COLORS,
-    CONSOLE_MESSAGE_TYPE,
-    SIGNAL_OWNER,
-    WIDGET,
-)
 
 from names import START_PAGE_NAME
 
@@ -49,10 +51,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     configure_widget_sig = qtc.pyqtSignal(Message)
 
     # -- worker signals ---
-    message_worker_sig = qtc.pyqtSignal(Message)
-    frame_extraction_worker_sig = qtc.pyqtSignal(Message)
     io_worker_sig = qtc.pyqtSignal(Message)
+    frame_extraction_worker_sig = qtc.pyqtSignal(Message)
     face_detection_worker_sig = qtc.pyqtSignal(Message)
+    message_worker_sig = qtc.pyqtSignal(Message)
+    # next_element_worker_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -68,6 +71,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.setup_io_worker()
         self.setup_frame_extraction_worker()
         self.setup_face_detection_worker()
+        # self.setup_next_element_worker()
         self.setup_message_worker()
 
         self.m_pages = {}
@@ -88,8 +92,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.init_toolbar()
         self.init_statusbar()
 
-        self.resize(APP_CONFIG.app.window.preferred_width,
-                    APP_CONFIG.app.window.preferred_height)
+        self.resize(
+            APP_CONFIG.app.window.preferred_width,
+            APP_CONFIG.app.window.preferred_height,
+        )
 
     def init_toolbar(self):
         self.toolbar = qwt.QToolBar(self)
@@ -127,60 +133,65 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.show_widget(self.job_progressbar, False)
 
     def setup_io_worker(self):
-        self.io_worker_thread = IO_WorkerThread()
-        self.io_worker_sig.connect(self.io_worker_thread.worker.process)
+        io_worker_signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
+        }
+        self.io_worker_thread = IO_WorkerThread(
+            self.io_worker_sig,
+            io_worker_signals,
+        )
         self.io_worker_thread.start()
 
     def setup_message_worker(self):
-        self.message_worker_thread = MessageWorkerThread()
-        self.message_worker_thread.worker.add_signal(
-            self.console_print_sig,
-            SIGNAL_OWNER.CONSOLE,
-        )
-        self.message_worker_thread.worker.add_signal(
-            self.io_worker_sig,
-            SIGNAL_OWNER.IO_WORKER,
-        )
-        self.message_worker_thread.worker.add_signal(
+        message_worker_signals = {
+            SIGNAL_OWNER.IO_WORKER: self.io_worker_sig,
+            SIGNAL_OWNER.FACE_DETECTION_WORKER: self.face_detection_worker_sig,
+            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER:
             self.frame_extraction_worker_sig,
-            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
+            SIGNAL_OWNER.JOB_PROGRESS: self.job_progress_sig,
+            SIGNAL_OWNER.CONFIGURE_WIDGET: self.configure_widget_sig,
+            SIGNAL_OWNER.CONSOLE: self.console_print_sig,
+        }
+        self.message_worker_thread = MessageWorkerThread(
+            self.message_worker_sig,
+            message_worker_signals,
         )
-        self.message_worker_thread.worker.add_signal(
-            self.configure_widget_sig,
-            SIGNAL_OWNER.CONFIGURE_WIDGET,
-        )
-        self.message_worker_thread.worker.add_signal(
-            self.job_progress_sig,
-            SIGNAL_OWNER.JOB_PROGRESS,
-        )
-        self.message_worker_thread.worker.add_signal(
-            self.face_detection_worker_sig,
-            SIGNAL_OWNER.FACE_DETECTION_WORKER
-        )
-        self.message_worker_sig.connect(
-            self.message_worker_thread.worker.process)
         self.message_worker_thread.start()
 
     def setup_frame_extraction_worker(self):
-        self.frame_extraction_worker_thread = FramesExtractionWorkerThread()
-        self.frame_extraction_worker_thread.worker.add_signal(
-            self.message_worker_sig,
-            SIGNAL_OWNER.MESSAGE_WORKER
+        frames_extraction_worker_signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
+        }
+        self.frames_extraction_worker_thread = FramesExtractionWorkerThread(
+            self.frame_extraction_worker_sig,
+            frames_extraction_worker_signals,
         )
-        self.frame_extraction_worker_sig.connect(
-            self.frame_extraction_worker_thread.worker.process)
-        self.frame_extraction_worker_thread.start()
+        self.frames_extraction_worker_thread.start()
 
     def setup_face_detection_worker(self):
-        self.face_detection_worker_thread = FaceDetectionWorkerThread()
-        self.face_detection_worker_thread.worker.add_signal(
+        face_detection_worker_signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
+        }
+        self.face_detection_worker_thread = FaceDetectionWorkerThread(
+            self.face_detection_worker_sig,
+            face_detection_worker_signals,
+        )
+        self.face_detection_worker_thread.start()
+
+    def setup_next_element_worker(self):
+        self.next_element_worker_thread = NextElementWorkerThread()
+        self.next_element_worker_thread.worker.add_signal(
             self.message_worker_sig,
             SIGNAL_OWNER.MESSAGE_WORKER
         )
-        self.face_detection_worker_sig.connect(
-            self.face_detection_worker_thread.worker.process
+        self.next_element_worker_thread.worker.add_signal(
+            self.frame_extraction_worker_thread.worker.next_element_sig,
+            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
         )
-        self.face_detection_worker_thread.start()
+        self.next_element_worker_sig.connect(
+            self.next_element_worker_thread.worker.process
+        )
+        self.next_element_worker_thread.start()
 
     def configure_widget(self, msg: Message):
         data = msg.body.data
@@ -242,8 +253,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def save_settings(self):
         """Updates current app setting with new ones.
         """
-        current_device = self.devices_dropdown.currentData()
-        APP_CONFIG.app.core.current_device = current_device
+        selected_device = self.devices_dropdown.currentData()
+        APP_CONFIG.app.core.selected_device = selected_device
         self.settings_window.close()
 
     def register_page(self, page: Page):
@@ -255,7 +266,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def register_pages(self):
         for page in [StartPage, MakeDeepfakePage]:
             page_signals = {
-                SIGNAL_OWNER.CONSOLE: self.console_print_sig,
                 SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
             }
             p = page(self, page_signals)
