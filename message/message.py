@@ -1,11 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 
 from enums import (
     CONSOLE_MESSAGE_TYPE,
-    FACE_DETECTION_ALGORITHM,
     FILE_TYPE,
     IO_OPERATION_TYPE,
     JOB_TYPE,
@@ -16,120 +15,6 @@ from enums import (
     BODY_KEY,
 )
 
-
-# class ConsolePrintMessageBody(MessageBody):
-
-#     def __init__(self, type: CONSOLE_MESSAGE_TYPE, message: str):
-#         super().__init__(JOB_TYPE.CONSOLE_PRINT)
-
-#         self.type = type
-#         self.message = message
-
-#     def get_data(self):
-#         return self.type, self.message
-
-
-# class FrameExtractionMessageBody(MessageBody):
-
-#     def __init__(self,
-#                  video_path: str,
-#                  destination_directory: str,
-#                  resize: bool,
-#                  new_size: int,
-#                  image_format: str):
-#         super().__init__(JOB_TYPE.FRAME_EXTRACTION)
-
-#         self.video_path = video_path
-#         self.destination_directory = destination_directory
-#         self.resize = resize
-#         self.new_size = new_size
-#         self.image_format = image_format
-
-#     def get_data(self):
-#         return self.video_path, self.destination_directory, self.resize, self.new_size, self.image_format
-
-
-# class IO_OperationMessageBody(MessageBody):
-
-#     def __init__(self,
-#                  type: IO_OP_TYPE,
-#                  file_path: str,
-#                  new_file_path: Optional[str] = '',
-#                  file: Optional[np.ndarray] = None,
-#                  resize: bool = False,
-#                  new_size: int = None,
-#                  multipart: Optional[bool] = False,
-#                  part: Optional[int] = None,
-#                  total: Optional[int] = None):
-#         super().__init__(JOB_TYPE.IO_OPERATION)
-
-#         self.type = type
-#         self.file_path = file_path
-#         self.new_file_path = new_file_path
-#         self.file = file
-#         self.resize = resize
-#         self.new_size = new_size
-#         self.multipart = multipart
-#         self.part = part
-#         self.total = total
-
-#     def get_data(self):
-#         return (
-#             self.type,
-#             self.file_path,
-#             self.new_file_path,
-#             self.file,
-#             self.resize,
-#             self.new_size,
-#             self.multipart,
-#             self.part,
-#             self.total,
-#         )
-
-
-# class ConfigureWidgetMessageBody(MessageBody):
-
-#     def __init__(self,
-#                  widget: WIDGET,
-#                  widget_method: str,
-#                  method_args: List):
-#         super().__init__(JOB_TYPE.WIDGET_CONFIGURATION)
-
-#         self.widget = widget
-#         self.widget_method = widget_method
-#         self.method_args = method_args
-
-#     def get_data(self):
-#         return self.widget, self.widget_method, self.method_args
-
-
-# class FaceDetectionMessageBody(MessageBody):
-
-#     def __init__(self,
-#                  faces_directory: str,
-#                  model_path: str,
-#                  algorithm: Optional[FACE_DETECTION_ALGORITHM]
-#                  = FACE_DETECTION_ALGORITHM.S3FD):
-#         super().__init__(JOB_TYPE.FACE_DETECTION)
-
-#         self.faces_directory = faces_directory
-#         self.model_path = model_path
-#         self.algorithm = algorithm
-
-#     def get_data(self):
-#         return self.faces_directory, self.model_path, self.algorithm
-
-
-# class AnswerBody(MessageBody):
-
-#     def __init__(self, status: MESSAGE_STATUS, finished: bool):
-#         super().__init__(JOB_TYPE.IO_OPERATION)
-
-#         self.status = status
-#         self.finished = finished
-
-#     def get_data(self):
-#         return self.status, self.finished
 
 @dataclass
 class Body:
@@ -162,6 +47,27 @@ class Messages:
                 {
                     BODY_KEY.CONSOLE_MESSAGE_TYPE: msg_type,
                     BODY_KEY.MESSAGE: message
+                }
+            )
+        )
+
+    def CONFIGURE_WIDGET(
+        sender: SIGNAL_OWNER,
+        widget: WIDGET,
+        method: str,
+        args: List,
+    ):
+        return Message(
+            MESSAGE_TYPE.REQUEST,
+            MESSAGE_STATUS.OK,
+            sender,
+            SIGNAL_OWNER.CONFIGURE_WIDGET,
+            Body(
+                JOB_TYPE.WIDGET_CONFIGURATION,
+                {
+                    BODY_KEY.WIDGET: widget,
+                    BODY_KEY.METHOD: method,
+                    BODY_KEY.ARGS: args,
                 }
             )
         )
