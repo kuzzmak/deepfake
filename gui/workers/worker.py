@@ -27,12 +27,15 @@ class Worker(qtc.QObject, metaclass=WorkerMeta):
         *args,
         **kwargs
     ):
-        """Base class for any worker object.
+        """Base worker class.
 
         Parameters
         ----------
         signals : Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]], optional
             signals to which worker should have access to, by default dict()
+        wait_queue : Optional[queue.Queue], optional
+            queue to which something should be pushed when another element
+            is requested from worker, by default None
         """
         super().__init__(*args, **kwargs)
         self.signals = signals
