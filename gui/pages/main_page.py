@@ -105,10 +105,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.addToolBar(qtc.Qt.LeftToolBarArea, self.toolbar)
         self.toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
         icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_ArrowLeft)
-        back_action = self.toolbar.addAction(icon, 'back')
+        back_action = self.toolbar.addAction(icon, 'Back')
         back_action.triggered.connect(self.test)
 
-        job_info = self.toolbar.addAction('job info')
+        icon = qtg.QIcon(qtg.QPixmap(':/job_info.svg'))
+        job_info = self.toolbar.addAction(icon, 'Job info')
         job_info.triggered.connect(self.open_job_info)
         self.show_toolbar(False)
 
