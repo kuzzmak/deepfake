@@ -1,0 +1,30 @@
+{
+    "app": {
+        "input_faces_directory": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\input_faces_data",
+        "output_faces_directory": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\output_faces_data",
+        "core": {
+            "face_detection": {
+                "algorithms": {
+                    "s3fd": {
+                        "weight_path": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\weights\\s3fd\\s3fd.pth"
+                    }
+                }
+            }
+        },
+        "gui": {
+            "window": {
+                "preferred_width": 1280,
+                "preferred_height": 720
+            },
+            "widgets": {
+                "video_widget": {
+                    "video_aspect_ratio": 1.7778
+                },
+                "console": {
+                    "font_name": "Consolas",
+                    "text_size": 10
+                }
+            }
+        }
+    }
+}
