@@ -12,6 +12,9 @@ _C = EasyDict()
 APP_CONFIG = _C
 
 _C.app = EasyDict()
+_C.app.input_faces_directory = 'C:\\Users\\tonkec\\Documents\\deepfake\\data\\input_faces_data'
+_C.app.output_faces_directory = 'C:\\Users\\tonkec\\Documents\\deepfake\\data\\output_faces_data'
+_C.app.s3fd_model_path = 'C:\\Users\\tonkec\\Documents\\deepfake\\data\\weights\\s3fd\\s3fd.pth'
 
 _C.app.console = EasyDict()
 _C.app.console.font_name = 'Consolas'
@@ -23,7 +26,7 @@ _C.app.window.preferred_height = 720
 
 _C.app.core = EasyDict()
 _C.app.core.devices = devices
-_C.app.core.current_device = DEVICE.CPU
+_C.app.core.selected_device = DEVICE.CPU
 
 _C.app.core.face_detection = EasyDict()
 
