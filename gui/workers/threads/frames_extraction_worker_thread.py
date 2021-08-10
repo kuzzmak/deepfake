@@ -1,7 +1,8 @@
-from enums import SIGNAL_OWNER
 from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
+
+from enums import SIGNAL_OWNER
 
 from gui.workers.frames_extraction_worker import FramesExtractionWorker
 from gui.workers.threads.worker_thread import WorkerThread
