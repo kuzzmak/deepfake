@@ -91,6 +91,6 @@ class FramesExtractionWorker(Worker):
             success, image = vidcap.read()
             count += 1
 
-            # wait for sigal from io worker that it saved picture
+            # wait for signal from io worker that it saved picture
             if success:
                 _ = self.wait_for_element()
