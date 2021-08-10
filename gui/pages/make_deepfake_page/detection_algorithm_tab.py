@@ -1,3 +1,4 @@
+from config import APP_CONFIG
 from typing import Dict, Optional
 
 import PyQt5.QtGui as qtg
@@ -28,13 +29,15 @@ class DetectionAlgorithmTab(BaseWidget):
     input_picture_added_sig = qtc.pyqtSignal(Message)
     output_picture_added_sig = qtc.pyqtSignal(Message)
 
-    def __init__(self,
-                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
+    def __init__(
+        self,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()
+    ):
         super().__init__(signals)
 
-        self.input_faces_directory = None
-        self.output_faces_directory = None
-        self.model_path = None
+        self.input_faces_directory = APP_CONFIG.app.input_faces_directory
+        self.output_faces_directory = APP_CONFIG.app.output_faces_directory
+        self.model_path = APP_CONFIG.app.s3fd_model_path
         self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.S3FD
 
         self.input_picture_added_sig.connect(self.input_picture_added)
@@ -278,9 +281,9 @@ class DetectionAlgorithmTab(BaseWidget):
             )
 
         else:
-            msg = Messages.DIRECTORY_NOT_SELECTED()
+            msg = Messages.DIRECTORY_NOT_SELECTED
 
-        self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
     def select_model_path(self):
         """Selects where model for face detection is located.
@@ -305,7 +308,7 @@ class DetectionAlgorithmTab(BaseWidget):
         else:
             msg = Messages.FILE_NOT_SELECTED()
 
-        self.signals[SIGNAL_OWNER.CONSOLE].emit(msg)
+        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
     def start_detection(self):
         """Sends message with faces directories to make deepfake page.
