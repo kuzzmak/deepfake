@@ -24,5 +24,6 @@ class WorkerThread(qtc.QThread):
         super().__init__(*args, **kwargs)
 
         self.worker = worker
-        worker_signal.connect(self.worker.process)
         self.worker.moveToThread(self)
+        self.worker_signal = worker_signal
+        self.worker_signal.connect(self.worker.process)
