@@ -8,16 +8,15 @@ import cv2 as cv
 from gui.workers.worker import Worker
 
 from message.message import (
-    Body,
     IOOperationBody,
     Message,
+    Messages,
 )
 
 from enums import (
     BODY_KEY,
     FILE_TYPE,
     IO_OPERATION_TYPE,
-    JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
     SIGNAL_OWNER,
@@ -46,19 +45,11 @@ class FramesExtractionWorker(Worker):
 
         total_frames = int(vidcap.get(cv.CAP_PROP_FRAME_COUNT))
 
-        msg = Message(
-            MESSAGE_TYPE.REQUEST,
-            MESSAGE_STATUS.OK,
-            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
-            SIGNAL_OWNER.CONFIGURE_WIDGET,
-            Body(
-                JOB_TYPE.WIDGET_CONFIGURATION,
-                {
-                    BODY_KEY.WIDGET: WIDGET.JOB_PROGRESS,
-                    BODY_KEY.METHOD: 'setMaximum',
-                    BODY_KEY.ARGS: [total_frames],
-                }
-            )
+        msg = Messages.CONFIGURE_WIDGET(
+            SIGNAL_OWNER.FACE_DETECTION_WORKER,
+            WIDGET.JOB_PROGRESS,
+            'setMaximum',
+            [total_frames],
         )
         self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
