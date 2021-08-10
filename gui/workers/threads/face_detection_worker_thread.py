@@ -1,7 +1,8 @@
-from enums import SIGNAL_OWNER
 from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
+
+from enums import SIGNAL_OWNER
 
 from gui.workers.threads.worker_thread import WorkerThread
 from gui.workers.face_detection_worker import FaceDetectionWorker
@@ -21,12 +22,15 @@ class FaceDetectionWorkerThread(WorkerThread):
         self,
         worker_signal: qtc.pyqtSignal,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        next_element_signal: Optional[qtc.pyqtSignal] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
-            FaceDetectionWorker(signals),
+            FaceDetectionWorker,
             worker_signal,
+            signals,
+            next_element_signal,
             *args,
             **kwargs
         )

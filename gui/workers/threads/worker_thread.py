@@ -1,15 +1,24 @@
+import queue
+from typing import Dict, Optional
+
 import PyQt5.QtCore as qtc
+
+from enums import SIGNAL_OWNER
 
 from gui.workers.worker import Worker
 
 
 class WorkerThread(qtc.QThread):
 
-    def __init__(self,
-                 worker: Worker,
-                 worker_signal: qtc.pyqtSignal,
-                 *args,
-                 **kwargs):
+    def __init__(
+        self,
+        worker: Worker,
+        worker_signal: qtc.pyqtSignal,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        next_element_signal: Optional[qtc.pyqtSignal] = None,
+        *args,
+        **kwargs,
+    ):
         """Base class for any worker related threads.
 
         Parameters
@@ -23,7 +32,17 @@ class WorkerThread(qtc.QThread):
         """
         super().__init__(*args, **kwargs)
 
-        self.worker = worker
+        if next_element_signal is not None:
+            self.w_q = queue.Queue()
+            self.worker = worker(signals, self.w_q)
+            next_element_signal.connect(self.next_element)
+        else:
+            self.worker = worker(signals)
+
         self.worker.moveToThread(self)
         self.worker_signal = worker_signal
         self.worker_signal.connect(self.worker.process)
+
+    @qtc.pyqtSlot()
+    def next_element(self):
+        self.w_q.put(1)

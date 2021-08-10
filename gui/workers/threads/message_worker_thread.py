@@ -23,12 +23,15 @@ class MessageWorkerThread(WorkerThread):
         self,
         worker_signal: qtc.pyqtSignal,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        next_element_signal: Optional[qtc.pyqtSignal] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
-            MessageWorker(signals),
+            MessageWorker,
             worker_signal,
+            signals,
+            next_element_signal,
             *args,
             **kwargs
         )
