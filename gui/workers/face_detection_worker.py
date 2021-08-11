@@ -11,6 +11,7 @@ import cv2 as cv
 
 from enums import (
     BODY_KEY,
+    DATA_TYPE,
     DEVICE,
     FACE_DETECTION_ALGORITHM,
     FILE_TYPE,
@@ -69,59 +70,89 @@ class FaceDetectionWorker(Worker):
             )
             net.eval()
 
-        if input_data_directory is not None:
-            input_images = get_file_paths_from_dir(input_data_directory)
+        _process(
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+            DATA_TYPE.INPUT,
+            input_data_directory,
+            input_faces_directory,
+            net,
+            device,
+        )
 
-            _msg = Messages.CONFIGURE_WIDGET(
-                SIGNAL_OWNER.FACE_DETECTION_WORKER,
-                WIDGET.JOB_PROGRESS,
-                'setMaximum',
-                [len(input_images)],
-            )
-            self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(_msg)
+        _process(
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+            DATA_TYPE.OUTPUT,
+            output_data_directory,
+            output_faces_directory,
+            net,
+            device,
+        )
 
-            input_images_counter = 0
-            for img_path in input_images:
 
-                faces = detect(net, img_path, 0.6, device)
+def _process(
+    message_worker_sig: qtc.pyqtSignal,
+    data_type: DATA_TYPE,
+    data_directory: str,
+    faces_directory: str,
+    net,
+    device: DEVICE,
+):
+    if data_directory is not None:
+        images = get_file_paths_from_dir(data_directory)
 
-                for face in faces:
-                    _msg = Message(
-                        MESSAGE_TYPE.REQUEST,
-                        MESSAGE_STATUS.OK,
-                        SIGNAL_OWNER.FACE_DETECTION_WORKER,
-                        SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER,
-                        Body(
-                            JOB_TYPE.IMAGE_DISPLAY,
-                            {
-                                BODY_KEY.FILE: face,
-                            }
-                        )
+        _msg = Messages.CONFIGURE_WIDGET(
+            SIGNAL_OWNER.FACE_DETECTION_WORKER,
+            WIDGET.JOB_PROGRESS,
+            'setMaximum',
+            [len(images)],
+        )
+        message_worker_sig.emit(_msg)
+
+        images_counter = 0
+        img_name = 'if' if data_type == DATA_TYPE.INPUT else 'of'
+        img_name += f'_{images_counter}.jpg'
+        recipient = SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER \
+            if data_type == DATA_TYPE.INPUT \
+            else SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER
+
+        for img_path in images:
+
+            faces = detect(net, img_path, 0.6, device)
+
+            for face in faces:
+                _msg = Message(
+                    MESSAGE_TYPE.REQUEST,
+                    MESSAGE_STATUS.OK,
+                    SIGNAL_OWNER.FACE_DETECTION_WORKER,
+                    recipient,
+                    Body(
+                        JOB_TYPE.IMAGE_DISPLAY,
+                        {
+                            BODY_KEY.FILE: face,
+                        }
                     )
-                    self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(_msg)
+                )
+                message_worker_sig.emit(_msg)
 
-                    _msg = Message(
-                        MESSAGE_TYPE.REQUEST,
-                        MESSAGE_STATUS.OK,
-                        SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
-                        SIGNAL_OWNER.IO_WORKER,
-                        IOOperationBody(
-                            io_operation_type=IO_OPERATION_TYPE.SAVE,
-                            file_path=os.path.join(
-                                input_faces_directory,
-                                f'if_{input_images_counter}.png',
-                            ),
-                            file=face,
-                            file_type=FILE_TYPE.IMAGE,
-                            multipart=True,
-                            part=input_images_counter + 1,
-                            total=len(input_images),
-                        )
+                _msg = Message(
+                    MESSAGE_TYPE.REQUEST,
+                    MESSAGE_STATUS.OK,
+                    SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
+                    SIGNAL_OWNER.IO_WORKER,
+                    IOOperationBody(
+                        io_operation_type=IO_OPERATION_TYPE.SAVE,
+                        file_path=os.path.join(
+                            faces_directory,
+                            img_name,
+                        ),
+                        file=face,
+                        file_type=FILE_TYPE.IMAGE,
+                        multipart=True,
+                        part=images_counter + 1,
+                        total=len(images),
                     )
-                    self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(_msg)
-
-        if output_data_directory is not None:
-            output_images = get_file_paths_from_dir(output_data_directory)
+                )
+                message_worker_sig.emit(_msg)
 
 
 def detect(net, img_path: str, thresh: float, device: DEVICE):
