@@ -1,16 +1,9 @@
-# -*- coding:utf-8 -*-
-
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-
 import torch
 
-from ..bbox_utils import decode, nms
-from torch.autograd import Function
+from core.face_detection.algorithms.utils.bbox_utils import decode, nms
 
 
-class Detect(Function):
+class Detect:
     """At test time, Detect is the final layer of SSD.  Decode location preds,
     apply non-maximum suppression to location predictions based on conf
     scores and threshold to a top_k number of output predictions for both
@@ -24,6 +17,11 @@ class Detect(Function):
         self.conf_thresh = cfg.CONF_THRESH
         self.variance = cfg.VARIANCE
         self.nms_top_k = cfg.NMS_TOP_K
+
+    def __call__(self, loc_data: torch.Tensor,
+                 conf_data: torch.Tensor,
+                 prior_data: torch.Tensor) -> torch.Tensor:
+        return self.forward(loc_data, conf_data, prior_data)
 
     def forward(self,
                 loc_data: torch.Tensor,
