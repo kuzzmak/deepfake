@@ -1,0 +1,72 @@
+from typing import List
+
+import cv2 as cv
+
+import numpy as np
+
+import torch
+
+from core.face_detection.algorithms.FaceDetectionModel \
+    import FaceDetectionModel
+from core.face_detection.algorithms.s3fd.s3fd_model_factory \
+    import S3FDModelFactory
+from core.face_detection.algorithms.s3fd.utils.augmentations import to_chw_bgr
+
+from enums import DEVICE
+
+
+class S3FDFDM(FaceDetectionModel):
+    """Detection model for S3FD face detection algorithm.
+    """
+
+    def __init__(self, device: DEVICE):
+        super().__init__(S3FDModelFactory, device)
+
+    def detect(self, image: np.ndarray) -> List[np.ndarray]:
+        thresh = 0.6
+        height, width, _ = image.shape
+        max_im_shrink = np.sqrt(1700 * 1200 / (height * width))
+        img = cv.resize(
+            image,
+            None,
+            None,
+            fx=max_im_shrink,
+            fy=max_im_shrink,
+            interpolation=cv.INTER_LINEAR,
+        )
+        # image = cv2.resize(img, (640, 640))
+        x = to_chw_bgr(img)
+        x = x.astype('float32')
+        x -= np.array([104., 117., 123.])[:, np.newaxis,
+                                          np.newaxis].astype('float32')
+        x = x[[2, 1, 0], :, :]
+
+        x = torch.from_numpy(x).unsqueeze(0)
+        if self.device == DEVICE.CUDA:
+            x = x.cuda()
+
+        with torch.no_grad():
+            y = self.model(x)
+        detections = y.data
+        scale = torch.Tensor([width, height, width, height])
+
+        faces = []
+
+        for i in range(detections.size(1)):
+            j = 0
+            while detections[0, i, j, 0] >= thresh:
+                pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
+                j += 1
+                faces.append((int(pt[0]), int(pt[1]), int(pt[2]), int(pt[3])))
+
+        return self._extract_faces(faces, image)
+
+    @staticmethod
+    def _extract_faces(faces: List[tuple], img: np.ndarray):
+        extracted_faces = []
+
+        for face in faces:
+            x1, y1, x2, y2 = face
+            extracted_faces.append(img[y1: y2, x1: x2])
+
+        return extracted_faces
