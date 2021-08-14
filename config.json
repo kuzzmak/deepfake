@@ -7,6 +7,9 @@
                 "algorithms": {
                     "s3fd": {
                         "weight_path": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\weights\\s3fd\\s3fd.pth"
+                    },
+                    "faceboxes": {
+                        "weight_path": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\weights\\faceboxes\\faceboxes.pth"
                     }
                 }
             },
