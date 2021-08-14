@@ -16,7 +16,7 @@ from enums import DEVICE
 
 
 class S3FDFDM(FaceDetectionModel):
-    """Detection model for S3FD face detection algorithm.
+    """Face detection model for S3FD algorithm.
     """
 
     def __init__(self, device: DEVICE):
@@ -59,14 +59,4 @@ class S3FDFDM(FaceDetectionModel):
                 j += 1
                 faces.append((int(pt[0]), int(pt[1]), int(pt[2]), int(pt[3])))
 
-        return self._extract_faces(faces, image)
-
-    @staticmethod
-    def _extract_faces(faces: List[tuple], img: np.ndarray):
-        extracted_faces = []
-
-        for face in faces:
-            x1, y1, x2, y2 = face
-            extracted_faces.append(img[y1: y2, x1: x2])
-
-        return extracted_faces
+        return self.extract_faces(faces, image)
