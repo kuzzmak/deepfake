@@ -25,7 +25,7 @@ class _MTCNN:
 @dataclass
 class _Algorithms:
     s3fd: _S3FD
-    # faceboxes: _FaceBoxes
+    faceboxes: _FaceBoxes
     # mtcnn: _MTCNN
 
 
@@ -106,7 +106,10 @@ def _load_config():
         _algorithms = _face_detection['algorithms']
 
         _s3fd = _algorithms['s3fd']
-        weight_path = _s3fd['weight_path']
+        s3fd_weight_path = _s3fd['weight_path']
+
+        _faceboxes = _algorithms['faceboxes']
+        faceboxes_weight_path = _faceboxes['weight_path']
 
         _gui = _app['gui']
 
@@ -135,7 +138,8 @@ def _load_config():
                 _Core(
                     _FaceDetection(
                         _Algorithms(
-                            _S3FD(weight_path)
+                            _S3FD(s3fd_weight_path),
+                            _FaceBoxes(faceboxes_weight_path)
                         )
                     ),
                     devices,
