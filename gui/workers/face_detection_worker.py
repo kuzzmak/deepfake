@@ -1,3 +1,4 @@
+from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 import os
 from typing import Dict, Optional
 
@@ -7,7 +8,7 @@ import cv2 as cv
 
 from core.face_detection.algorithms.FaceDetectionModel \
     import FaceDetectionModel
-from core.face_detection.algorithms.s3fd.a3fd_fdm import S3FDFDM
+from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
 
 from enums import (
     BODY_KEY,
@@ -51,6 +52,8 @@ class FaceDetectionWorker(Worker):
 
         if algorithm == FACE_DETECTION_ALGORITHM.S3FD:
             model = S3FDFDM(device)
+        elif algorithm == FACE_DETECTION_ALGORITHM.FACEBOXES:
+            model = FaceboxesFDM(device)
 
         self._process(
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
@@ -79,17 +82,17 @@ class FaceDetectionWorker(Worker):
         if data_directory is not None:
             images = get_file_paths_from_dir(data_directory)
 
-            _msg = Messages.CONFIGURE_WIDGET(
+            msg_conf_wgt = Messages.CONFIGURE_WIDGET(
                 SIGNAL_OWNER.FACE_DETECTION_WORKER,
                 WIDGET.JOB_PROGRESS,
                 'setMaximum',
                 [len(images)],
             )
-            message_worker_sig.emit(_msg)
+            message_worker_sig.emit(msg_conf_wgt)
 
             images_counter = 0
             img_name = 'if' if data_type == DATA_TYPE.INPUT else 'of'
-            img_name += f'_{images_counter}.jpg'
+            img_name += '_{}.jpg'
             recipient = SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER \
                 if data_type == DATA_TYPE.INPUT \
                 else SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER
@@ -100,7 +103,7 @@ class FaceDetectionWorker(Worker):
                 faces = model.detect(image)
 
                 for face in faces:
-                    _msg = Message(
+                    msg_image_display = Message(
                         MESSAGE_TYPE.REQUEST,
                         MESSAGE_STATUS.OK,
                         SIGNAL_OWNER.FACE_DETECTION_WORKER,
@@ -112,9 +115,9 @@ class FaceDetectionWorker(Worker):
                             }
                         )
                     )
-                    message_worker_sig.emit(_msg)
+                    message_worker_sig.emit(msg_image_display)
 
-                    _msg = Message(
+                    msg_save_face = Message(
                         MESSAGE_TYPE.REQUEST,
                         MESSAGE_STATUS.OK,
                         SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
@@ -123,7 +126,7 @@ class FaceDetectionWorker(Worker):
                             io_operation_type=IO_OPERATION_TYPE.SAVE,
                             file_path=os.path.join(
                                 faces_directory,
-                                img_name,
+                                img_name.format(images_counter),
                             ),
                             file=face,
                             file_type=FILE_TYPE.IMAGE,
@@ -132,4 +135,6 @@ class FaceDetectionWorker(Worker):
                             total=len(images),
                         )
                     )
-                    message_worker_sig.emit(_msg)
+                    message_worker_sig.emit(msg_save_face)
+
+                    images_counter += 1
