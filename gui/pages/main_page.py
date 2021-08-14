@@ -1,5 +1,4 @@
 from datetime import datetime
-from gui.widgets.job_info_window import JobInfoWindow
 
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
@@ -16,9 +15,12 @@ from enums import (
     WIDGET,
 )
 
+from gui.widgets.common import VerticalSpacer, HorizontalSpacer
+from gui.widgets.job_info_window import JobInfoWindow
+
+from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
-from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 
 from gui.templates.main_page import Ui_main_page
 
@@ -89,7 +91,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def init_ui(self):
         self.setupUi(self)
 
-        font = qtg.QFont(APP_CONFIG.app.console.font_name)
+        font = qtg.QFont(APP_CONFIG.app.gui.widgets.console.font_name)
         self.console.setFont(font)
         self.show_console(False)
 
@@ -99,8 +101,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.init_statusbar()
 
         self.resize(
-            APP_CONFIG.app.window.preferred_width,
-            APP_CONFIG.app.window.preferred_height,
+            APP_CONFIG.app.gui.window.preferred_width,
+            APP_CONFIG.app.gui.window.preferred_height,
         )
 
     def init_toolbar(self):
@@ -128,7 +130,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         file_menu.addSeparator()
         file_menu.addAction('Quit', self.close)
 
-        help_menu = self.menubar.addMenu('Help')
+        self.menubar.addMenu('Help')
 
         self.show_menubar(False)
 
@@ -224,11 +226,20 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         """
         self.settings_window = qwt.QMainWindow(self)
         self.settings_window.setWindowTitle('Settings')
-        self.settings_window.setFixedSize(500, 200)
+        self.settings_window.setFixedSize(500, 400)
 
         central_wgt = qwt.QWidget()
         central_wgt_layout = qwt.QVBoxLayout()
         central_wgt.setLayout(central_wgt_layout)
+
+        tab_wgt = qwt.QTabWidget(self.settings_window)
+        central_wgt_layout.addWidget(tab_wgt)
+
+        # -- device tab ---
+        device_tab_wgt = qwt.QWidget(tab_wgt)
+        device_tab_wgt_layout = qwt.QVBoxLayout(device_tab_wgt)
+        device_tab_wgt.setLayout(device_tab_wgt_layout)
+        tab_wgt.addTab(device_tab_wgt, 'Device')
 
         device_row = qwt.QWidget()
         device_row_layout = qwt.QHBoxLayout()
@@ -241,15 +252,49 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             self.devices_dropdown.addItem(device.value, device)
         device_row_layout.addWidget(self.devices_dropdown)
 
-        central_wgt_layout.addWidget(device_row)
+        device_tab_wgt_layout.addWidget(device_row)
+        device_tab_wgt_layout.addItem(VerticalSpacer)
 
+        # -- window tab ---
+        window_tab_wgt = qwt.QWidget(tab_wgt)
+        window_tab_wgt_layout = qwt.QVBoxLayout()
+        window_tab_wgt.setLayout(window_tab_wgt_layout)
+
+        preferred_width_row = qwt.QWidget()
+        preferred_width_row_layout = qwt.QHBoxLayout()
+        preferred_width_row.setLayout(preferred_width_row_layout)
+        preferred_width_row_layout.addWidget(
+            qwt.QLabel(text='Preferred width'),
+        )
+        self.preferred_width_edit = qwt.QLineEdit()
+        self.preferred_width_edit.setText(
+            str(APP_CONFIG.app.gui.window.preferred_width),
+        )
+        preferred_width_row_layout.addWidget(self.preferred_width_edit)
+
+        preferred_height_row = qwt.QWidget()
+        preferred_height_row_layout = qwt.QHBoxLayout()
+        preferred_height_row.setLayout(preferred_height_row_layout)
+        preferred_height_row_layout.addWidget(
+            qwt.QLabel(text='Preferred height'))
+        self.preferred_height_edit = qwt.QLineEdit()
+        self.preferred_height_edit.setText(
+            str(APP_CONFIG.app.gui.window.preferred_height),
+        )
+        preferred_height_row_layout.addWidget(self.preferred_height_edit)
+
+        window_tab_wgt_layout.addWidget(preferred_width_row)
+        window_tab_wgt_layout.addWidget(preferred_height_row)
+        window_tab_wgt_layout.addItem(VerticalSpacer)
+
+        tab_wgt.addTab(window_tab_wgt, 'Window')
+
+        # -- bottom buttons --
         button_row = qwt.QWidget()
         button_row_layout = qwt.QHBoxLayout()
         button_row.setLayout(button_row_layout)
-
-        spacer = qwt.QSpacerItem(
-            1, 1, qwt.QSizePolicy.MinimumExpanding, qwt.QSizePolicy.Fixed)
-        button_row_layout.addItem(spacer)
+        central_wgt_layout.addWidget(button_row)
+        button_row_layout.addItem(HorizontalSpacer)
 
         ok_btn = qwt.QPushButton(text='Ok')
         ok_btn.setFixedWidth(120)
@@ -260,8 +305,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         cancel_btn.setFixedWidth(120)
         cancel_btn.clicked.connect(self.settings_window.close)
         button_row_layout.addWidget(cancel_btn)
-
-        central_wgt_layout.addWidget(button_row)
 
         self.settings_window.setCentralWidget(central_wgt)
         self.settings_window.show()
@@ -330,7 +373,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         curr_time_prefix = '[' + datetime.now().strftime('%H:%M:%S') + '] - '
         text = msg_type_prefix + \
             console_message_template.format(
-                APP_CONFIG.app.console.text_size,
+                APP_CONFIG.app.gui.widgets.console.text_size,
                 CONSOLE_COLORS.BLACK.value,
                 curr_time_prefix + msg
             )
@@ -354,5 +397,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         prefix_color = message_type.value.prefix_color.value
         prefix = message_type.value.prefix
         prefix = console_message_template.format(
-            APP_CONFIG.app.console.text_size, prefix_color, f'{prefix: <11}')
+            APP_CONFIG.app.gui.widgets.console.text_size,
+            prefix_color,
+            f'{prefix: <11}',
+        )
         return prefix
