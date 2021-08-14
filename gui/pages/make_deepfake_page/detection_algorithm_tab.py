@@ -1,9 +1,10 @@
-from config import APP_CONFIG
 from typing import Dict, Optional
 
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
+
+from config import APP_CONFIG
 
 from enums import (
     BODY_KEY,
@@ -37,7 +38,7 @@ class DetectionAlgorithmTab(BaseWidget):
 
         self.input_faces_directory = APP_CONFIG.app.input_faces_directory
         self.output_faces_directory = APP_CONFIG.app.output_faces_directory
-        self.model_path = APP_CONFIG.app.s3fd_model_path
+        self.model_path = APP_CONFIG.app.core.face_detection.algorithms.s3fd.weight_path
         self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.S3FD
 
         self.input_picture_added_sig.connect(self.input_picture_added)
