@@ -44,3 +44,29 @@ class FaceDetectionModel(metaclass=FaceDetectionModelMeta):
             list of detected faces
         """
         ...
+
+    @staticmethod
+    def extract_faces(faces: List[tuple], img: np.ndarray) -> List[np.ndarray]:
+        """Helper function for getting faces out of the image when
+        bounding boxes are found by face detection algorithms.
+
+        Parameters
+        ----------
+        faces : List[tuple]
+            list of bounding boxes, first two numbers in tuple are
+            upper left image corner and second two are lower right corner
+        img : np.ndarray
+            image from which faces should be extracted
+
+        Returns
+        -------
+        List[np.ndarray]
+            list of faces
+        """
+        extracted_faces = []
+
+        for face in faces:
+            x1, y1, x2, y2 = face
+            extracted_faces.append(img[y1: y2, x1: x2])
+
+        return extracted_faces
