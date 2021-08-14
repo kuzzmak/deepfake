@@ -50,7 +50,7 @@ class Worker(qtc.QObject, metaclass=WorkerMeta):
             except queue.Empty:
                 ...
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     @qtc.pyqtSlot(Message)
     def process(self, msg: Message):
         ...
