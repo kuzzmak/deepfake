@@ -1,15 +1,14 @@
-from datetime import datetime
-
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from config import APP_CONFIG
 
+from console import Console
+
 from enums import (
     APP_STATUS,
     BODY_KEY,
-    CONSOLE_COLORS,
     CONSOLE_MESSAGE_TYPE,
     SIGNAL_OWNER,
     WIDGET,
@@ -37,9 +36,6 @@ from message.message import Message, Messages
 
 from names import START_PAGE_NAME
 
-console_message_template = '<span style="font-size:{}pt; ' + \
-    'color:{}; white-space:pre;">{}<span>'
-
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
 
@@ -49,7 +45,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     show_toolbar_sig = qtc.pyqtSignal(bool)
     job_progress_sig = qtc.pyqtSignal(Message)
     app_status_label_sig = qtc.pyqtSignal(str)
-    console_print_sig = qtc.pyqtSignal(Message)
     configure_widget_sig = qtc.pyqtSignal(Message)
     job_progressbar_value_sig = qtc.pyqtSignal(int)
 
@@ -70,8 +65,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.show_console_sig.connect(self.show_console)
         self.show_toolbar_sig.connect(self.show_toolbar)
         self.job_progress_sig.connect(self.job_progress)
-        self.console_print_sig.connect(self.console_print)
         self.configure_widget_sig.connect(self.configure_widget)
+
+        Console.get_instance().print_sig.connect(self._console_print)
 
         self.job_info_window = JobInfoWindow(self)
 
@@ -91,11 +87,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def init_ui(self):
         self.setupUi(self)
 
-        font = qtg.QFont(APP_CONFIG.app.gui.widgets.console.font_name)
-        self.console.setFont(font)
-        self.show_console(False)
-
         self.register_pages()
+        self.init_console()
         self.init_menubar()
         self.init_toolbar()
         self.init_statusbar()
@@ -123,6 +116,15 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def open_job_info(self):
         self.job_info_window.show()
+
+    def init_console(self):
+        font = qtg.QFont(APP_CONFIG.app.gui.widgets.console.font_name)
+        self.console.setFont(font)
+        self.show_console(False)
+        p = self.console.viewport().palette()
+        p.setColor(self.console.viewport().backgroundRole(),
+                   qtg.QColor(109, 107, 106))
+        self.console.viewport().setPalette(p)
 
     def init_menubar(self):
         file_menu = self.menubar.addMenu('File')
@@ -170,7 +172,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             SIGNAL_OWNER.NEXT_ELEMENT_WORKER: self.next_element_worker_sig,
             SIGNAL_OWNER.JOB_PROGRESS: self.job_progress_sig,
             SIGNAL_OWNER.CONFIGURE_WIDGET: self.configure_widget_sig,
-            SIGNAL_OWNER.CONSOLE: self.console_print_sig,
         }
         self.message_worker_thread = MessageWorkerThread(
             self.message_worker_sig,
@@ -349,7 +350,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
                 CONSOLE_MESSAGE_TYPE.LOG,
                 'Frames extraction finished.'
             )
-            self.console_print_sig.emit(msg)
+            Console.print(msg)
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
@@ -363,21 +364,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def show_toolbar(self, show: bool):
         self.show_widget(self.toolbar, show)
 
-    @qtc.pyqtSlot(Message)
-    def console_print(self, message: Message):
-        data = message.body.data
-        msg_type = data[BODY_KEY.CONSOLE_MESSAGE_TYPE]
-        msg = data[BODY_KEY.MESSAGE]
-
-        msg_type_prefix = self._get_console_message_prefix(msg_type)
-        curr_time_prefix = '[' + datetime.now().strftime('%H:%M:%S') + '] - '
-        text = msg_type_prefix + \
-            console_message_template.format(
-                APP_CONFIG.app.gui.widgets.console.text_size,
-                CONSOLE_COLORS.BLACK.value,
-                curr_time_prefix + msg
-            )
-        self.console.append(text)
+    @qtc.pyqtSlot(str)
+    def _console_print(self, msg: str):
+        self.console.append(msg)
 
     @qtc.pyqtSlot(str)
     def goto(self, name: str):
@@ -391,14 +380,3 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             widget.show()
         else:
             widget.hide()
-
-    @staticmethod
-    def _get_console_message_prefix(message_type: CONSOLE_MESSAGE_TYPE):
-        prefix_color = message_type.value.prefix_color.value
-        prefix = message_type.value.prefix
-        prefix = console_message_template.format(
-            APP_CONFIG.app.gui.widgets.console.text_size,
-            prefix_color,
-            f'{prefix: <11}',
-        )
-        return prefix
