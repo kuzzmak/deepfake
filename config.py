@@ -9,17 +9,17 @@ from enums import DEVICE
 
 @dataclass
 class _S3FD:
-    weight_path: str
+    gd_id: str
 
 
 @dataclass
 class _FaceBoxes:
-    weight_path: str
+    gd_id: str
 
 
 @dataclass
 class _MTCNN:
-    weight_path: str
+    gd_id: str
 
 
 @dataclass
@@ -106,10 +106,10 @@ def _load_config():
         _algorithms = _face_detection['algorithms']
 
         _s3fd = _algorithms['s3fd']
-        s3fd_weight_path = _s3fd['weight_path']
+        s3fd_gd_id = _s3fd['gd_id']
 
         _faceboxes = _algorithms['faceboxes']
-        faceboxes_weight_path = _faceboxes['weight_path']
+        faceboxes_gd_id = _faceboxes['gd_id']
 
         _gui = _app['gui']
 
@@ -138,8 +138,8 @@ def _load_config():
                 _Core(
                     _FaceDetection(
                         _Algorithms(
-                            _S3FD(s3fd_weight_path),
-                            _FaceBoxes(faceboxes_weight_path)
+                            _S3FD(s3fd_gd_id),
+                            _FaceBoxes(faceboxes_gd_id)
                         )
                     ),
                     devices,

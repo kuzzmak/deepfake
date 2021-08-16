@@ -6,10 +6,12 @@
             "face_detection": {
                 "algorithms": {
                     "s3fd": {
-                        "weight_path": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\weights\\s3fd\\s3fd.pth"
+                        "weight_path": "https://drive.google.com/file/d/1UPY_Rf8A51Jxxi17_zeN8c0tb4TQgDrU",
+                        "gd_id": "1UPY_Rf8A51Jxxi17_zeN8c0tb4TQgDrU"
                     },
                     "faceboxes": {
-                        "weight_path": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\weights\\faceboxes\\faceboxes.pth"
+                        "weight_path": "https://drive.google.com/file/d/1R9cs2GkdF-aGV1MBbtXgOWdnVaski5em",
+                        "gd_id": "1R9cs2GkdF-aGV1MBbtXgOWdnVaski5em"
                     }
                 }
             },
