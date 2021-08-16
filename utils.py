@@ -1,3 +1,4 @@
+import errno
 import os
 from typing import List
 
@@ -5,7 +6,11 @@ import numpy as np
 
 import cv2 as cv
 
+import gdown
+
 import PyQt5.QtGui as qtg
+
+from torch.hub import get_dir
 
 
 def get_file_paths_from_dir(dir: str) -> List[str] or None:
@@ -98,3 +103,46 @@ def resize_image_retain_aspect_ratio(image: np.ndarray,
     dim = (width, height)
 
     return cv.resize(image, dim, interpolation=cv.INTER_AREA)
+
+
+def load_file_from_google_drive(model_id: str, filename: str) -> str:
+    """Function for getting the model from google drive. If model already
+    exists locally in `torch.hub.get_dir()` directory, then this path is
+    returned. If model doesn't exist locally, it's downloaded firstly from
+    google drive and save on location mentioned before.
+
+    Parameters
+    ----------
+    model_id : str
+        id of the model file on google drive, if
+        `https://drive.google.com/file/d/1UPY_Rf8A51Jxxi17_zeN8c0tb4TQgDrU`
+        is the link to file of the model, then
+        `1UPY_Rf8A51Jxxi17_zeN8c0tb4TQgDrU` is the model_id
+    filename : str
+        what should be the name of the file, including extension
+
+    Returns
+    -------
+    str
+        paht to the model on disk
+    """
+    hub_dir = get_dir()
+    models_dir = os.path.join(hub_dir, 'checkpoints')
+
+    try:
+        os.makedirs(models_dir)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            # Directory already exists, ignore.
+            pass
+        else:
+            # Unexpected OSError, re-raise.
+            raise
+
+    cached_file = os.path.join(models_dir, filename)
+    if not os.path.exists(cached_file):
+        url = f'https://drive.google.com/uc?id={model_id}'
+        model_dir = os.path.join(models_dir, filename)
+        gdown.download(url, model_dir, quiet=True)
+
+    return cached_file
