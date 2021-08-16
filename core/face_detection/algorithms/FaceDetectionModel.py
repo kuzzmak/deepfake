@@ -27,6 +27,8 @@ class FaceDetectionModel(metaclass=FaceDetectionModelMeta):
         """
         self.device = device
         self.model = model_factory.build_model(device)
+        self.model.eval()
+        self.model.to(device.value)
 
     @abc.abstractmethod
     def detect(self, image: np.ndarray) -> List[np.ndarray]:
