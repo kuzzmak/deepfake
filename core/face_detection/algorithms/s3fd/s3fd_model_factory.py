@@ -8,6 +8,8 @@ from core.face_detection.algorithms.s3fd.s3fd import build_s3fd
 
 from enums import DEVICE
 
+from utils import load_file_from_google_drive
+
 
 class S3FDModelFactory(ModelFactory):
     """Factory for S3FD face detection algorithm.
@@ -15,12 +17,12 @@ class S3FDModelFactory(ModelFactory):
 
     def build_model(device: DEVICE) -> nn.Module:
         net = build_s3fd('test')
-        model_path = APP_CONFIG.app.core.face_detection.algorithms.s3fd.weight_path
+        model_id = APP_CONFIG.app.core.face_detection.algorithms.s3fd.gd_id
+        dict_path = load_file_from_google_drive(model_id, 's3fd.pth')
         net.load_state_dict(
             torch.load(
-                model_path,
+                dict_path,
                 map_location=torch.device(device.value)
             )
         )
-        net.eval()
         return net
