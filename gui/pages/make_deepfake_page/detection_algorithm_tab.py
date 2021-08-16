@@ -40,7 +40,6 @@ class DetectionAlgorithmTab(BaseWidget):
 
         self.input_faces_directory = APP_CONFIG.app.input_faces_directory
         self.output_faces_directory = APP_CONFIG.app.output_faces_directory
-        self.model_path = APP_CONFIG.app.core.face_detection.algorithms.s3fd.weight_path
         self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.S3FD
 
         self.input_picture_added_sig.connect(self.input_picture_added)
@@ -120,19 +119,6 @@ class DetectionAlgorithmTab(BaseWidget):
         output_directory_wgt_layout.addWidget(
             select_output_faces_directory_btn)
         left_part_layout.addWidget(output_directory_wgt)
-
-        model_path_wgt = qwt.QWidget()
-        model_path_wgt_layout = qwt.QHBoxLayout()
-        model_path_wgt.setLayout(model_path_wgt_layout)
-        model_path_wgt_layout.addWidget(qwt.QLabel(text='Model path'))
-        spacer = qwt.QSpacerItem(
-            40, 20, qwt.QSizePolicy.Fixed, qwt.QSizePolicy.Fixed)
-        model_path_wgt_layout.addItem(spacer)
-        select_model_path_btn = qwt.QPushButton(text='Select')
-        select_model_path_btn.clicked.connect(self.select_model_path)
-        select_model_path_btn.setFixedWidth(120)
-        model_path_wgt_layout.addWidget(select_model_path_btn)
-        left_part_layout.addWidget(model_path_wgt)
 
         spacer = qwt.QSpacerItem(
             40, 20, qwt.QSizePolicy.Expanding,
@@ -288,31 +274,6 @@ class DetectionAlgorithmTab(BaseWidget):
 
         Console.print(msg)
 
-    def select_model_path(self):
-        """Selects where model for face detection is located.
-        """
-        options = qwt.QFileDialog.Options()
-        options |= qwt.QFileDialog.DontUseNativeDialog
-        model_path, _ = qwt.QFileDialog.getOpenFileName(
-            self,
-            'Select model file',
-            "data/weights",
-            "Model file (*.pth)",
-            options=options)
-
-        if model_path:
-            self.model_path = model_path
-
-            msg = Messages.CONSOLE_PRINT(
-                CONSOLE_MESSAGE_TYPE.LOG,
-                f'Selected model: {model_path}.'
-            )
-
-        else:
-            msg = Messages.FILE_NOT_SELECTED()
-
-        Console.print(msg)
-
     def start_detection(self):
         """Sends message with faces directories to make deepfake page.
         """
@@ -325,8 +286,8 @@ class DetectionAlgorithmTab(BaseWidget):
                 JOB_TYPE.FACE_DETECTION,
                 {
                     BODY_KEY.INPUT_FACES_DIRECTORY: self.input_faces_directory,
-                    BODY_KEY.OUTPUT_FACES_DIRECTORY: self.output_faces_directory,
-                    BODY_KEY.MODEL_PATH: self.model_path,
+                    BODY_KEY.OUTPUT_FACES_DIRECTORY:
+                    self.output_faces_directory,
                     BODY_KEY.ALGORITHM: self.algorithm_selected_value,
                 }
             )
