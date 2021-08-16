@@ -1,4 +1,6 @@
+from enums import CONSOLE_MESSAGE_TYPE
 import errno
+from message.message import Messages
 import os
 from typing import List
 
@@ -11,6 +13,8 @@ import gdown
 import PyQt5.QtGui as qtg
 
 from torch.hub import get_dir
+
+from console import Console
 
 
 def get_file_paths_from_dir(dir: str) -> List[str] or None:
@@ -141,8 +145,21 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
 
     cached_file = os.path.join(models_dir, filename)
     if not os.path.exists(cached_file):
+        msg = Messages.CONSOLE_PRINT(
+            CONSOLE_MESSAGE_TYPE.LOG, f'{filename} not found locally. ' +
+            'Downloading from google drive. Please wait...')
+        Console.print(msg)
+
         url = f'https://drive.google.com/uc?id={model_id}'
         model_dir = os.path.join(models_dir, filename)
         gdown.download(url, model_dir, quiet=True)
 
+        msg = Messages.CONSOLE_PRINT(
+            CONSOLE_MESSAGE_TYPE.LOG, 'Done downloading. ' +
+            f'Model location: {models_dir}.')
+        Console.print(msg)
+    else:
+        msg = Messages.CONSOLE_PRINT(
+            CONSOLE_MESSAGE_TYPE.LOG, f'Using local model instance: {cached_file}.')
+        Console.print(msg)
     return cached_file
