@@ -159,7 +159,6 @@ class BODY_KEY(Enum):
     MESSAGE = 'message'
     SIGNAL = 'signal'
     SIGNAL_OWNER = 'signal_owner'
-    MODEL_PATH = 'model_path'
     ALGORITHM = 'algorithm'
     WORKER = 'worker'
     DEVICE = 'device'
