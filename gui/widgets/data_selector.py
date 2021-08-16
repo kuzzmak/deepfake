@@ -4,6 +4,8 @@ from typing import Dict, Optional
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
+from console import Console
+
 from enums import (
     CONSOLE_MESSAGE_TYPE,
     DATA_TYPE,
@@ -168,7 +170,7 @@ class DataSelector(BaseWidget):
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED
 
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        Console.print(msg)
 
     def select_pictures(self):
         """Select directory with faces which would be used for face
@@ -193,7 +195,7 @@ class DataSelector(BaseWidget):
                 self.picture_viewer.pictures_added_sig.emit(image_paths)
 
                 msg = Messages.CONSOLE_PRINT(
-                    CONSOLE_MESSAGE_TYPE.INFO,
+                    CONSOLE_MESSAGE_TYPE.LOG,
                     f'Selected {self.data_type.value.lower()} data directory: ' +
                     f'{directory} with {len(image_paths)} pictures.'
                 )
@@ -215,7 +217,7 @@ class DataSelector(BaseWidget):
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED
 
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        Console.print(msg)
 
     def select_frames_directory(self):
         """Selects where extracted frames from video will go.
@@ -225,7 +227,7 @@ class DataSelector(BaseWidget):
         directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
         if directory:
             msg = Messages.CONSOLE_PRINT(
-                CONSOLE_MESSAGE_TYPE.INFO,
+                CONSOLE_MESSAGE_TYPE.LOG,
                 f'Selected {self.data_type.value.lower()} ' +
                 f'directory: {directory} for extracted frames.'
             )
@@ -250,7 +252,7 @@ class DataSelector(BaseWidget):
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED
 
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        Console.print(msg)
 
     @qtc.pyqtSlot(str)
     def biggest_frame_dim_input_text_changed(self, text: str):

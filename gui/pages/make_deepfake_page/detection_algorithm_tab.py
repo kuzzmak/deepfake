@@ -6,6 +6,8 @@ import PyQt5.QtWidgets as qwt
 
 from config import APP_CONFIG
 
+from console import Console
+
 from enums import (
     BODY_KEY,
     CONSOLE_MESSAGE_TYPE,
@@ -284,7 +286,7 @@ class DetectionAlgorithmTab(BaseWidget):
         else:
             msg = Messages.DIRECTORY_NOT_SELECTED
 
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        Console.print(msg)
 
     def select_model_path(self):
         """Selects where model for face detection is located.
@@ -309,7 +311,7 @@ class DetectionAlgorithmTab(BaseWidget):
         else:
             msg = Messages.FILE_NOT_SELECTED()
 
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        Console.print(msg)
 
     def start_detection(self):
         """Sends message with faces directories to make deepfake page.
