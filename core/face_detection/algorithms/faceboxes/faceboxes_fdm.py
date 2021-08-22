@@ -1,3 +1,4 @@
+from core.bounding_box import BoundingBox
 from typing import List
 
 import numpy as np
@@ -17,8 +18,7 @@ from enums import DEVICE
 
 
 class FaceboxesFDM(FaceDetectionModel):
-    """Face detection model for faceboxes algorithm.
-    """
+    """Face detection model for faceboxes algorithm."""
 
     def __init__(self, device: DEVICE):
         super().__init__(FaceboxesModelFactory, device)
@@ -58,21 +58,22 @@ class FaceboxesFDM(FaceDetectionModel):
         # do NMS
         dets = np.hstack((boxes, scores[:, np.newaxis])).astype(
             np.float32, copy=False)
-        # keep = py_cpu_nms(dets, args.nms_threshold)
         keep = nms(dets, 0.3, self.device.value)
         dets = dets[keep, :]
 
         # keep top-K faster NMS
         dets = dets[:750, :]
 
-        faces = []
+        bounding_boxes = []
 
         # show image
         for b in dets:
+            # b[4] is model confidence
             if b[4] < 0.5:
                 continue
+            # convert to integer coordinates
             b = list(map(int, b))
             b = b[:4]
-            faces.append(b)
+            bounding_boxes.append(BoundingBox(*b))
 
-        return self.extract_faces(faces, image)
+        return self.extract_faces(bounding_boxes, image)
