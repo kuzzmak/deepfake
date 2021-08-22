@@ -6,6 +6,7 @@ import numpy as np
 
 import torch
 
+from core.bounding_box import BoundingBox
 from core.face_detection.algorithms.FaceDetectionModel \
     import FaceDetectionModel
 from core.face_detection.algorithms.s3fd.s3fd_model_factory \
@@ -50,13 +51,14 @@ class S3FDFDM(FaceDetectionModel):
         detections = y.data
         scale = torch.Tensor([width, height, width, height])
 
-        faces = []
+        bounding_boxes = []
 
         for i in range(detections.size(1)):
             j = 0
             while detections[0, i, j, 0] >= thresh:
                 pt = (detections[0, i, j, 1:] * scale).cpu().numpy()
                 j += 1
-                faces.append((int(pt[0]), int(pt[1]), int(pt[2]), int(pt[3])))
+                bb = list(map(int, pt))
+                bounding_boxes.append(BoundingBox(*bb))
 
-        return self.extract_faces(faces, image)
+        return self.extract_faces(bounding_boxes, image)
