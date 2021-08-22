@@ -100,7 +100,7 @@ class FaceDetectionWorker(Worker):
             for img_path in images:
 
                 image = cv.imread(img_path, cv.IMREAD_COLOR)
-                faces = model.detect(image)
+                faces = model.detect_faces(image)
 
                 for face in faces:
                     msg_image_display = Message(
@@ -111,7 +111,7 @@ class FaceDetectionWorker(Worker):
                         Body(
                             JOB_TYPE.IMAGE_DISPLAY,
                             {
-                                BODY_KEY.FILE: face,
+                                BODY_KEY.FILE: face.detected_face,
                             }
                         )
                     )
@@ -128,7 +128,7 @@ class FaceDetectionWorker(Worker):
                                 faces_directory,
                                 img_name.format(images_counter),
                             ),
-                            file=face,
+                            file=face.detected_face,
                             file_type=FILE_TYPE.IMAGE,
                             multipart=True,
                             part=images_counter + 1,
