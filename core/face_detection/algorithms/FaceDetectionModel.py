@@ -3,6 +3,7 @@ from typing import List
 
 import numpy as np
 
+from core.base_model import BaseModel
 from core.bounding_box import BoundingBox
 from core.face import Face
 from core.face_detection.algorithms.ModelFactory import ModelFactory
@@ -10,31 +11,14 @@ from core.face_detection.algorithms.ModelFactory import ModelFactory
 from enums import DEVICE
 
 
-class FaceDetectionModelMeta(abc.ABCMeta):
-    ...
-
-
-class FaceDetectionModel(metaclass=FaceDetectionModelMeta):
-    """Base class which every face detection algorithm should implement.
-    """
+class FaceDetectionModel(BaseModel):
+    """Base class which every face detection algorithm should implement."""
 
     def __init__(self, model_factory: ModelFactory, device: DEVICE):
-        """Constructor.
-
-        Parameters
-        ----------
-        model_factory : ModelFactory
-            class of the model factory
-        device : DEVICE
-            computation device
-        """
-        self.device = device
-        self.model = model_factory.build_model(device)
-        self.model.eval()
-        self.model.to(device.value)
+        super().__init__(model_factory, device)
 
     @abc.abstractmethod
-    def detect(self, image: np.ndarray) -> List[np.ndarray]:
+    def detect_faces(self, image: np.ndarray) -> List[Face]:
         """If any face exists in image, this method should detect
         all of them.
 
@@ -45,7 +29,7 @@ class FaceDetectionModel(metaclass=FaceDetectionModelMeta):
 
         Returns
         -------
-        List[np.ndarray]
+        List[Face]
             list of detected faces
         """
         ...
