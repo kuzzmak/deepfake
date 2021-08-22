@@ -1,4 +1,3 @@
-from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 import os
 from typing import Dict, Optional
 
@@ -6,6 +5,7 @@ import PyQt5.QtCore as qtc
 
 import cv2 as cv
 
+from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 from core.face_detection.algorithms.FaceDetectionModel \
     import FaceDetectionModel
 from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
