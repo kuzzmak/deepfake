@@ -4,6 +4,7 @@ from typing import List
 import numpy as np
 
 from core.bounding_box import BoundingBox
+from core.face import Face
 from core.face_detection.algorithms.ModelFactory import ModelFactory
 
 from enums import DEVICE
@@ -50,7 +51,10 @@ class FaceDetectionModel(metaclass=FaceDetectionModelMeta):
         ...
 
     @staticmethod
-    def extract_faces(bounding_boxes: List[BoundingBox], img: np.ndarray) -> List[np.ndarray]:
+    def extract_faces(
+        bounding_boxes: List[BoundingBox],
+        img: np.ndarray,
+    ) -> List[Face]:
         """Helper function for getting faces out of the image when
         bounding boxes are found by face detection algorithms.
 
@@ -64,13 +68,19 @@ class FaceDetectionModel(metaclass=FaceDetectionModelMeta):
 
         Returns
         -------
-        List[np.ndarray]
+        List[Face]
             list of faces
         """
         extracted_faces = []
 
         for bb in bounding_boxes:
             (x1, y1), (x2, y2) = bb.upper_left, bb.lower_right
-            extracted_faces.append(img[y1:y2, x1:x2])
+
+            f = Face()
+            f.bounding_box = bb
+            f.raw_image = img
+            f.detected_face = img[y1:y2, x1:x2]
+
+            extracted_faces.append(f)
 
         return extracted_faces
