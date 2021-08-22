@@ -3,6 +3,10 @@ import numpy as np
 
 
 class Face:
+    """Class for everything that has to do with faces. Contains image from
+    which faces are extracted, extracted faces, alignments... Also, all 
+    operations that should be made on faces, should be implemented here.
+    """
 
     def __init__(
         self,
@@ -12,6 +16,20 @@ class Face:
         alignments: np.ndarray = None,
 
     ):
+        """Constructor.
+
+        Parameters
+        ----------
+        raw_image : np.ndarray, optional
+            image face, by default None
+        bounding_box : BoundingBox, optional
+            two dots on the image which are enough to make a bounding box
+            containing detected face, by default None
+        detected_face : np.ndarray, optional
+            detected face in the raw_image, by default None
+        alignments : np.ndarray, optional
+            array of dots representing face, by default None
+        """
         self._raw_image = raw_image
         self._bounding_box = bounding_box
         self._detected_face = detected_face
