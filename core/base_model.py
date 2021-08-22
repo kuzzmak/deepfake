@@ -1,6 +1,6 @@
 import abc
 
-from core.face_detection.algorithms.ModelFactory import ModelFactory
+from core.model_factory import ModelFactory
 
 from enums import DEVICE
 

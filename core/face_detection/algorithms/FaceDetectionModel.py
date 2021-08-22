@@ -6,7 +6,7 @@ import numpy as np
 from core.base_model import BaseModel
 from core.bounding_box import BoundingBox
 from core.face import Face
-from core.face_detection.algorithms.ModelFactory import ModelFactory
+from core.model_factory import ModelFactory
 
 from enums import DEVICE
 

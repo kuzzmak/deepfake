@@ -4,7 +4,7 @@ import torch.nn as nn
 from config import APP_CONFIG
 
 from core.face_detection.algorithms.faceboxes.faceboxes import FaceBoxes
-from core.face_detection.algorithms.ModelFactory import ModelFactory
+from core.model_factory import ModelFactory
 
 from enums import DEVICE
 

@@ -5,8 +5,7 @@ import torch.nn as nn
 
 
 class ModelFactory(abc.ABCMeta):
-    """Base class which every model factory should implement.
-    """
+    """Base class which every model factory should implement."""
 
     @abc.abstractstaticmethod
     def build_model(device: DEVICE) -> nn.Module:

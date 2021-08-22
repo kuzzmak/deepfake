@@ -3,7 +3,7 @@ import torch.nn as nn
 
 from config import APP_CONFIG
 
-from core.face_detection.algorithms.ModelFactory import ModelFactory
+from core.model_factory import ModelFactory
 from core.face_detection.algorithms.s3fd.s3fd import build_s3fd
 
 from enums import DEVICE
