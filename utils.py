@@ -109,6 +109,7 @@ def resize_image_retain_aspect_ratio(image: np.ndarray,
     return cv.resize(image, dim, interpolation=cv.INTER_AREA)
 
 
+# TODO replace gdown with implementation that updates work progress in gui
 def load_file_from_google_drive(model_id: str, filename: str) -> str:
     """Function for getting the model from google drive. If model already
     exists locally in `torch.hub.get_dir()` directory, then this path is
@@ -160,6 +161,8 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
         Console.print(msg)
     else:
         msg = Messages.CONSOLE_PRINT(
-            CONSOLE_MESSAGE_TYPE.LOG, f'Using local model instance: {cached_file}.')
+            CONSOLE_MESSAGE_TYPE.LOG,
+            f'Using local model instance: {cached_file}.',
+        )
         Console.print(msg)
     return cached_file
