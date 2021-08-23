@@ -23,7 +23,7 @@ class _MTCNN:
 
 
 @dataclass
-class _Algorithms:
+class _FaceDetectionAlgorithms:
     s3fd: _S3FD
     faceboxes: _FaceBoxes
     # mtcnn: _MTCNN
@@ -31,12 +31,28 @@ class _Algorithms:
 
 @dataclass
 class _FaceDetection:
-    algorithms: _Algorithms
+    algorithms: _FaceDetectionAlgorithms
+
+
+@dataclass
+class _FAN:
+    gd_id: str
+
+
+@dataclass
+class _LandmarkDetectionAlgorithms:
+    fan: _FAN
+
+
+@dataclass
+class _LandmarkDetection:
+    algorithms: _LandmarkDetectionAlgorithms
 
 
 @dataclass
 class _Core:
     face_detection: _FaceDetection
+    landmark_detection: _LandmarkDetection
     devices: List[DEVICE]
     selected_device: DEVICE = DEVICE.CPU
 
@@ -103,13 +119,20 @@ def _load_config():
 
         _face_detection = _core['face_detection']
 
-        _algorithms = _face_detection['algorithms']
+        _face_detection_algorithms = _face_detection['algorithms']
 
-        _s3fd = _algorithms['s3fd']
+        _s3fd = _face_detection_algorithms['s3fd']
         s3fd_gd_id = _s3fd['gd_id']
 
-        _faceboxes = _algorithms['faceboxes']
+        _faceboxes = _face_detection_algorithms['faceboxes']
         faceboxes_gd_id = _faceboxes['gd_id']
+
+        _landmark_detection = _core['landmark_detection']
+
+        _landmark_detection_algorithms = _landmark_detection['algorithms']
+
+        _fan = _landmark_detection_algorithms['fan']
+        fan_gd_id = _fan['gd_id']
 
         _gui = _app['gui']
 
@@ -137,9 +160,14 @@ def _load_config():
                 output_faces_directory,
                 _Core(
                     _FaceDetection(
-                        _Algorithms(
+                        _FaceDetectionAlgorithms(
                             _S3FD(s3fd_gd_id),
                             _FaceBoxes(faceboxes_gd_id)
+                        )
+                    ),
+                    _LandmarkDetection(
+                        _LandmarkDetectionAlgorithms(
+                            _FAN(fan_gd_id)
                         )
                     ),
                     devices,
