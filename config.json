@@ -15,6 +15,13 @@
                     }
                 }
             },
+            "landmark_detection": {
+                "algorithms": {
+                    "fan": {
+                        "gd_id": "1ZcuF9fBvZbLpC8jVJ66tdeVgBrDXcj85"
+                    }
+                }
+            },
             "selected_device": "cpu"
         },
         "gui": {
