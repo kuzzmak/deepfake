@@ -12,8 +12,7 @@ from utils import load_file_from_google_drive
 
 
 class S3FDModelFactory(ModelFactory):
-    """Factory for S3FD face detection algorithm.
-    """
+    """Factory for S3FD face detection algorithm."""
 
     def build_model(device: DEVICE) -> nn.Module:
         net = build_s3fd('test')
