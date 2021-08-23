@@ -10,7 +10,7 @@ class ModelFactory(abc.ABCMeta):
     @abc.abstractstaticmethod
     def build_model(device: DEVICE) -> nn.Module:
         """Builds specific model. Loads weights of the model and
-        puts model in eval mode.
+        everything else necessary.
 
         Parameters
         ----------
