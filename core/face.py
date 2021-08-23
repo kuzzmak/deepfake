@@ -1,5 +1,8 @@
-from core.bounding_box import BoundingBox
+import cv2 as cv
+
 import numpy as np
+
+from core.bounding_box import BoundingBox
 
 
 class Landmarks:
@@ -71,7 +74,7 @@ class Landmarks:
 
 class Face:
     """Class for everything that has to do with faces. Contains image from
-    which faces are extracted, extracted faces, alignments... Also, all 
+    which faces are extracted, extracted faces, alignments... Also, all
     operations that should be made on faces, should be implemented here.
     """
 
@@ -95,7 +98,7 @@ class Face:
         detected_face : np.ndarray, optional
             detected face in the raw_image, by default None
         landmarks : Landmarks, optional
-            array of dots representing face, by default None
+            object containing face landmark dots, by default None
         """
         self._raw_image = raw_image
         self._bounding_box = bounding_box
@@ -115,7 +118,7 @@ class Face:
         return self._detected_face
 
     @property
-    def landmarks(self) -> np.ndarray:
+    def landmarks(self) -> Landmarks:
         return self._landmarks
 
     @raw_image.setter
@@ -131,5 +134,24 @@ class Face:
         self._detected_face = detected_face
 
     @landmarks.setter
-    def landmarks(self, landmarks: np.ndarray):
+    def landmarks(self, landmarks: Landmarks):
         self._landmarks = landmarks
+
+    def draw_landmarks(self) -> np.ndarray:
+        """Draws small dots which represent face landmarks on the raw image
+        so it's easier to see if landmarks were detected correctly.
+
+        Returns
+        -------
+        np.ndarray
+            raw image copy with drawn landmarks
+        """
+        if self.landmarks is None:
+            return self.raw_image
+
+        copy = np.copy(self.raw_image)
+        for dot in self.landmarks.dots:
+            (x, y) = list(map(int, dot))
+            copy = cv.circle(copy, (x, y), radius=2,
+                             color=(255, 255, 255), thickness=-1)
+        return copy
