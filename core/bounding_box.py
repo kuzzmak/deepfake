@@ -35,9 +35,9 @@ class BoundingBox:
         return (self._x2, self._y2)
 
     @property
-    def center(self) -> Tuple[float, float]:
-        x = self._x2 - (self._x2 - self._x1) / 2.
-        y = self._y2 - (self._y2 - self._y1) / 2.
+    def center(self) -> Tuple[int, int]:
+        x = round(self._x2 - (self._x2 - self._x1) / 2.)
+        y = round(self._y2 - (self._y2 - self._y1) / 2.)
         return (x, y)
 
     def __repr__(self):
