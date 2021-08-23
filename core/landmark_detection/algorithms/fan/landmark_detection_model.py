@@ -1,7 +1,8 @@
 import abc
 
 from core.base_model import BaseModel
-from core.face import Face, Landmarks
+from core.face import Face
+from core.landmarks import Landmarks
 from core.model_factory import ModelFactory
 
 from enums import DEVICE

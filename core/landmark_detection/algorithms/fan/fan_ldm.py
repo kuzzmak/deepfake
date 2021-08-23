@@ -2,7 +2,8 @@ import numpy as np
 
 import torch
 
-from core.face import Face, Landmarks
+from core.face import Face
+from core.landmarks import Landmarks
 from core.landmark_detection.algorithms.fan.fan_model_factory \
     import FANModelFactory
 from core.landmark_detection.algorithms.fan.landmark_detection_model \
