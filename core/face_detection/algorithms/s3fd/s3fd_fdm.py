@@ -7,6 +7,7 @@ import numpy as np
 import torch
 
 from core.bounding_box import BoundingBox
+from core.face import Face
 from core.face_detection.algorithms.FaceDetectionModel \
     import FaceDetectionModel
 from core.face_detection.algorithms.s3fd.s3fd_model_factory \
@@ -17,13 +18,12 @@ from enums import DEVICE
 
 
 class S3FDFDM(FaceDetectionModel):
-    """Face detection model for S3FD algorithm.
-    """
+    """Face detection model for S3FD algorithm."""
 
     def __init__(self, device: DEVICE):
         super().__init__(S3FDModelFactory, device)
 
-    def detect(self, image: np.ndarray) -> List[np.ndarray]:
+    def detect_faces(self, image: np.ndarray) -> List[Face]:
         thresh = 0.6
         height, width, _ = image.shape
         max_im_shrink = np.sqrt(1700 * 1200 / (height * width))
