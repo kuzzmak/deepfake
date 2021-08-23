@@ -5,6 +5,7 @@ import numpy as np
 
 import torch
 
+from core.face import Face
 from core.face_detection.algorithms.FaceDetectionModel \
     import FaceDetectionModel
 from core.face_detection.algorithms.faceboxes.faceboxes_model_factory \
@@ -23,7 +24,7 @@ class FaceboxesFDM(FaceDetectionModel):
     def __init__(self, device: DEVICE):
         super().__init__(FaceboxesModelFactory, device)
 
-    def detect(self, image: np.ndarray) -> List[np.ndarray]:
+    def detect_faces(self, image: np.ndarray) -> List[Face]:
         img = np.float32(image)
         im_height, im_width, _ = img.shape
         scale = torch.Tensor(
