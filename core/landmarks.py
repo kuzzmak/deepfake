@@ -58,6 +58,10 @@ class Landmarks:
         return self.dots[self._face_dots]
 
     @property
+    def no_face(self) -> np.ndarray:
+        return self.dots[self._face_dots.stop:]
+
+    @property
     def eyebrow1(self) -> np.ndarray:
         return self.dots[self._eye1_dots]
 
