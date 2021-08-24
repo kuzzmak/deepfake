@@ -8,7 +8,7 @@ from core.landmark_detection.algorithms.fan.fan_model_factory \
     import FANModelFactory
 from core.landmark_detection.algorithms.fan.landmark_detection_model \
     import LandmarkDetectionModel
-from core.landmark_detection.algorithms.fan.face_alignment.utils \
+from core.landmark_detection.algorithms.fan.utils \
     import (
         crop,
         get_preds_fromhm,
