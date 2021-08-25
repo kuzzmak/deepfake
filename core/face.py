@@ -3,6 +3,7 @@ import cv2 as cv
 import numpy as np
 
 from core.bounding_box import BoundingBox
+from core.exception import NoLandmarksError
 from core.landmarks import Landmarks
 
 
@@ -18,7 +19,7 @@ class Face:
         bounding_box: BoundingBox = None,
         detected_face: np.ndarray = None,
         landmarks: Landmarks = None,
-
+        alignment: np.ndarray = None,
     ):
         """Constructor.
 
@@ -33,11 +34,14 @@ class Face:
             detected face in the raw_image, by default None
         landmarks : Landmarks, optional
             object containing face landmark dots, by default None
+        alignment : np.ndarray, optional
+            alignment which transforms initial image to the mean face
         """
         self._raw_image = raw_image
         self._bounding_box = bounding_box
         self._detected_face = detected_face
         self._landmarks = landmarks
+        self._alignment = alignment
 
     @property
     def raw_image(self) -> np.ndarray:
@@ -55,6 +59,10 @@ class Face:
     def landmarks(self) -> Landmarks:
         return self._landmarks
 
+    @property
+    def alignment(self) -> np.ndarray:
+        return self._alignment
+
     @raw_image.setter
     def raw_image(self, raw_image: np.ndarray):
         self._raw_image = raw_image
@@ -70,6 +78,10 @@ class Face:
     @landmarks.setter
     def landmarks(self, landmarks: Landmarks):
         self._landmarks = landmarks
+
+    @alignment.setter
+    def alignment(self, alignment: np.ndarray):
+        self._alignment = alignment
 
     def draw_landmarks(self) -> np.ndarray:
         """Draws small dots which represent face landmarks on the raw image
@@ -87,5 +99,57 @@ class Face:
         for dot in self.landmarks.dots:
             (x, y) = list(map(int, dot))
             copy = cv.circle(copy, (x, y), radius=2,
-                             color=(255, 255, 255), thickness=-1)
+                             color=(255, 0, 0), thickness=-1)
         return copy
+
+    def _add_landmark_to_mask(
+        self,
+        mask: np.ndarray,
+        landmarks: np.ndarray,
+    ) -> np.ndarray:
+        """Adds convex fill to the mask on spaces defined by landmarks. These
+        spaces can be specific face landmarks or whole face specified by
+        landmarks.
+
+        Parameters
+        ----------
+        mask : np.ndarray
+            mask on which to add convex fill
+        landmarks : np.ndarray
+            face landmarks
+
+        Returns
+        -------
+        np.ndarray
+            convex fill added on mask
+        """
+        landmarks = landmarks.astype(np.int32)
+
+        cv.fillConvexPoly(mask, cv.convexHull(landmarks), 1,)
+        dilate_h = mask.shape[0] // 64
+        dilate_w = mask.shape[1] // 64
+        mask = cv.dilate(
+            mask,
+            cv.getStructuringElement(cv.MORPH_ELLIPSE, (dilate_h, dilate_w)),
+            iterations=1,
+        )
+        return mask
+
+    @property
+    def mask(self) -> np.ndarray:
+        """Makes face mask which from the face landmarks.
+
+        Returns
+        -------
+        np.ndarray
+            face mask
+        """
+        h, w, _ = self.raw_image.shape
+        mask = np.zeros((h, w, 1), dtype=np.float32)
+
+        if self.landmarks is None:
+            raise NoLandmarksError()
+
+        mask = self._add_landmark_to_mask(mask, self.landmarks.dots)
+
+        return mask
