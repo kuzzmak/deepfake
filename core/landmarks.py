@@ -20,7 +20,7 @@ _mean_face_y = np.array([
     0.864805, 0.784792, 0.778746, 0.785343, 0.778746, 0.784792, 0.824182,
     0.831803, 0.824182])
 
-MEAN_LANDMARKS_2D = np.stack([_mean_face_x, _mean_face_y], axis=1)
+MEAN_FACE_2D = np.stack([_mean_face_x, _mean_face_y], axis=1)
 
 
 class Landmarks:
