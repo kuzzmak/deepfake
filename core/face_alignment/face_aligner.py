@@ -49,7 +49,7 @@ class FaceAligner:
 
         padding = image_size // 4
         aligned_image = transform(
-            face.raw_image,
+            face.raw_image.data,
             face.alignment,
             image_size,
             padding,
