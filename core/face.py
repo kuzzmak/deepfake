@@ -4,6 +4,7 @@ import numpy as np
 
 from core.bounding_box import BoundingBox
 from core.exception import NoLandmarksError
+from core.image.image import Image
 from core.landmarks import Landmarks
 
 
@@ -15,7 +16,7 @@ class Face:
 
     def __init__(
         self,
-        raw_image: np.ndarray = None,
+        raw_image: Image = None,
         bounding_box: BoundingBox = None,
         detected_face: np.ndarray = None,
         landmarks: Landmarks = None,
@@ -25,8 +26,9 @@ class Face:
 
         Parameters
         ----------
-        raw_image : np.ndarray, optional
-            image face, by default None
+        raw_image : Image, optional
+            image object containing image data and other properties,
+            by default None
         bounding_box : BoundingBox, optional
             two dots on the image which are enough to make a bounding box
             containing detected face, by default None
@@ -44,7 +46,7 @@ class Face:
         self._alignment = alignment
 
     @property
-    def raw_image(self) -> np.ndarray:
+    def raw_image(self) -> Image:
         return self._raw_image
 
     @property
@@ -64,7 +66,7 @@ class Face:
         return self._alignment
 
     @raw_image.setter
-    def raw_image(self, raw_image: np.ndarray):
+    def raw_image(self, raw_image: Image):
         self._raw_image = raw_image
 
     @bounding_box.setter
@@ -93,9 +95,9 @@ class Face:
             raw image copy with drawn landmarks
         """
         if self.landmarks is None:
-            return self.raw_image
+            return self.raw_image.data
 
-        copy = np.copy(self.raw_image)
+        copy = np.copy(self.raw_image.data)
         for dot in self.landmarks.dots:
             (x, y) = list(map(int, dot))
             copy = cv.circle(copy, (x, y), radius=2,
