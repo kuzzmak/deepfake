@@ -13,6 +13,7 @@ from core.face_detection.algorithms.face_detection_model \
 from core.face_detection.algorithms.s3fd.s3fd_model_factory \
     import S3FDModelFactory
 from core.face_detection.algorithms.s3fd.utils.augmentations import to_chw_bgr
+from core.image.image import Image
 
 from enums import DEVICE
 
@@ -23,12 +24,12 @@ class S3FDFDM(FaceDetectionModel):
     def __init__(self, device: DEVICE):
         super().__init__(S3FDModelFactory, device)
 
-    def detect_faces(self, image: np.ndarray) -> List[Face]:
+    def detect_faces(self, image: Image) -> List[Face]:
         thresh = 0.6
         height, width, _ = image.shape
         max_im_shrink = np.sqrt(1700 * 1200 / (height * width))
         img = cv.resize(
-            image,
+            image.data,
             None,
             None,
             fx=max_im_shrink,
@@ -61,4 +62,4 @@ class S3FDFDM(FaceDetectionModel):
                 bb = list(map(int, pt))
                 bounding_boxes.append(BoundingBox(*bb))
 
-        return self.extract_faces(bounding_boxes, image)
+        return self.extract_faces(bounding_boxes, image.data)

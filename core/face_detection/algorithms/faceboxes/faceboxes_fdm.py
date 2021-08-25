@@ -14,6 +14,7 @@ from core.face_detection.algorithms.faceboxes.layers.functions.prior_box \
     import PriorBox
 from core.face_detection.algorithms.utils.bbox_utils import decode
 from core.face_detection.algorithms.faceboxes.utils.nms_wrapper import nms
+from core.image.image import Image
 
 from enums import DEVICE
 
@@ -24,8 +25,8 @@ class FaceboxesFDM(FaceDetectionModel):
     def __init__(self, device: DEVICE):
         super().__init__(FaceboxesModelFactory, device)
 
-    def detect_faces(self, image: np.ndarray) -> List[Face]:
-        img = np.float32(image)
+    def detect_faces(self, image: Image) -> List[Face]:
+        img = np.float32(image.data)
         im_height, im_width, _ = img.shape
         scale = torch.Tensor(
             [img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
@@ -77,4 +78,4 @@ class FaceboxesFDM(FaceDetectionModel):
             b = b[:4]
             bounding_boxes.append(BoundingBox(*b))
 
-        return self.extract_faces(bounding_boxes, image)
+        return self.extract_faces(bounding_boxes, image.data)

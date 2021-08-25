@@ -50,7 +50,7 @@ class FANLDM(LandmarkDetectionModel):
         center[1] = center[1] - (d[3] - d[1]) * 0.12
         scale = (d[2] - d[0] + d[3] - d[1]) / 195.
 
-        inp = crop(face.raw_image, center, scale)
+        inp = crop(face.raw_image.data, center, scale)
         inp = torch.from_numpy(inp.transpose((2, 0, 1))).float()
 
         inp = inp.to(self.device.value)

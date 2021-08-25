@@ -6,6 +6,7 @@ import numpy as np
 from core.base_model import BaseModel
 from core.bounding_box import BoundingBox
 from core.face import Face
+from core.image.image import Image
 from core.model_factory import ModelFactory
 
 from enums import DEVICE
@@ -18,13 +19,13 @@ class FaceDetectionModel(BaseModel):
         super().__init__(model_factory, device)
 
     @abc.abstractmethod
-    def detect_faces(self, image: np.ndarray) -> List[Face]:
+    def detect_faces(self, image: Image) -> List[Face]:
         """If any face exists in image, this method should detect
         all of them.
 
         Parameters
         ----------
-        image : np.ndarray
+        image : Image
             image for detection
 
         Returns
@@ -62,7 +63,6 @@ class FaceDetectionModel(BaseModel):
 
             f = Face()
             f.bounding_box = bb
-            f.raw_image = img
             f.detected_face = img[y1:y2, x1:x2]
 
             extracted_faces.append(f)
