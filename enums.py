@@ -93,7 +93,7 @@ class DATA_TYPE(Enum):
     OUTPUT = 'Output'
 
 
-class IMAGE_FORMATS(Enum):
+class IMAGE_FORMAT(Enum):
     PNG = 'png'
     JPG = 'jpg'
 
