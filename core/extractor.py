@@ -4,6 +4,7 @@ import numpy as np
 
 from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
+from core.image.image import Image
 from core.landmark_detection.landmark_detection_model \
     import LandmarkDetectionModel
 from core.face_detection.algorithms.face_detection_model \
@@ -20,18 +21,16 @@ class Extractor:
         self.fdm = fdm
         self.ldm = ldm
 
-    def detect_faces(self, image: np.ndarray) -> List[Face]:
+    def detect_faces(self, image: Image) -> List[Face]:
         """Initiates face detection process on the `image`. When face is
-        detected, `Face` object is created and followind properties are
-        set:
-            - `raw_image` which is image from the input
-            - `bounding_box` which bounds face with two dots, upper left
-                and lower right and they make a bounding rectangle
+        detected, `Face` object is created and `bounding_box` property is set
+        which bounds a face with two dots, upper left and lower right and they
+        make a bounding rectangle.
 
         Parameters
         ----------
-        image : np.ndarray
-            image with potential faces
+        image : Image
+            image object with potential faces
 
         Returns
         -------
@@ -39,6 +38,8 @@ class Extractor:
             list of detected `Face` objects
         """
         faces = self.fdm.detect_faces(image)
+        for f in faces:
+            f.raw_image = image
         return faces
 
     def detect_landmarks(self, face: Face) -> None:
