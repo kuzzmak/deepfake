@@ -1,3 +1,4 @@
+from core.exception import NoBoundingBoxError
 import numpy as np
 
 import torch
@@ -6,7 +7,7 @@ from core.face import Face
 from core.landmarks import Landmarks
 from core.landmark_detection.algorithms.fan.fan_model_factory \
     import FANModelFactory
-from core.landmark_detection.algorithms.fan.landmark_detection_model \
+from core.landmark_detection.landmark_detection_model \
     import LandmarkDetectionModel
 from core.landmark_detection.algorithms.fan.utils \
     import (
@@ -23,6 +24,9 @@ class FANLDM(LandmarkDetectionModel):
         super().__init__(FANModelFactory, device)
 
     def detect_landmarks(self, face: Face) -> Landmarks:
+        if face.bounding_box is None:
+            raise NoBoundingBoxError()
+
         landmarks = self._get_landmarks_from_image(face)
         landmarks = Landmarks(landmarks)
         return landmarks
