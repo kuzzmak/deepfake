@@ -6,7 +6,7 @@ import numpy as np
 import torch
 
 from core.face import Face
-from core.face_detection.algorithms.FaceDetectionModel \
+from core.face_detection.algorithms.face_detection_model \
     import FaceDetectionModel
 from core.face_detection.algorithms.faceboxes.faceboxes_model_factory \
     import FaceboxesModelFactory

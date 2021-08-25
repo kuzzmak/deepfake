@@ -8,7 +8,7 @@ import torch
 
 from core.bounding_box import BoundingBox
 from core.face import Face
-from core.face_detection.algorithms.FaceDetectionModel \
+from core.face_detection.algorithms.face_detection_model \
     import FaceDetectionModel
 from core.face_detection.algorithms.s3fd.s3fd_model_factory \
     import S3FDModelFactory
