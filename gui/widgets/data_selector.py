@@ -9,7 +9,7 @@ from console import Console
 from enums import (
     CONSOLE_MESSAGE_TYPE,
     DATA_TYPE,
-    IMAGE_FORMATS,
+    IMAGE_FORMAT,
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
@@ -117,8 +117,8 @@ class DataSelector(BaseWidget):
         right_part_layout.addWidget(qwt.QLabel(text='Format: '))
 
         image_format_dropdown = qwt.QComboBox()
-        image_format_dropdown.addItem(IMAGE_FORMATS.PNG.value)
-        image_format_dropdown.addItem(IMAGE_FORMATS.JPG.value)
+        image_format_dropdown.addItem(IMAGE_FORMAT.PNG.value)
+        image_format_dropdown.addItem(IMAGE_FORMAT.JPG.value)
         right_part_layout.addWidget(image_format_dropdown)
 
         row = qwt.QWidget()
