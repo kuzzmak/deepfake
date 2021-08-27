@@ -8,6 +8,7 @@ from serializer.serializer import Serializer
 
 
 class FaceSerializer(Serializer):
+    """Serializer for the `Face` object."""
 
     def load(path: str) -> Face:
         """Load face from the metadata file.
