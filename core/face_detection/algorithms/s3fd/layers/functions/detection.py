@@ -10,13 +10,13 @@ class Detect:
     confidence score and locations.
     """
 
-    def __init__(self, cfg):
-        self.num_classes = cfg.NUM_CLASSES
-        self.top_k = cfg.TOP_K
-        self.nms_thresh = cfg.NMS_THRESH
-        self.conf_thresh = cfg.CONF_THRESH
-        self.variance = cfg.VARIANCE
-        self.nms_top_k = cfg.NMS_TOP_K
+    def __init__(self):
+        self.num_classes = 2
+        self.top_k = 5000
+        self.nms_thresh = 0.3
+        self.conf_thresh = 0.05
+        self.variance = [0.1, 0.2]
+        self.nms_top_k = 5000
 
     def __call__(self, loc_data: torch.Tensor,
                  conf_data: torch.Tensor,

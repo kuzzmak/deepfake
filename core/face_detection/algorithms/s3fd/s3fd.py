@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from core.face_detection.algorithms.s3fd.data.config import cfg
 from core.face_detection.algorithms.s3fd.layers.modules.l2norm import L2Norm
 from core.face_detection.algorithms.s3fd.layers.functions.detection \
     import Detect
@@ -45,7 +44,7 @@ class S3FD(nn.Module):
         self.conf = nn.ModuleList(head[1])
 
         self.softmax = nn.Softmax(dim=-1)
-        self.detect = Detect(cfg)
+        self.detect = Detect()
 
     def forward(self, x):
         """Applies network layers and ops on input image(s) x.
@@ -123,7 +122,7 @@ class S3FD(nn.Module):
             feat += [loc[i].size(1), loc[i].size(2)]
             features_maps += [feat]
 
-        self.priorbox = PriorBox(size, features_maps, cfg)
+        self.priorbox = PriorBox(size, features_maps)
         self.priors = self.priorbox.forward()
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)

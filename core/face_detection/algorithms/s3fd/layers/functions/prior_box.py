@@ -8,17 +8,17 @@ class PriorBox:
     feature map.
     """
 
-    def __init__(self, input_size, feature_maps, cfg):
+    def __init__(self, input_size, feature_maps):
         super(PriorBox, self).__init__()
 
         self.imh = input_size[0]
         self.imw = input_size[1]
 
         # number of priors for feature map location (either 4 or 6)
-        self.variance = cfg.VARIANCE or [0.1]
-        self.min_sizes = cfg.ANCHOR_SIZES
-        self.steps = cfg.STEPS
-        self.clip = cfg.CLIP
+        self.variance = [0.1, 0.2]
+        self.min_sizes = [16, 32, 64, 128, 256, 512]
+        self.steps = [4, 8, 16, 32, 64, 128]
+        self.clip = False
         for v in self.variance:
             if v <= 0:
                 raise ValueError('Variances must be greater than 0')
