@@ -125,6 +125,10 @@ class FACE_DETECTION_ALGORITHM(Enum):
     FACEBOXES = 'faceboxes'
 
 
+class LANDMARK_DETECTION_ALGORITHM(Enum):
+    FAN = 'fan'
+
+
 class FILE_TYPE(Enum):
     IMAGE = 'image'
 
