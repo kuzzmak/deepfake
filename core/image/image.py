@@ -12,6 +12,7 @@ from core.exception import (
     UnsupportedImageTypeError,
 )
 from enums import IMAGE_FORMAT
+from utils import get_file_extension
 
 
 class Image:
@@ -34,7 +35,7 @@ class Image:
         UnsupportedImageTypeError
             trying to load image of the unsupported format
         """
-        ext = path.split('.')[-1]
+        ext = get_file_extension(path)
         formats = [f.value for f in IMAGE_FORMAT]
         if ext not in formats:
             raise UnsupportedImageTypeError(ext)
