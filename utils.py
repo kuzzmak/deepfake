@@ -1,6 +1,4 @@
-from enums import CONSOLE_MESSAGE_TYPE
 import errno
-from message.message import Messages
 import os
 from typing import List
 
@@ -14,7 +12,51 @@ import PyQt5.QtGui as qtg
 
 from torch.hub import get_dir
 
-from console import Console
+# from console import Console
+from enums import CONSOLE_MESSAGE_TYPE, IMAGE_FORMAT
+from message.message import Messages
+
+
+def get_file_extension(file_path: str) -> str:
+    """Gets file extension.
+
+    Parameters
+    ----------
+    file_path : str
+        path of the file
+
+    Returns
+    -------
+    str
+        file extension
+    """
+    ext = file_path.split('.')[-1]
+    return ext
+
+
+def get_image_paths_from_dir(dir: str) -> List[str] or None:
+    """Function for getting all image paths in directory `dir`. Only images
+    with extension in `IMAGE_FORMAT` will be returned.
+
+    Parameters
+    ----------
+    dir : str
+        directory with images
+
+    Returns
+    -------
+    List[str] or None
+        image paths or None if directory does not exist
+    """
+    file_paths = get_file_paths_from_dir(dir)
+    if file_paths is None:
+        return None
+
+    images_exts = [f.value for f in IMAGE_FORMAT]
+    image_paths = [fp for fp in file_paths
+                   if get_file_extension(fp) in images_exts]
+
+    return image_paths
 
 
 def get_file_paths_from_dir(dir: str) -> List[str] or None:
@@ -149,7 +191,7 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
         msg = Messages.CONSOLE_PRINT(
             CONSOLE_MESSAGE_TYPE.LOG, f'{filename} not found locally. ' +
             'Downloading from google drive. Please wait...')
-        Console.print(msg)
+        # Console.print(msg)
 
         url = f'https://drive.google.com/uc?id={model_id}'
         model_dir = os.path.join(models_dir, filename)
@@ -158,11 +200,49 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
         msg = Messages.CONSOLE_PRINT(
             CONSOLE_MESSAGE_TYPE.LOG, 'Done downloading. ' +
             f'Model location: {models_dir}.')
-        Console.print(msg)
+        # Console.print(msg)
     else:
         msg = Messages.CONSOLE_PRINT(
             CONSOLE_MESSAGE_TYPE.LOG,
             f'Using local model instance: {cached_file}.',
         )
-        Console.print(msg)
+        # Console.print(msg)
     return cached_file
+
+
+def construct_file_path(file_path: str) -> str:
+    """Constructs new file name by adding a number to the end of the
+    filename if file on this path already exists.
+
+    Parameters
+    ----------
+    file_path : str
+        file path
+
+    Returns
+    -------
+    str
+        file path
+    """
+    if os.path.exists(file_path):
+        # ['folder1', 'folder2', 'file.txt']
+        parts = file_path.split(os.sep)
+        # 'file.txt'
+        filename_with_ext = parts.pop()
+
+        (filename, ext) = filename_with_ext.split('.')
+
+        # making new file path where numbers are added to the end of the
+        # filename if more copies of the same file exist
+        counter = 1
+        while True:
+            new_filename_with_ext = f'{filename}_{str(counter)}.{ext}'
+            folders = f'{os.sep}'.join(parts)
+            new_file_path = os.path.join(folders, new_filename_with_ext)
+
+            if os.path.exists(new_file_path):
+                counter += 1
+            else:
+                return new_file_path
+    else:
+        return file_path
