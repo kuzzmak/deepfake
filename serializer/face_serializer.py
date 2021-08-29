@@ -5,6 +5,7 @@ from core.face import Face
 from core.exception import FileDoesNotExistsError, NotDirectoryError
 
 from serializer.serializer import Serializer
+from utils import construct_file_path
 
 
 class FaceSerializer(Serializer):
@@ -63,4 +64,5 @@ class FaceSerializer(Serializer):
             path,
             'metadata_' + image_name + '.p',
         )
+        image_path = construct_file_path(image_path)
         pickle.dump(obj, open(image_path, 'wb'))
