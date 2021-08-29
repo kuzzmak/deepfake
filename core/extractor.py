@@ -1,6 +1,5 @@
 import argparse
 import os
-from serializer.face_serializer import FaceSerializer
 from typing import List, Union
 
 import numpy as np
@@ -18,6 +17,7 @@ from enums import (
     FACE_DETECTION_ALGORITHM,
     LANDMARK_DETECTION_ALGORITHM,
 )
+from serializer.face_serializer import FaceSerializer
 from utils import get_image_paths_from_dir
 
 
