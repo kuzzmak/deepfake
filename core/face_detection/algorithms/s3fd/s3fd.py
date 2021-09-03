@@ -123,10 +123,10 @@ class S3FD(nn.Module):
             features_maps += [feat]
 
         self.priorbox = PriorBox(size, features_maps)
-        self.priors = self.priorbox.forward()
 
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
+        self.priors = self.priorbox.forward()
 
         output = self.detect(
             # loc preds
@@ -134,7 +134,7 @@ class S3FD(nn.Module):
             # conf preds
             self.softmax(conf.view(conf.size(0), -1, self.num_classes)),
             # default boxes
-            self.priors.type(type(x.data))
+            self.priors.type(type(x.data)).to(loc.device)
         )
         return output
 
