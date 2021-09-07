@@ -1,0 +1,42 @@
+version: 1
+formatters:
+  simple:
+    format: "[%(asctime)s] - %(name)s - %(levelname)s - %(message)s"
+    datefmt: '%Y-%m-%d %H:%M:%S'
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: simple
+    stream: ext://sys.stdout
+  file:
+    class: logging.handlers.TimedRotatingFileHandler
+    formatter: simple
+    filename: logs/df.log
+    when: midnight
+    interval: 1
+  gui:
+    (): logger.GuiHandler
+    formatter: simple
+    level: DEBUG
+    formatter: simple
+loggers:
+  gui.widgets.data_selector:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
+  test:
+    level: DEBUG
+    handlers: [file, gui]
+    propagate: no
+  utils:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: no
+  core.extractor:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: no
+root:
+  level: DEBUG
+  handlers: [console, file]
