@@ -1,20 +1,17 @@
+import logging
 import errno
 import os
-from typing import List
-
-import numpy as np
+from typing import List, Optional
 
 import cv2 as cv
-
 import gdown
-
+import numpy as np
 import PyQt5.QtGui as qtg
-
 from torch.hub import get_dir
 
-# from console import Console
-from enums import CONSOLE_MESSAGE_TYPE, IMAGE_FORMAT
-from message.message import Messages
+from enums import IMAGE_FORMAT
+
+logger = logging.getLogger(__name__)
 
 
 def get_file_extension(file_path: str) -> str:
@@ -59,19 +56,25 @@ def get_image_paths_from_dir(dir: str) -> List[str] or None:
     return image_paths
 
 
-def get_file_paths_from_dir(dir: str) -> List[str] or None:
-    """Returns list of paths to files in directory. If no files
-    are found in directory, None is returned.
+def get_file_paths_from_dir(
+    dir: str,
+    extensions: Optional[List[str]] = None,
+) -> Optional[List[str]]:
+    """Constructs file apsolute file paths of the files in `dir`. If files
+    with particular extensions are allowed, then `extensions` argument
+    should be also passed to function.
 
     Parameters
     ----------
     dir : str
         directory with files
+    extensions : Optional[List[str]], optional
+        files that end with these extension will be included, by default None
 
     Returns
     -------
-    list[str] or None
-        list of paths
+    Optional[List[str]]
+        list of file paths is they satisfy `extensions` argument
     """
     if not os.path.exists(dir):
         return None
@@ -80,6 +83,12 @@ def get_file_paths_from_dir(dir: str) -> List[str] or None:
         dir) if os.path.isfile(os.path.join(dir, f))]
     curr_dir = os.path.abspath(dir)
     file_paths = [os.path.join(curr_dir, x) for x in files]
+
+    if extensions is None:
+        return file_paths
+
+    exts = set(extensions)
+    file_paths = [f for f in file_paths if get_file_extension(f) in exts]
 
     return file_paths
 
@@ -177,7 +186,9 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
     models_dir = os.path.join(hub_dir, 'checkpoints')
 
     try:
+        logger.debug('No models folder, creating...')
         os.makedirs(models_dir)
+        logger.debug(f'New models folder: {models_dir}')
     except OSError as e:
         if e.errno == errno.EEXIST:
             # Directory already exists, ignore.
@@ -188,25 +199,19 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
 
     cached_file = os.path.join(models_dir, filename)
     if not os.path.exists(cached_file):
-        msg = Messages.CONSOLE_PRINT(
-            CONSOLE_MESSAGE_TYPE.LOG, f'{filename} not found locally. ' +
-            'Downloading from google drive. Please wait...')
-        # Console.print(msg)
+        logger.debug(
+            'Model not found locally, downloading from Google drive...')
 
         url = f'https://drive.google.com/uc?id={model_id}'
         model_dir = os.path.join(models_dir, filename)
         gdown.download(url, model_dir, quiet=True)
 
-        msg = Messages.CONSOLE_PRINT(
-            CONSOLE_MESSAGE_TYPE.LOG, 'Done downloading. ' +
-            f'Model location: {models_dir}.')
-        # Console.print(msg)
+        logger.debug(
+            f'Model downloading finished. Model location: {model_dir}.')
+
     else:
-        msg = Messages.CONSOLE_PRINT(
-            CONSOLE_MESSAGE_TYPE.LOG,
-            f'Using local model instance: {cached_file}.',
-        )
-        # Console.print(msg)
+        logger.debug(f'Using local model instance: {cached_file}.')
+
     return cached_file
 
 
