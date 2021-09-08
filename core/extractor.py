@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from typing import List, Union
 
@@ -19,6 +20,8 @@ from enums import (
 )
 from serializer.face_serializer import FaceSerializer
 from utils import get_image_paths_from_dir
+
+logger = logging.getLogger(__name__)
 
 
 class ExtractorConfiguration:
@@ -178,7 +181,8 @@ class Extractor:
         image_paths = get_image_paths_from_dir(self.input_dir)
 
         if image_paths:
-            print('Extraction process started, please wait...\n')
+            logger.info('Extraction started, please wait...')
+
             pbar = tqdm(
                 image_paths,
                 desc="Images done",
@@ -193,9 +197,9 @@ class Extractor:
                     self.detect_landmarks(f)
                     FaceSerializer.save(f, self.output_dir)
 
-            print('\nExtraction process done.')
+            logger.info('Extraction process done.')
         else:
-            print(f'No supported images in folder: {self.input_dir}.')
+            logger.warning(f'No supported images in folder: {self.input_dir}.')
 
 
 def main():
