@@ -38,7 +38,6 @@ class Console(qtc.QObject):
     @qtc.pyqtSlot(str, str, Level, str)
     def _print(self, date: str, name: str, level: Level, msg: str):
         prefix = self._get_prefix(date, name, level)
-        print(prefix)
         msg = console_message_template.format(
             APP_CONFIG.app.gui.widgets.console.text_size,
             COLOR.WHITE.value,
