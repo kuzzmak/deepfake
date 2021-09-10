@@ -9,7 +9,7 @@ from core.landmarks import MEAN_FACE_2D
 class FaceAligner:
 
     @staticmethod
-    def calculate_alignment(face: Face):
+    def _calculate_alignment(face: Face):
         """Calculates alignment matrix which transforms face from the raw
         image (detected face) into the mean face. Alignment matrix is set
         to the `alignment` atribute of the `face` input object.
@@ -44,17 +44,7 @@ class FaceAligner:
         np.ndarray
             aligned image of the face
         """
-        if face.alignment is None:
-            FaceAligner.calculate_alignment(face)
-
-        padding = image_size // 4
-        aligned_image = transform(
-            face.raw_image.data,
-            face.alignment,
-            image_size,
-            padding,
-        )
-        return aligned_image
+        return FaceAligner._get_aligned(face, image_size, False)
 
     @staticmethod
     def get_aligned_mask(face: Face, image_size: int) -> np.ndarray:
@@ -73,10 +63,46 @@ class FaceAligner:
         np.ndarray
             transformed mask
         """
-        if face.alignment is None:
-            FaceAligner.calculate_alignment(face)
+        return FaceAligner._get_aligned(face, image_size, True)
 
-        mask = face.mask
+    @staticmethod
+    def _get_aligned(
+        face: Face,
+        image_size: int,
+        mask: bool = False,
+    ) -> np.ndarray:
+        """Resizes detected face or face mask to the size `image_size`. If
+        face objects contains no alignment, it is being calculated.
+
+        Parameters
+        ----------
+        face : Face
+            face object
+        image_size : int
+            size of the square to which image is being resized
+        mask : bool, optional
+            return aligned mask, if false, then aligned face is returned, by
+            default False
+
+        Returns
+        -------
+        np.ndarray
+            aligned face or mask
+        """
+        if face.alignment is None:
+            FaceAligner._calculate_alignment(face)
+
+        image = face.raw_image.data
+
+        if mask:
+            # Mask contains ones on places where face should be so in order to
+            # extract only face from the raw image, mask is multiplied with
+            # the raw image so only pixels on places where mask is one, appear
+            # in final image. OpenCV uses H,W,C convention so image is
+            # transposed in order to be able to do matrix multiplication.
+            image = image.transpose(2, 0, 1) * face.mask
+            image = image.transpose(1, 2, 0).astype('uint8')
+
         padding = image_size // 4
-        aligned_mask = transform(mask, face.alignment, image_size, padding)
-        return aligned_mask
+        aligned_image = transform(image, face.alignment, image_size, padding)
+        return aligned_image
