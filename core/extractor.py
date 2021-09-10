@@ -140,42 +140,6 @@ class Extractor:
         landmarks = self.ldm.detect_landmarks(face)
         face.landmarks = landmarks
 
-    def get_aligned_face(self, face: Face, image_size: int) -> np.ndarray:
-        """Aligned and centered face getter.
-
-        Parameters
-        ----------
-        face : Face
-            face object containing everything necessary
-        image_size : int
-            size of the square in which image will be resized
-
-        Returns
-        -------
-        np.ndarray
-            aligned face
-        """
-        aligned_face = FaceAligner.get_aligned_face(face, image_size)
-        return aligned_face
-
-    def get_aligned_mask(self, face: Face, image_size: int) -> np.ndarray:
-        """Aligned and centered face mask getter.
-
-        Parameters
-        ----------
-        face : Face
-            face object containing everything necessary
-        image_size : int
-            size of the square in which image will be resized
-
-        Returns
-        -------
-        np.ndarray
-            aligned face mask
-        """
-        aligned_mask = FaceAligner.get_aligned_mask(face, image_size)
-        return aligned_mask
-
     def run(self):
         """Initiates process of face and landmark extraction."""
         image_paths = get_image_paths_from_dir(self.input_dir)
