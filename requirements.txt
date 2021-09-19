@@ -4,6 +4,7 @@ numba==0.54.0
 numpy==1.20.3
 opencv-python==4.5.3.56
 Pillow==8.3.1
+pytorch-ignite==0.4.6
 PyQt5==5.15.4
 scipy==1.7.1
 torch==1.9.0
