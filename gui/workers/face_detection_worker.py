@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Dict, Optional
 
@@ -28,6 +29,8 @@ from gui.workers.worker import Worker
 from message.message import Body, IOOperationBody, Message, Messages
 
 from utils import get_file_paths_from_dir
+
+logger = logging.getLogger(__name__)
 
 
 class FaceDetectionWorker(Worker):
@@ -97,10 +100,19 @@ class FaceDetectionWorker(Worker):
                 if data_type == DATA_TYPE.INPUT \
                 else SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER
 
+            logger.info(
+                f'Face detection process started for {data_type.value} data.'
+            )
+
             for img_path in images:
 
                 image = cv.imread(img_path, cv.IMREAD_COLOR)
                 faces = model.detect_faces(image)
+
+                logger.info(
+                    f'Extraced face progress: {images_counter}/' +
+                    f'{len(img_path)}.'
+                )
 
                 for face in faces:
                     msg_image_display = Message(
@@ -138,3 +150,7 @@ class FaceDetectionWorker(Worker):
                     message_worker_sig.emit(msg_save_face)
 
                     images_counter += 1
+
+            logger.info(
+                f'Face detection process finished for {data_type.value} data.'
+            )

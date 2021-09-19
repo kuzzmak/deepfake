@@ -1,12 +1,11 @@
-from datetime import datetime
-
 import PyQt5.QtCore as qtc
 
 from config import APP_CONFIG
-
-from enums import BODY_KEY, CONSOLE_COLORS, CONSOLE_MESSAGE_TYPE
-
-from message.message import Message
+from enums import (
+    COLOR,
+    Level,
+    LevelColor,
+)
 
 console_message_template = '<span style="font-size:{}pt; ' + \
     'color:{}; white-space:pre;">{}<span>'
@@ -15,7 +14,7 @@ console_message_template = '<span style="font-size:{}pt; ' + \
 class Console(qtc.QObject):
 
     __instance = None
-    _int_print_sig = qtc.pyqtSignal(Message)
+    _int_print_sig = qtc.pyqtSignal(str, str, Level, str)
     print_sig = qtc.pyqtSignal(str)
 
     def __init__(self):
@@ -33,35 +32,24 @@ class Console(qtc.QObject):
         return Console.__instance
 
     @staticmethod
-    def print(msg: Message):
-        Console.get_instance()._int_print_sig.emit(msg)
+    def print(date: str, name: str, level: Level, msg: str):
+        Console.get_instance()._int_print_sig.emit(date, name, level, msg)
 
-    @qtc.pyqtSlot(Message)
-    def _print(self, msg: Message):
-        data = msg.body.data
-        msg_type = data[BODY_KEY.CONSOLE_MESSAGE_TYPE]
-        msg = data[BODY_KEY.MESSAGE]
-        msg_type_prefix = self._get_console_message_prefix(msg_type)
-        curr_time_prefix = self._get_current_time_prefix() + ' - '
-        text = msg_type_prefix + \
-            console_message_template.format(
-                APP_CONFIG.app.gui.widgets.console.text_size,
-                CONSOLE_COLORS.WHITE.value,
-                curr_time_prefix + msg
-            )
-        self.print_sig.emit(text)
+    @qtc.pyqtSlot(str, str, Level, str)
+    def _print(self, date: str, name: str, level: Level, msg: str):
+        prefix = self._get_prefix(date, name, level)
+        msg = console_message_template.format(
+            APP_CONFIG.app.gui.widgets.console.text_size,
+            COLOR.WHITE.value,
+            msg
+        )
+        self.print_sig.emit(prefix + msg)
 
     @staticmethod
-    def _get_current_time_prefix():
-        return '[' + datetime.now().strftime('%H:%M:%S') + ']'
-
-    @staticmethod
-    def _get_console_message_prefix(message_type: CONSOLE_MESSAGE_TYPE):
-        prefix_color = message_type.value.prefix_color.value
-        prefix = message_type.value.prefix
+    def _get_prefix(date: str, name: str, level: Level):
         prefix = console_message_template.format(
             APP_CONFIG.app.gui.widgets.console.text_size,
-            prefix_color,
-            f'{prefix: <11}',
+            LevelColor[level.value].value.value,
+            f'[{date}] - {name} - {level.value} - '
         )
         return prefix

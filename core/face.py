@@ -139,7 +139,7 @@ class Face:
 
     @property
     def mask(self) -> np.ndarray:
-        """Makes face mask which from the face landmarks.
+        """Makes face mask based on the detected landmarks on the whole image.
 
         Returns
         -------

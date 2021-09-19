@@ -1,10 +1,9 @@
+import logging
 import os
 from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
-
-from console import Console
 
 from enums import (
     CONSOLE_MESSAGE_TYPE,
@@ -28,6 +27,8 @@ from message.message import (
 )
 
 from utils import get_file_paths_from_dir
+
+logger = logging.getLogger(__name__)
 
 
 class DataSelector(BaseWidget):
@@ -156,10 +157,8 @@ class DataSelector(BaseWidget):
             options=options)
 
         if video_path:
-            msg = Messages.CONSOLE_PRINT(
-                CONSOLE_MESSAGE_TYPE.LOG,
-                f'{self.data_type.value} video selected from: {video_path}'
-            )
+            logger.info(
+                f'{self.data_type.value} video selected from: {video_path}.')
 
             self.video_player.video_selection.emit(video_path)
             video_name = video_path.split(os.sep)[-1]
@@ -168,9 +167,7 @@ class DataSelector(BaseWidget):
             self.video_path = video_path
 
         else:
-            msg = Messages.DIRECTORY_NOT_SELECTED
-
-        Console.print(msg)
+            logger.warning('No directory selected.')
 
     def select_pictures(self):
         """Select directory with faces which would be used for face
@@ -185,23 +182,29 @@ class DataSelector(BaseWidget):
 
         if directory:
 
+            logger.info(f'Selected pictures folder: {directory}.')
+
             self.preview_widget.setCurrentWidget(self.picture_viewer)
 
             image_paths = get_file_paths_from_dir(directory)
             if len(image_paths) == 0:
-                msg = Messages.NO_IMAGES_FOUND
+                logger.warning(
+                    f'No supported pictures were found in: {directory}.'
+                )
 
             else:
                 self.picture_viewer.pictures_added_sig.emit(image_paths)
 
-                msg = Messages.CONSOLE_PRINT(
-                    CONSOLE_MESSAGE_TYPE.LOG,
-                    f'Selected {self.data_type.value.lower()} data directory: ' +
-                    f'{directory} with {len(image_paths)} pictures.'
+                logger.info(
+                    f'Selected {directory} as a ' +
+                    f'{self.data_type.value.lower()} data directory.' +
+                    f' This directory contains {len(image_paths)} ' +
+                    'supported pictures.'
                 )
 
                 self.preview_label.setText(
-                    f'Preview of pictures in {directory} directory.')
+                    f'Preview of pictures in {directory} directory.'
+                )
 
                 self.data_directory = directory
 
@@ -215,9 +218,7 @@ class DataSelector(BaseWidget):
                     )
 
         else:
-            msg = Messages.DIRECTORY_NOT_SELECTED
-
-        Console.print(msg)
+            logger.warning('No directory selected.')
 
     def select_frames_directory(self):
         """Selects where extracted frames from video will go.
@@ -228,6 +229,11 @@ class DataSelector(BaseWidget):
         if directory:
             msg = Messages.CONSOLE_PRINT(
                 CONSOLE_MESSAGE_TYPE.LOG,
+                f'Selected {self.data_type.value.lower()} ' +
+                f'directory: {directory} for extracted frames.'
+            )
+
+            logger.info(
                 f'Selected {self.data_type.value.lower()} ' +
                 f'directory: {directory} for extracted frames.'
             )
@@ -250,9 +256,7 @@ class DataSelector(BaseWidget):
                 )
 
         else:
-            msg = Messages.DIRECTORY_NOT_SELECTED
-
-        Console.print(msg)
+            logger.warning('No directory selected.')
 
     @qtc.pyqtSlot(str)
     def biggest_frame_dim_input_text_changed(self, text: str):

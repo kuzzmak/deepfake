@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 from typing import List, Union
 
@@ -19,6 +20,8 @@ from enums import (
 )
 from serializer.face_serializer import FaceSerializer
 from utils import get_image_paths_from_dir
+
+logger = logging.getLogger(__name__)
 
 
 class ExtractorConfiguration:
@@ -137,48 +140,13 @@ class Extractor:
         landmarks = self.ldm.detect_landmarks(face)
         face.landmarks = landmarks
 
-    def get_aligned_face(self, face: Face, image_size: int) -> np.ndarray:
-        """Aligned and centered face getter.
-
-        Parameters
-        ----------
-        face : Face
-            face object containing everything necessary
-        image_size : int
-            size of the square in which image will be resized
-
-        Returns
-        -------
-        np.ndarray
-            aligned face
-        """
-        aligned_face = FaceAligner.get_aligned_face(face, image_size)
-        return aligned_face
-
-    def get_aligned_mask(self, face: Face, image_size: int) -> np.ndarray:
-        """Aligned and centered face mask getter.
-
-        Parameters
-        ----------
-        face : Face
-            face object containing everything necessary
-        image_size : int
-            size of the square in which image will be resized
-
-        Returns
-        -------
-        np.ndarray
-            aligned face mask
-        """
-        aligned_mask = FaceAligner.get_aligned_mask(face, image_size)
-        return aligned_mask
-
     def run(self):
         """Initiates process of face and landmark extraction."""
         image_paths = get_image_paths_from_dir(self.input_dir)
 
         if image_paths:
-            print('Extraction process started, please wait...\n')
+            logger.info('Extraction started, please wait...')
+
             pbar = tqdm(
                 image_paths,
                 desc="Images done",
@@ -193,9 +161,9 @@ class Extractor:
                     self.detect_landmarks(f)
                     FaceSerializer.save(f, self.output_dir)
 
-            print('\nExtraction process done.')
+            logger.info('Extraction process done.')
         else:
-            print(f'No supported images in folder: {self.input_dir}.')
+            logger.warning(f'No supported images in folder: {self.input_dir}.')
 
 
 def main():

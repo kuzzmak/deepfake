@@ -17,6 +17,29 @@ class CONSOLE_MESSAGE_TYPE(Enum):
     WARNING = ConsolePrefix('[WARNING]', CONSOLE_COLORS.ORANGE)
 
 
+class Level(Enum):
+    DEBUG = 'DEBUG'
+    CRITICAL = 'CRITICAL'
+    INFO = 'INFO'
+    WARNING = 'WARNING'
+    ERROR = 'ERROR'
+
+
+class COLOR(Enum):
+    RED = '#ff0000'
+    BLACK = '#000000'
+    ORANGE = '#ffa500'
+    WHITE = '#ffffff'
+
+
+class LevelColor(Enum):
+    DEBUG = COLOR.WHITE
+    CRITICAL = COLOR.RED
+    INFO = COLOR.WHITE
+    WARNING = COLOR.ORANGE
+    ERROR = COLOR.RED
+
+
 class IO_OPERATION_TYPE(Enum):
     DELETE = 'delete'
     RENAME = 'rename'

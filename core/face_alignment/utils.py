@@ -30,7 +30,9 @@ def transform(
     mat = mat * size
     mat[:, 2] += padding
     new_size = int(size + padding * 2)
-    return cv.warpAffine(image, mat, (new_size, new_size))
+    warped = cv.warpAffine(image, mat, (new_size, new_size))
+    # TODO cange resizing type when image is smaller or bigger
+    return cv.resize(warped, (size, size), cv.INTER_CUBIC)
 
 
 def umeyama(src, dst, estimate_scale):

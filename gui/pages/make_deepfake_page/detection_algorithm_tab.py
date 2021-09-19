@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Optional
 
 import PyQt5.QtGui as qtg
@@ -6,11 +7,8 @@ import PyQt5.QtWidgets as qwt
 
 from config import APP_CONFIG
 
-from console import Console
-
 from enums import (
     BODY_KEY,
-    CONSOLE_MESSAGE_TYPE,
     DATA_TYPE,
     FACE_DETECTION_ALGORITHM,
     JOB_TYPE,
@@ -22,9 +20,11 @@ from enums import (
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.picture_viewer import PictureViewer
 
-from message.message import Body, Message, Messages
+from message.message import Body, Message
 
 from resources.icons import icons
+
+logger = logging.getLogger(__name__)
 
 
 class DetectionAlgorithmTab(BaseWidget):
@@ -263,16 +263,13 @@ class DetectionAlgorithmTab(BaseWidget):
             else:
                 self.output_faces_directory = directory
 
-            msg = Messages.CONSOLE_PRINT(
-                CONSOLE_MESSAGE_TYPE.LOG,
+            logger.info(
                 'Selected faces directory for ' +
                 f'{data_type.value.lower()}: {directory}.'
             )
 
         else:
-            msg = Messages.DIRECTORY_NOT_SELECTED
-
-        Console.print(msg)
+            logger.warning('No directory selected.')
 
     def start_detection(self):
         """Sends message with faces directories to make deepfake page.
