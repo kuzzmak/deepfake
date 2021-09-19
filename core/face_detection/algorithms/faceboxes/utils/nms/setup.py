@@ -7,6 +7,9 @@ extensions = [
     Extension('cpu_nms', ['cpu_nms.pyx'],
               include_dirs=[numpy.get_include()]
               ),
+    Extension('gpu_nms', ['gpu_nms.pyx'],
+              include_dirs=[numpy.get_include()]
+              ),
 ]
 
 setup(

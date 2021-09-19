@@ -6,7 +6,7 @@
 # --------------------------------------------------------
 
 from core.face_detection.algorithms.faceboxes.utils.nms.cpu_nms import cpu_nms
-# from core.face_detection.algorithms.faceboxes.utils.nms.gpu_nms import gpu_nms
+from core.face_detection.algorithms.faceboxes.utils.nms.gpu_nms import gpu_nms
 
 
 def nms(dets, thresh, device='cpu'):
@@ -15,4 +15,4 @@ def nms(dets, thresh, device='cpu'):
         return []
     if device == 'cpu':
         return cpu_nms(dets, thresh)
-    # return gpu_nms(dets, thresh)
+    return gpu_nms(dets, thresh)
