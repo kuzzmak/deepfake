@@ -14,6 +14,7 @@ class Conv2d(nn.Module):
         kernel_size: int,
         stride: int = 1,
         padding: Union[str, int] = 'valid',
+        bias: bool = False,
         activation: Activation = LeakyReLu(0.01),
     ):
         super().__init__()
@@ -24,6 +25,7 @@ class Conv2d(nn.Module):
             kernel_size=kernel_size,
             stride=stride,
             padding=padding,
+            bias=bias,
         )
         self.activation = activation
 
