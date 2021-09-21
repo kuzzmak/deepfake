@@ -29,9 +29,11 @@ class DeepfakeDataset(Dataset):
     def __getitem__(self, index: int) -> Face:
         face_path = self.faces_path[index]
         face = FaceSerializer.load(face_path)
-        aligned = FaceAligner.get_aligned_face(face, self.input_shape)
-        if self.transforms:
-            aligned = self.transforms(aligned)
+        aligned_face = FaceAligner.get_aligned_face(face, self.input_shape)
+        aligned_mask = FaceAligner.get_aligned_mask(face, self.input_shape)
+
+        # if self.transforms:
+        #     aligned = self.transforms(aligned)
         # mask = face.mask
         # if self.transforms:
         #     print('in transform')
@@ -40,4 +42,4 @@ class DeepfakeDataset(Dataset):
         #     detected_face = self.transforms(detected_face)
         #     mask = self.transforms(mask)
         # return detected_face, mask
-        return aligned
+        return aligned_face, aligned_mask
