@@ -36,6 +36,7 @@ class ExtractorConfiguration:
         lda: Union[str, LANDMARK_DETECTION_ALGORITHM] =
         LANDMARK_DETECTION_ALGORITHM.FAN,
         quiet: bool = False,
+        device: DEVICE = DEVICE.CPU,
     ) -> None:
         """Constructor.
 
@@ -54,6 +55,8 @@ class ExtractorConfiguration:
             LANDMARK_DETECTION_ALGORITHM.FAN
         quiet : bool, optional
             show progress of extraction or not, by default False
+        device : DEVICE, optional
+            which device should be used for extraction 
         """
         self.input_dir = input_dir
         if isinstance(fda, FACE_DETECTION_ALGORITHM):
@@ -68,6 +71,7 @@ class ExtractorConfiguration:
             output_dir = os.path.join(self.input_dir, 'metadata')
         self.output_dir = output_dir
         self.quiet = quiet
+        self.device = device
 
     def __str__(self):
         return 'Extractor configuration:\n' \
@@ -93,13 +97,13 @@ class Extractor:
 
         fdm = configuration.fda
         if fdm == FACE_DETECTION_ALGORITHM.S3FD:
-            self.fdm = S3FDFDM(DEVICE.CPU)
+            self.fdm = S3FDFDM(configuration.device)
         elif fdm == FACE_DETECTION_ALGORITHM.FACEBOXES:
-            self.fdm = FaceboxesFDM(DEVICE.CPU)
+            self.fdm = FaceboxesFDM(configuration.device)
 
         ldm = configuration.lda
         if ldm == LANDMARK_DETECTION_ALGORITHM.FAN:
-            self.ldm = FANLDM(DEVICE.CPU)
+            self.ldm = FANLDM(configuration.device)
 
         self.verbose = not configuration.quiet
 
