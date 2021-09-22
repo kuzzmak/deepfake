@@ -193,7 +193,25 @@ class OriginalAE(DeepfakeAEModel):
         last_conv_filters: int,
         kernel: int,
         stride: int,
-    ):
+    ) -> int:
+        """Calculates input size of the linear layer after flattening.
+
+        Parameters
+        ----------
+        last_conv_filters : int
+            number of filters of the last convolution layer before linear layer
+        kernel : int
+            size of the kernel in convolution layers before linear layer, it is
+            assumed that all convolutions have same kernel size
+        stride : int
+            stride size in convolution layer before linear layer, it is assumed
+            that all convolutions have same stride
+
+        Returns
+        -------
+        int
+            size of the input to the linear layer
+        """
         shape = [self.input_shape[1], self.input_shape[2]]
         for _ in range(len(self.encoder_channels)):
             w = int((shape[1] - kernel) / stride + 1)
