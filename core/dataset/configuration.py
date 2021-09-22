@@ -9,7 +9,23 @@ from core.dataset.dataset import DeepfakeDataset
 
 @dataclass
 class DatasetConfiguration:
+    """Configuration class for the `Deepfake` dataset.
 
+    Parameters
+    ----------
+    faces_path : str
+        path of the directory containing `Face` metadata
+    batch_size : int
+        batch size
+    input_shape : int
+        size of the square image on the input
+    data_transforms : Optional[transforms.Compose], optional
+        transformations for the dataset, by default None
+    shuffle : bool
+        should the dataset be shuffled, by default True
+    num_workers : int
+        number of threads used for dataset loading, by default 2
+    """
     faces_path: str
     batch_size: int
     input_shape: int
