@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import torch
 
@@ -10,7 +10,11 @@ from core.model.ae_model import DeepfakeAEModel
 class OriginalAE(DeepfakeAEModel):
     """Original Deepfake model based on https://github.com/dfaker/df."""
 
-    def __init__(self, input_shape: Tuple[int, int, int]):
+    def __init__(
+        self,
+        input_shape: Tuple[int, int, int],
+        learn_mask: bool = False,
+    ):
         """Constructor.
 
         Parameters
@@ -19,6 +23,8 @@ class OriginalAE(DeepfakeAEModel):
             image shape which model will receive on it's input in format
             C, H, W where C represents number of channels, H represents height
             of the image and W, width of the image
+        learn_mask : bool
+            if mask also should be learned, by default False
         """
         assert len(input_shape) == 3, 'Wrong image shape passed as an ' + \
             'argument, must have three values C - number of image channels' + \
@@ -37,6 +43,7 @@ class OriginalAE(DeepfakeAEModel):
             encoder_channels=encoder_channels,
             conv_template=conv_template,
             input_shape=input_shape,
+            learn_mask=learn_mask,
         )
 
     def init_layers(self):
@@ -170,7 +177,10 @@ class OriginalAE(DeepfakeAEModel):
         x = self.upscale_512_e(x)               # [bs, 512, 8, 8]
         return x
 
-    def decoder(self, x: torch.Tensor) -> torch.Tensor:
+    def decoder(
+        self,
+        x: torch.Tensor,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         x1 = self.upscale_512_d_1(x)            # [bs, 512, 16, 16]
         x1 = self.res_block_512_d_1(x1)         # [bs, 512, 16, 16]
         x1 = self.upscale_256_d_1(x1)           # [bs, 256, 32, 32]
@@ -180,13 +190,15 @@ class OriginalAE(DeepfakeAEModel):
         x1 = self.upscale_64_d_1(x1)            # [bs, 64, 128, 128]
         x1 = self.conv_d_1(x1)                  # [bs, 3, 128, 128]
 
-        x2 = self.upscale_512_d_2(x)            # [bs, 512, 16, 16]
-        x2 = self.upscale_256_d_2(x2)           # [bs, 256, 32, 32]
-        x2 = self.upscale_128_d_2(x2)           # [bs, 128, 64, 64]
-        x2 = self.upscale_64_d_2(x2)            # [bs, 64, 128, 128]
-        x2 = self.conv_d_2(x2)                  # [bs, 1, 128, 128]
+        if self.learn_mask:
+            x2 = self.upscale_512_d_2(x)        # [bs, 512, 16, 16]
+            x2 = self.upscale_256_d_2(x2)       # [bs, 256, 32, 32]
+            x2 = self.upscale_128_d_2(x2)       # [bs, 128, 64, 64]
+            x2 = self.upscale_64_d_2(x2)        # [bs, 64, 128, 128]
+            x2 = self.conv_d_2(x2)              # [bs, 1, 128, 128]
+            return x1, x2
 
-        return x1, x2
+        return x1
 
     def _calculate_linar_input_size(
         self,
