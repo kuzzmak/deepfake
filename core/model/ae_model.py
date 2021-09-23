@@ -1,4 +1,5 @@
 import abc
+from typing import Tuple, Union
 
 import torch
 
@@ -32,7 +33,10 @@ class DeepfakeAEModel(DeepfakeModel):
         ...
 
     @abc.abstractmethod
-    def decoder(self, x: torch.Tensor) -> torch.Tensor:
+    def decoder(
+        self,
+        x: torch.Tensor,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
         """Decoder part of the autoencoder network.
 
         Parameters
@@ -42,7 +46,9 @@ class DeepfakeAEModel(DeepfakeModel):
 
         Returns
         -------
-        torch.Tensor
-            decoded input from encoder
+        Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]
+            decoded input from encoder, if `learn_mask` if `True`, then
+            decoded face and mask are returned, else only decoded face is
+            returned
         """
         ...
