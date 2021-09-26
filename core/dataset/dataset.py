@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, Tuple
 
 import numpy as np
@@ -14,6 +15,8 @@ from utils import get_file_paths_from_dir
 # if no transformation are passed on class initialization, this default
 # transformation is used
 default_transforms = transforms.Compose([transforms.ToTensor()])
+
+logger = logging.getLogger(__name__)
 
 
 class DeepfakeDataset(Dataset):
@@ -50,7 +53,12 @@ class DeepfakeDataset(Dataset):
             else default_transforms
         self.metadata_paths = get_file_paths_from_dir(metadata_path, ['p'])
         if self.load_into_memory:
+            logger.info(
+                f"Loading dataset into memory ({'GPU' if device == DEVICE.CUDA else 'RAM'}).")
             self._load()
+            logger.info(
+                f'Loaded: {len(self.faces)} face metadata into memory.'
+            )
 
     def _load(self):
         """Loads dataset into ram or gpu.
@@ -131,11 +139,11 @@ class DeepfakeDataset(Dataset):
     def __len__(self):
         return len(self.metadata_paths)
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if self.load_into_memory:
             # laod from memory
-            return self.faces[index], self.masks[index]
+            return self.faces[index], self.faces[index], self.masks[index]
         # laod from disk
         path = self.metadata_paths[index]
         face, mask = self._load_from_path(path)
-        return face, mask
+        return face, face, mask
