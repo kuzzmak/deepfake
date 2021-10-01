@@ -25,8 +25,11 @@ from message.message import (
     Message,
     Messages,
 )
+from serializer.face_serializer import FaceSerializer
 
 from utils import get_file_paths_from_dir
+from core.face import Face
+from core.face_alignment.face_aligner import FaceAligner
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +181,7 @@ class DataSelector(BaseWidget):
         #     "getExistingDirectory",
         #     "./"
         # )
-        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
+        directory = "C:\\Users\\kuzmi\\Documents\\deepfake\\data\\gen_faces\\metadata"
 
         if directory:
 
@@ -193,7 +196,15 @@ class DataSelector(BaseWidget):
                 )
 
             else:
-                self.picture_viewer.pictures_added_sig.emit(image_paths)
+
+                faces = []
+                for i_p in image_paths:
+
+                    face = FaceSerializer.load(i_p)
+                    face = FaceAligner.get_aligned_face(face, 64)
+                    faces.append(face)
+
+                self.picture_viewer.images_added_sig.emit(faces)
 
                 logger.info(
                     f'Selected {directory} as a ' +
