@@ -18,7 +18,7 @@ from enums import (
 )
 
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.picture_viewer import PictureViewer
+from gui.widgets.picture_viewer import ImageViewer
 
 from message.message import Body, Message
 
@@ -148,8 +148,8 @@ class DetectionAlgorithmTab(BaseWidget):
 
         tab_wgt = qwt.QTabWidget()
 
-        self.input_picture_viewer = PictureViewer()
-        self.output_picture_viewer = PictureViewer()
+        self.input_picture_viewer = ImageViewer()
+        self.output_picture_viewer = ImageViewer()
 
         tab_wgt.addTab(self.input_picture_viewer, 'Input faces')
         tab_wgt.addTab(self.output_picture_viewer, 'Output faces')
@@ -216,7 +216,7 @@ class DetectionAlgorithmTab(BaseWidget):
         """
         data = msg.body.data
         image = data[BODY_KEY.FILE]
-        self.input_picture_viewer.pictures_added_sig.emit([image])
+        self.input_picture_viewer.images_added_sig.emit([image])
 
     @qtc.pyqtSlot(Message)
     def output_picture_added(self, msg: Message):
@@ -229,7 +229,7 @@ class DetectionAlgorithmTab(BaseWidget):
         """
         data = msg.body.data
         image = data[BODY_KEY.FILE]
-        self.output_picture_viewer.pictures_added_sig.emit([image])
+        self.output_picture_viewer.images_added_sig.emit([image])
 
     @qtc.pyqtSlot(int)
     def algorithm_selected(self, id: int):

@@ -17,7 +17,7 @@ from enums import (
 )
 
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.picture_viewer import PictureViewer
+from gui.widgets.picture_viewer import ImageViewer
 from gui.widgets.video_player import VideoPlayer
 
 from message.message import (
@@ -76,7 +76,7 @@ class DataSelector(BaseWidget):
         video_player_wgt_layout.addWidget(self.video_player)
         self.preview_widget.addWidget(self.video_player_wgt)
 
-        self.picture_viewer = PictureViewer()
+        self.picture_viewer = ImageViewer()
         self.preview_widget.addWidget(self.picture_viewer)
 
         self.preview_label = qwt.QLabel()
