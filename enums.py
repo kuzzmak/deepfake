@@ -189,3 +189,17 @@ class BODY_KEY(Enum):
     ALGORITHM = 'algorithm'
     WORKER = 'worker'
     DEVICE = 'device'
+
+
+class INDEX_TYPE(Enum):
+    QMODELINDEX = 'qmodelindex'
+    INT = 'int'
+
+
+class IMAGE_SORT(Enum):
+    IMAGE_HASH = 'image_hash'
+
+
+class NUMBER_TYPE(Enum):
+    INT = 'int'
+    FLOAT = 'float'
