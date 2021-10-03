@@ -1,7 +1,8 @@
-import logging
+import builtins
 import errno
+import logging
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import cv2 as cv
 import gdown
@@ -9,7 +10,7 @@ import numpy as np
 import PyQt5.QtGui as qtg
 from torch.hub import get_dir
 
-from enums import IMAGE_FORMAT
+from enums import IMAGE_FORMAT, NUMBER_TYPE
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,8 @@ def np_array_to_qicon(image: np.ndarray) -> qtg.QIcon:
         image.shape[1],
         image.shape[0],
         image.shape[1] * 3,
-        qtg.QImage.Format_RGB888).rgbSwapped()
+        qtg.QImage.Format_RGB888,
+    ).rgbSwapped()
     image = qtg.QIcon(qtg.QPixmap(image))
     return image
 
@@ -199,14 +201,14 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
 
     cached_file = os.path.join(models_dir, filename)
     if not os.path.exists(cached_file):
-        logger.debug(
+        logger.info(
             'Model not found locally, downloading from Google drive...')
 
         url = f'https://drive.google.com/uc?id={model_id}'
         model_dir = os.path.join(models_dir, filename)
         gdown.download(url, model_dir, quiet=True)
 
-        logger.debug(
+        logger.info(
             f'Model downloading finished. Model location: {model_dir}.')
 
     else:
@@ -251,3 +253,26 @@ def construct_file_path(file_path: str) -> str:
                 return new_file_path
     else:
         return file_path
+
+
+def parse_number(
+    number: str,
+    number_type: NUMBER_TYPE = NUMBER_TYPE.INT,
+) -> Union[int, float, None]:
+    """Function for parsing a number from string.
+
+    Args:
+        number (str): number to parse
+        number_type (NUMBER_TYPE, optional): parse to int or float. Defaults
+            to NUMBER_TYPE.INT.
+
+    Returns:
+        Union[int, float, None]: parsed number to int or float or `None` if
+            trying to parse something that is not a number
+    """
+    parse_fun = getattr(builtins, number_type.value)
+    try:
+        num = parse_fun(number)
+    except ValueError:
+        return None
+    return num
