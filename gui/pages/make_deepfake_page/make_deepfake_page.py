@@ -37,7 +37,7 @@ class MakeDeepfakePage(Page):
         self,
         parent,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
-        * args,
+        *args,
         **kwargs,
     ):
         super().__init__(
