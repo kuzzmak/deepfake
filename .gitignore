@@ -2,3 +2,11 @@ env
 .vscode
 __pycache__
 data
+logs
+*.c
+*.pyd
+*.exp
+*.lib
+*.obj
+test[0-9].*
+test.*
