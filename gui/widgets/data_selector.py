@@ -39,9 +39,11 @@ class DataSelector(BaseWidget):
     selected_video = qtc.pyqtSignal(str)
     selected_pictures_directory = qtc.pyqtSignal(str)
 
-    def __init__(self,
-                 data_type: DATA_TYPE,
-                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
+    def __init__(
+        self,
+        data_type: DATA_TYPE,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+    ):
         super().__init__(signals)
 
         self.data_type = data_type
@@ -52,7 +54,6 @@ class DataSelector(BaseWidget):
         self.init_ui()
 
     def init_ui(self):
-
         self.main_layout = qwt.QVBoxLayout()
 
         self.main_layout.addWidget(qwt.QLabel(
@@ -181,7 +182,7 @@ class DataSelector(BaseWidget):
         #     "getExistingDirectory",
         #     "./"
         # )
-        directory = "C:\\Users\\kuzmi\\Documents\\deepfake\\data\\gen_faces\\metadata"
+        directory = "C:\\Users\\kuzmi\\Documents\\deepfake\\data\\gen_faces\\temp"
 
         if directory:
 
@@ -199,9 +200,7 @@ class DataSelector(BaseWidget):
 
                 faces = []
                 for i_p in image_paths:
-
                     face = FaceSerializer.load(i_p)
-                    face = FaceAligner.get_aligned_face(face, 64)
                     faces.append(face)
 
                 self.picture_viewer.images_added_sig.emit(faces)
