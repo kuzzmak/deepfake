@@ -14,3 +14,8 @@ HorizontalSpacer = qwt.QSpacerItem(
     qwt.QSizePolicy.MinimumExpanding,
     qwt.QSizePolicy.Fixed,
 )
+
+MinimalSizePolicy = qwt.QSizePolicy(
+    qwt.QSizePolicy.Fixed,
+    qwt.QSizePolicy.Fixed,
+)
