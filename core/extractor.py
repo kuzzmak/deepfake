@@ -3,16 +3,13 @@ import logging
 import os
 from typing import List, Union
 
-import numpy as np
 from tqdm import tqdm
 
 from core.face import Face
-from core.face_alignment.face_aligner import FaceAligner
 from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
 from core.image.image import Image
 from core.landmark_detection.algorithms.fan.fan_ldm import FANLDM
-
 from enums import (
     DEVICE,
     FACE_DETECTION_ALGORITHM,
@@ -56,7 +53,7 @@ class ExtractorConfiguration:
         quiet : bool, optional
             show progress of extraction or not, by default False
         device : DEVICE, optional
-            which device should be used for extraction 
+            which device should be used for extraction
         """
         self.input_dir = input_dir
         if isinstance(fda, FACE_DETECTION_ALGORITHM):
