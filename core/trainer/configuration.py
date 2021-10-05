@@ -1,7 +1,5 @@
 import abc
-from core.dataset.configuration import DatasetConfiguration
 from dataclasses import dataclass
-from enums import DEVICE
 from typing import Iterator, Tuple
 
 from torch.nn.modules.loss import _Loss
@@ -9,7 +7,10 @@ from torch.nn.parameter import Parameter
 from torch.optim.optimizer import Optimizer
 from torch.optim.adam import Adam
 
+from core.dataset.configuration import DatasetConfiguration
 from core.model.model import DeepfakeModel
+from enums import DEVICE
+from gui.widgets.preview.configuration import PreviewConfiguration
 
 
 @dataclass
@@ -63,5 +64,6 @@ class TrainerConfiguration:
     epochs: int
     criterion: _Loss
     device: DEVICE = DEVICE.CPU
+    preview_conf: PreviewConfiguration = PreviewConfiguration()
     log_dir: str = 'tensorboard_log'
     checkpoints_dir: str = 'models'
