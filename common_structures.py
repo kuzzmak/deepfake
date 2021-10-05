@@ -62,8 +62,17 @@ class IO_OP:
 
 
 class CommObject(qtc.QObject):
+    """Object containing a signal for any kind of communication between
+    threads and gui.
+    """
     data_sig: qtc.pyqtSignal
 
 
 class TensorCommObject(CommObject):
+    """Object containing signal for communication between threads and gui
+    where threads send `torch.Tensor` to the gui.
+
+    Args:
+        CommObject (CommObject): base class for communication object
+    """
     data_sig = qtc.pyqtSignal(torch.Tensor)
