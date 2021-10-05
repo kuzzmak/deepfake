@@ -7,6 +7,7 @@ import cv2 as cv
 import gdown
 import numpy as np
 import PyQt5.QtGui as qtg
+import torch
 from torch.hub import get_dir
 
 from enums import IMAGE_FORMAT
@@ -251,3 +252,25 @@ def construct_file_path(file_path: str) -> str:
                 return new_file_path
     else:
         return file_path
+
+
+def tensor_to_np_image(image: torch.Tensor) -> np.ndarray:
+    """Converts image in a form of a `torch.Tensor` into image in `np.ndarray`
+    format. In tensor form, image is in 0..1 range so it has to be multiplied
+    by 255 in order to be displayed correctly in `Figure`.
+
+    Args:
+        image (torch.Tensor): image in tensor form
+
+    Returns:
+        np.ndarray: image in numpy form
+    """
+    img = image.cpu().detach().numpy()
+    img = img * 255
+    # move number of channels to the last dimension
+    img = img.transpose(1, 2, 0)
+    img = np.float32(img)
+    # image was initially in BGR format, convert to RGB to properly show in
+    # maptlotlib canvas
+    img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+    return np.int32(img)
