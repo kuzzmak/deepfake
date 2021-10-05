@@ -2,3 +2,10 @@ env
 .vscode
 __pycache__
 data
+*.c
+*.pyd
+*.exp
+*.lib
+*.obj
+tensorboard_log
+logs
