@@ -21,6 +21,14 @@ handlers:
     level: DEBUG
     formatter: simple
 loggers:
+  core.dataset.dataset:
+    level: DEBUG
+    handlers: [file, console]
+    propagate: no
+  core.trainer.trainer:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   gui.widgets.data_selector:
     level: DEBUG
     handlers: [file, gui, console]
