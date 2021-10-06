@@ -7,19 +7,23 @@ from ignite.contrib.handlers.tensorboard_logger import (
     GradsScalarHandler,
     TensorboardLogger,
     WeightsScalarHandler,
-    global_step_from_engine,
+    # global_step_from_engine,
 )
 from ignite.engine import (
     Engine,
     Events,
-    create_supervised_evaluator,
+    # create_supervised_evaluator,
 )
-from ignite.handlers import ModelCheckpoint
-from ignite.metrics import Loss
+# from ignite.handlers import ModelCheckpoint
+# from ignite.metrics import Loss
 from ignite.utils import convert_tensor
 import torch
-
-from core.trainer.configuration import TrainerConfiguration
+from torch.nn.modules.loss import _Loss
+from torch.optim.optimizer import Optimizer
+from torch.utils.data.dataloader import DataLoader
+from common_structures import CommObject
+from core.model.model import DeepfakeModel
+from enums import DEVICE
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +49,8 @@ def _training_step(
     device: Optional[Union[str, torch.device]] = None,
     non_blocking: bool = False,
     prepare_batch: Callable = _prepare_batch,
-    output_transform: Callable = lambda x, y, y_pred, loss: loss.item(),
+    output_transform: Callable =
+    lambda x, y, y_pred, loss: (x, y, y_pred, loss.item()),
 ) -> Callable:
     """ Function for executing one training step from the `Engine`.
 
@@ -69,7 +74,7 @@ def _training_step(
     output_transform : Callable, optional
         function that receives 'x', 'y', 'y_pred', 'loss' and returns value
         to be assigned to engine's state.output after each iteration. Default
-        is returning `loss.item()`, by default lambdax
+        is returning `x, y, y_pred, loss.item()`, by default lambdax
 
     Returns
     -------
@@ -103,7 +108,8 @@ def _trainer(
     device: Optional[Union[str, torch.device]] = None,
     non_blocking: bool = False,
     prepare_batch: Callable = _prepare_batch,
-    output_transform: Callable = lambda x, y, y_pred, loss: loss.item(),
+    output_transform: Callable =
+    lambda x, y, y_pred, loss: (x, y, y_pred, loss.item()),
 ) -> Engine:
     trainer = Engine(_training_step(
         model,
@@ -122,29 +128,49 @@ class Trainer:
     particular model.
     """
 
-    def __init__(self, conf: TrainerConfiguration) -> None:
-        """Constructor.
+    def __init__(
+        self,
+        model: DeepfakeModel,
+        data_loader: DataLoader,
+        optimizer: Optimizer,
+        criterion: _Loss,
+        device: DEVICE,
+        epochs: int,
+        log_dir: str,
+        checkpoints_dir: str,
+        show_preview: bool,
+        show_preview_comm: CommObject,
+    ) -> None:
+        self.model = model
+        self.data_loader = data_loader
+        self.optimizer = optimizer
+        self.criterion = criterion
+        self.device = device
+        self.epochs = epochs
+        self.log_dir = log_dir
+        self.checkpoints_dir = checkpoints_dir
+        self.show_preview = show_preview
+        self.show_preview_comm = show_preview_comm
 
-        Parameters
-        ----------
-        conf : TrainerConfiguration
-            configuration object for the `Trainer`
-        """
-        self.model = conf.model
-        self.data_loader = conf.dataset_conf.data_loader
-        self.optim_conf = conf.optim_conf
-        self.criterion = conf.criterion
-        self.device = conf.device
-        self.epochs = conf.epochs
-        self.log_dir = conf.log_dir
-        self.checkpoints_dir = conf.checkpoints_dir
+    def _refresh_preview(self, data):
+        if self.show_preview:
+            self.show_preview_comm.data_sig.emit(data)
 
     def run(self) -> None:
         """Initiates learning process of the model.
         """
+
+        # subplot_titles = ['input', 'AA']
+        n_images = 4
+        # n_cols = 2
+        # fig, axes = plt.subplots(n_images, n_cols)
+        # fig.set_size_inches(10, 10, True)
+        # for col in range(n_cols):
+        #     axes[0][col].set_title(subplot_titles[col])
+
         trainer = _trainer(
             model=self.model,
-            optimizer=self.optim_conf.optimizer(),
+            optimizer=self.optimizer,
             loss_fn=self.criterion,
             device=self.device.value,
         )
@@ -180,16 +206,23 @@ class Trainer:
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def on_epoch_completed(engine: Engine):
+            x, y, y_pred, loss = engine.state.output
             epoch_pbar.desc = epoch_desc.format(
                 engine.state.epoch,
-                engine.state.output,
+                loss,
             )
             epoch_pbar.update()
             # reset iteration progress bar
             iteration_pbar.count = 0
             iteration_pbar.start = time.time()
 
-            logger.info(epoch_desc.format(engine.state.epoch, ))
+            logger.info(epoch_desc.format(
+                engine.state.epoch,
+                loss,
+            ))
+
+            images = x[:n_images]
+            self._refresh_preview(images)
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def on_iteration_completed(engine: Engine):
@@ -200,7 +233,8 @@ class Trainer:
             trainer,
             event_name=Events.EPOCH_COMPLETED,
             tag="training",
-            output_transform=lambda loss: {"batchloss": loss},
+            # tuple unpacking is not possible, last element is loss
+            output_transform=lambda out: {"batchloss": out[-1]},
             metric_names="all",
         )
         tb_logger.attach(
@@ -231,6 +265,10 @@ class Trainer:
         #     model_checkpoint,
         #     {"model": self.model},
         # )
+
+        # plt.tight_layout()
+        # plt.ion()
+        # plt.show()
 
         trainer.run(self.data_loader, max_epochs=self.epochs)
 
