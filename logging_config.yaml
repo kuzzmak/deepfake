@@ -23,9 +23,13 @@ handlers:
 loggers:
   core.dataset.dataset:
     level: DEBUG
-    handlers: [file, console]
+    handlers: [file, gui, console]
     propagate: no
   core.trainer.trainer:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
+  trainer_thread:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
@@ -43,7 +47,7 @@ loggers:
     propagate: no
   utils:
     level: DEBUG
-    handlers: [console, file]
+    handlers: [console, gui, file]
     propagate: no
   core.extractor:
     level: DEBUG
