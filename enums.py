@@ -189,3 +189,11 @@ class BODY_KEY(Enum):
     ALGORITHM = 'algorithm'
     WORKER = 'worker'
     DEVICE = 'device'
+
+
+class MODEL(Enum):
+    ORIGINAL = 'original'
+
+
+class OPTIMIZER(Enum):
+    ADAM = 'Adam'
