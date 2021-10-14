@@ -83,11 +83,11 @@ class Upscale(nn.Module):
             padding=padding,
             activation=activation,
         )
-        self.pixelShuffle = nn.PixelShuffle(upscale)
+        self.pixel_shuffle = nn.PixelShuffle(upscale)
 
     def forward(self, x: torch.Tensor):
         x = self.conv(x)
-        x = self.pixelShuffle(x)
+        x = self.pixel_shuffle(x)
         return x
 
 
