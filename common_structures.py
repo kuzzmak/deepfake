@@ -1,8 +1,7 @@
-from functools import partial
 from dataclasses import dataclass
+from functools import partial
 
 import PyQt5.QtCore as qtc
-import torch
 
 from enums import (
     DIALOG_MESSAGE_ICON,
@@ -75,4 +74,4 @@ class TensorCommObject(CommObject):
     Args:
         CommObject (CommObject): base class for communication object
     """
-    data_sig = qtc.pyqtSignal(torch.Tensor)
+    data_sig = qtc.pyqtSignal(list)
