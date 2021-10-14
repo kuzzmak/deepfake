@@ -1,3 +1,5 @@
+import sys
+import traceback
 from typing import List
 
 from matplotlib.animation import TimedAnimation
@@ -29,7 +31,7 @@ class CustomFigCanvas(FigureCanvasQTAgg, TimedAnimation):
             for index, title in enumerate(subplot_titles)]
 
         FigureCanvasQTAgg.__init__(self, self.fig)
-        TimedAnimation.__init__(self, self.fig, interval=50, blit=True)
+        TimedAnimation.__init__(self, self.fig, interval=200, blit=True)
 
     @staticmethod
     def _hide_axes(axe):
@@ -42,22 +44,30 @@ class CustomFigCanvas(FigureCanvasQTAgg, TimedAnimation):
     def _step(self, *args):
         try:
             TimedAnimation._step(self, *args)
-        except Exception as e:
-            print('err')
-            print(e)
+        except Exception:
+            print(traceback.format_exc())
             TimedAnimation._stop(self)
+            sys.exit(0)
 
     def _draw_frame(self, framedata):
         while len(self._new_data) > 0:
             images = self._new_data[0]
             for row in range(self.n_images):
                 axe_input = self.axes[row * self.n_cols]
-                img_input = tensor_to_np_image(images[0][row])
-                axe_input.imshow(img_input)
+                try:
+                    img_input = tensor_to_np_image(images[0][row])
+                    axe_input.imshow(img_input)
+                except IndexError:
+                    # happens when one batch doesn't contain enough images to
+                    # display
+                    ...
 
                 axe_output = self.axes[row * self.n_cols + 1]
-                img_output = tensor_to_np_image(images[1][row])
-                axe_output.imshow(img_output)
+                try:
+                    img_output = tensor_to_np_image(images[1][row])
+                    axe_output.imshow(img_output)
+                except IndexError:
+                    ...
             del self._new_data[0]
 
     def add_data(self, data: List[torch.Tensor]):
