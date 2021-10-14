@@ -152,9 +152,9 @@ class Trainer:
         self.show_preview = show_preview
         self.show_preview_comm = show_preview_comm
 
-    def _refresh_preview(self, data):
+    def _refresh_preview(self, x, y_pred):
         if self.show_preview:
-            self.show_preview_comm.data_sig.emit(data)
+            self.show_preview_comm.data_sig.emit([x, y_pred])
 
     def run(self) -> None:
         """Initiates learning process of the model.
@@ -220,9 +220,7 @@ class Trainer:
                 engine.state.epoch,
                 loss,
             ))
-
-            images = x[:n_images]
-            self._refresh_preview(images)
+            self._refresh_preview(x[:n_images], y_pred[:n_images])
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def on_iteration_completed(engine: Engine):
