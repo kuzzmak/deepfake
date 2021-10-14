@@ -30,6 +30,7 @@ from message.message import Body, Message
 from resources.icons import icons  # noqa: F401
 from serializer.face_serializer import FaceSerializer
 from utils import get_file_paths_from_dir, parse_number
+from worker.io_worker import Worker as IOWorker
 
 logger = logging.getLogger(__name__)
 
@@ -319,17 +320,21 @@ class DetectionAlgorithmTab(BaseWidget):
 
     @qtc.pyqtSlot()
     def _save_sorted(self):
-        # faces = self.current_tab_ivs.image_viewer_images_ok.data
-        data: List[Face] = self.current_tab_ivs.image_viewer_images_ok.get_all_data(
+        data: List[Face] = self.current_tab_ivs \
+            .image_viewer_images_ok \
+            .get_all_data(
             StandardItem.FaceRole
         )
-        total = 0
-        for face in data:
-            FaceSerializer.save(
-                face, r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\temp')
-            total += 1
-            if total == 10:
-                break
+
+        self.thread = qtc.QThread()
+        self.worker = IOWorker(
+            data, r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\temp')
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.start()
 
     @qtc.pyqtSlot(int)
     def algorithm_selected(self, id: int) -> None:
