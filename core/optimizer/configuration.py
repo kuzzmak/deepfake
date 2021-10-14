@@ -13,6 +13,7 @@ DEFAULT_ADAM_CONF = OptimizerConfiguration(
     OPTIMIZER.ADAM,
     dict(
         {
+            'lr': 1e-3,
             'betas': (0.9, 0.999),
             'eps': 1e-8,
             'weight_decay': 0,
