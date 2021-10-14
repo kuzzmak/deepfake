@@ -54,7 +54,9 @@ class DeepfakeDataset(Dataset):
         self.metadata_paths = get_file_paths_from_dir(metadata_path, ['p'])
         if self.load_into_memory:
             logger.info(
-                f"Loading dataset into memory ({'GPU' if device == DEVICE.CUDA else 'RAM'}).")
+                'Loading dataset into memory ' +
+                f"({'GPU' if device == DEVICE.CUDA else 'RAM'})."
+            )
             self._load()
             logger.info(
                 f'Loaded: {len(self.faces)} face metadata into memory.'
@@ -139,9 +141,12 @@ class DeepfakeDataset(Dataset):
     def __len__(self):
         return len(self.metadata_paths)
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(
+        self,
+        index: int,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if self.load_into_memory:
-            # laod from memory
+            # load from memory
             return self.faces[index], self.faces[index], self.masks[index]
         # laod from disk
         path = self.metadata_paths[index]
