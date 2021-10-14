@@ -101,6 +101,8 @@ class TrainingTab(BaseWidget):
         model_conf = ModelConfiguration(MODEL.ORIGINAL)
 
         optimizer_conf = DEFAULT_ADAM_CONF
+        optimizer_conf.optimizer_args['lr'] = 5e-5
+        optimizer_conf.optimizer_args['betas'] = (0.5, 0.999)
 
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
