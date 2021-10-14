@@ -50,21 +50,23 @@ class CustomFigCanvas(FigureCanvasQTAgg, TimedAnimation):
     def _draw_frame(self, framedata):
         while len(self._new_data) > 0:
             images = self._new_data[0]
-            counter = 0
             for row in range(self.n_images):
                 axe_input = self.axes[row * self.n_cols]
-                img_input = tensor_to_np_image(images[counter])
+                img_input = tensor_to_np_image(images[0][row])
                 axe_input.imshow(img_input)
-                counter += 1
+
+                axe_output = self.axes[row * self.n_cols + 1]
+                img_output = tensor_to_np_image(images[1][row])
+                axe_output.imshow(img_output)
             del self._new_data[0]
 
-    def add_data(self, data: torch.Tensor):
+    def add_data(self, data: List[torch.Tensor]):
         self._new_data.append(data)
 
 
 class Preview(BaseWidget):
 
-    refresh_data_sig = qtc.pyqtSignal(torch.Tensor)
+    refresh_data_sig = qtc.pyqtSignal(list)
 
     def __init__(self):
         super().__init__()
@@ -77,6 +79,6 @@ class Preview(BaseWidget):
         layout.addWidget(self.preview)
         self.setLayout(layout)
 
-    @qtc.pyqtSlot(torch.Tensor)
-    def _refresh_data(self, data: torch.Tensor):
+    @qtc.pyqtSlot(list)
+    def _refresh_data(self, data: List[torch.Tensor]):
         self.preview.add_data(data)
