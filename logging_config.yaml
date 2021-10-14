@@ -33,6 +33,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  worker.io_worker:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   utils:
     level: DEBUG
     handlers: [console, file]
