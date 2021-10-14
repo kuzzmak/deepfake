@@ -5,9 +5,11 @@
 # Written by Ross Girshick
 # --------------------------------------------------------
 
-from core.face_detection.algorithms.faceboxes.utils.nms.cpu_nms import cpu_nms
+# from core.face_detection.algorithms.faceboxes.utils.nms.cpu_nms import cpu_nms
 # from core.face_detection.algorithms.faceboxes.utils.nms.gpu_nms import gpu_nms
-from core.face_detection.algorithms.faceboxes.utils.nms.py_cpu_nms import py_cpu_nms
+from core.face_detection.algorithms.faceboxes.utils.nms.py_cpu_nms import \
+    py_cpu_nms
+
 
 def nms(dets, thresh, device='cpu'):
     """Dispatch to either CPU or GPU NMS implementations."""
