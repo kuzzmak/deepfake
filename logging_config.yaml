@@ -37,6 +37,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  gui.pages.make_deepfake_page.training_tab:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   gui.pages.make_deepfake_page.detection_algorithm_tab:
     level: DEBUG
     handlers: [file, gui, console]
