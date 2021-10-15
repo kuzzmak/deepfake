@@ -7,6 +7,7 @@ from gui.pages.page import Page
 from gui.pages.make_deepfake_page.data_tab import DataTab
 from gui.pages.make_deepfake_page.detection_algorithm_tab \
     import DetectionAlgorithmTab
+from gui.pages.make_deepfake_page.training_tab import TrainingTab
 
 from message.message import Body, Message
 
@@ -88,6 +89,11 @@ class MakeDeepfakePage(Page):
         detection_algorithm_tab = DetectionAlgorithmTab(
             detection_algorithm_tab_signals)
         self.tab_wgt.addTab(detection_algorithm_tab, 'Detection algorithm')
+
+        training_tab = TrainingTab()
+        ind = self.tab_wgt.addTab(training_tab, 'Training')
+
+        self.tab_wgt.setCurrentIndex(ind)
 
         layout.addWidget(self.tab_wgt)
 

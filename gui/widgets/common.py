@@ -14,3 +14,17 @@ HorizontalSpacer = qwt.QSpacerItem(
     qwt.QSizePolicy.MinimumExpanding,
     qwt.QSizePolicy.Fixed,
 )
+
+
+def HWidget() -> qwt.QWidget:
+    wgt = qwt.QWidget()
+    wgt_layout = qwt.QHBoxLayout()
+    wgt.setLayout(wgt_layout)
+    return wgt
+
+
+def VWidget() -> qwt.QWidget:
+    wgt = qwt.QWidget()
+    wgt_layout = qwt.QVBoxLayout()
+    wgt.setLayout(wgt_layout)
+    return wgt
