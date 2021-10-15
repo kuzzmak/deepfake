@@ -1,3 +1,5 @@
+import logging
+
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 import torch
@@ -9,12 +11,14 @@ from core.dataset.configuration import DatasetConfiguration
 from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import DEFAULT_ADAM_CONF
 from core.trainer.configuration import TrainerConfiguration
-from enums import DEVICE, MODEL
+from enums import DEVICE, MODEL, OPTIMIZER
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.common import VerticalSpacer
+from gui.widgets.common import HWidget, VWidget, VerticalSpacer
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
 from trainer_thread import Worker
+
+logger = logging.getLogger(__name__)
 
 
 class ModelSelector(qwt.QWidget):
@@ -39,7 +43,7 @@ class ModelSelector(qwt.QWidget):
 
         layout.addWidget(models_gb)
         policy = qwt.QSizePolicy(
-            qwt.QSizePolicy.Fixed,
+            qwt.QSizePolicy.Minimum,
             qwt.QSizePolicy.Fixed,
         )
         self.setSizePolicy(policy)
@@ -48,6 +52,85 @@ class ModelSelector(qwt.QWidget):
     @qtc.pyqtSlot(int)
     def _model_changed(self, index: int) -> None:
         print('model index: ', index)
+
+
+class TrainingConfiguration(qwt.QWidget):
+
+    def __init__(self):
+        super().__init__()
+        self._init_ui()
+
+    def _init_ui(self):
+        layout = qwt.QVBoxLayout()
+
+        models_gb = qwt.QGroupBox()
+        models_gb.setTitle('Training configuration')
+        models_gb_layout = qwt.QVBoxLayout(models_gb)
+
+        self.input_A_directory_btn = qwt.QPushButton(text='Input A directory')
+        self.input_A_directory_btn.setToolTip('Not yet selected.')
+        self.input_A_directory_btn.clicked.connect(
+            lambda: self._select_input_directory('A'))
+        models_gb_layout.addWidget(self.input_A_directory_btn)
+
+        self.input_B_directory_btn = qwt.QPushButton(text='Input B directory')
+        self.input_B_directory_btn.setToolTip('Not yet selected.')
+        self.input_B_directory_btn.clicked.connect(
+            lambda: self._select_input_directory('B'))
+        models_gb_layout.addWidget(self.input_B_directory_btn)
+
+        batch_size_row = HWidget()
+        batch_size_row.layout().addWidget(qwt.QLabel(text="Batch size: "))
+        self.batch_size_input = qwt.QLineEdit()
+        batch_size_row.layout().addWidget(self.batch_size_input)
+        models_gb_layout.addWidget(batch_size_row)
+
+        epochs_row = HWidget()
+        epochs_row.layout().addWidget(qwt.QLabel(text='Number of epochs: '))
+        self.epochs_input = qwt.QLineEdit()
+        epochs_row.layout().addWidget(self.epochs_input)
+        models_gb_layout.addWidget(epochs_row)
+
+        optimizer_selection = qwt.QComboBox()
+        optimizer_selection.addItem('Adam', OPTIMIZER.ADAM)
+        models_gb_layout.addWidget(optimizer_selection)
+
+        self.optimizer_options = qwt.QStackedWidget()
+        self.adam_options = VWidget()
+        lr_row = HWidget()
+        lr_row.layout().addWidget(qwt.QLabel(text='lr'))
+        self.adam_lr_input = qwt.QLineEdit()
+        lr_row.layout().addWidget(self.adam_lr_input)
+        self.adam_options.layout().addWidget(lr_row)
+        self.optimizer_options.addWidget(self.adam_options)
+
+        layout.addWidget(models_gb)
+        layout.addWidget(self.optimizer_options)
+
+        self.setLayout(layout)
+
+    @qtc.pyqtSlot(str)
+    def _select_input_directory(self, side: str):
+        """Function for selecting input folder for side A or side B.
+
+        Args:
+            side (str): for which side folder is being selected
+        """
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self,
+            'getExistingDirectory',
+            './',
+        )
+        if not directory:
+            logger.warning(f'No directory selected for side {side}.')
+            return
+        else:
+            logger.info(
+                f'Selected input directory ({directory}) for ' +
+                f'side {side}.'
+            )
+            btn = getattr(self, f'input_{side}_directory_btn')
+            btn.setToolTip(directory)
 
 
 class TrainingTab(BaseWidget):
@@ -61,15 +144,19 @@ class TrainingTab(BaseWidget):
 
         left_part = qwt.QWidget()
         left_part.setMaximumWidth(300)
-        left_part.setAutoFillBackground(True)
-        p = left_part.palette()
-        p.setColor(left_part.backgroundRole(), qtc.Qt.red)
-        left_part.setPalette(p)
+        # left_part.setAutoFillBackground(True)
+        # p = left_part.palette()
+        # p.setColor(left_part.backgroundRole(), qtc.Qt.red)
+        # left_part.setPalette(p)
         left_part_layout = qwt.QVBoxLayout()
         left_part.setLayout(left_part_layout)
 
         model_selector = ModelSelector()
         left_part_layout.addWidget(model_selector)
+
+        training_conf = TrainingConfiguration()
+        left_part_layout.addWidget(training_conf)
+
         left_part_layout.addItem(VerticalSpacer)
 
         button_row = qwt.QWidget()
@@ -107,7 +194,7 @@ class TrainingTab(BaseWidget):
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
             # faces_path=r'C:\Users\tonkec\Documents\deepfake\data\gen_faces\metadata',
-            metadata_path=r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\metadata',
+            metadata_path=r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\temp',
             input_shape=input_shape[1],
             batch_size=32,
             load_into_memory=True,
@@ -121,7 +208,7 @@ class TrainingTab(BaseWidget):
         conf = TrainerConfiguration(
             device=device,
             input_shape=input_shape,
-            epochs=1,
+            epochs=10,
             criterion=MSELoss(),
             model_conf=model_conf,
             optimizer_conf=optimizer_conf,
