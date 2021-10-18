@@ -34,7 +34,7 @@ from gui.workers.threads.next_element_worker_thread \
 
 from message.message import Message, Messages
 
-from names import START_PAGE_NAME
+from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
@@ -82,7 +82,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.init_ui()
 
-        self.goto(START_PAGE_NAME)
+        # self.goto(START_PAGE_NAME)
+
+        self.goto(MAKE_DEEPFAKE_PAGE_NAME)
 
     def init_ui(self):
         self.setupUi(self)
