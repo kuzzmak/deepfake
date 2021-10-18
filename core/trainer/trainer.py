@@ -159,14 +159,7 @@ class Trainer:
     def run(self) -> None:
         """Initiates learning process of the model.
         """
-
-        # subplot_titles = ['input', 'AA']
         n_images = 4
-        # n_cols = 2
-        # fig, axes = plt.subplots(n_images, n_cols)
-        # fig.set_size_inches(10, 10, True)
-        # for col in range(n_cols):
-        #     axes[0][col].set_title(subplot_titles[col])
 
         trainer = _trainer(
             model=self.model,
@@ -263,10 +256,6 @@ class Trainer:
         #     model_checkpoint,
         #     {"model": self.model},
         # )
-
-        # plt.tight_layout()
-        # plt.ion()
-        # plt.show()
 
         trainer.run(self.data_loader, max_epochs=self.epochs)
 
