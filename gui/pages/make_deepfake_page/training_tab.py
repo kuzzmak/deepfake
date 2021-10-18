@@ -10,7 +10,7 @@ from torch.nn import MSELoss
 from common_structures import TensorCommObject
 from core.dataset.configuration import DatasetConfiguration
 from core.model.configuration import ModelConfiguration
-from core.optimizer.configuration import DEFAULT_ADAM_CONF
+from core.optimizer.configuration import DEFAULT_ADAM_CONF, OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
 from enums import DEVICE, MODEL, OPTIMIZER
 from gui.widgets.base_widget import BaseWidget
@@ -83,12 +83,14 @@ class TrainingConfiguration(qwt.QWidget):
         batch_size_row = HWidget()
         batch_size_row.layout().addWidget(qwt.QLabel(text="Batch size: "))
         self.batch_size_input = qwt.QLineEdit()
+        self.batch_size_input.setText(str(32))
         batch_size_row.layout().addWidget(self.batch_size_input)
         models_gb_layout.addWidget(batch_size_row)
 
         epochs_row = HWidget()
         epochs_row.layout().addWidget(qwt.QLabel(text='Number of epochs: '))
         self.epochs_input = qwt.QLineEdit()
+        self.epochs_input.setText(str(10))
         epochs_row.layout().addWidget(self.epochs_input)
         models_gb_layout.addWidget(epochs_row)
 
@@ -117,15 +119,29 @@ class TrainingConfiguration(qwt.QWidget):
         self.adam_options.layout().addWidget(lr_row)
         # betas
         betas_row = HWidget()
-        betas_row.layout().addWidget(qwt.QLabel(text="Beta 1"))
+        betas_row.layout().addWidget(qwt.QLabel(text="beta 1"))
         self.adam_beta1_input = qwt.QLineEdit()
         self.adam_beta1_input.setText(str(0.5))
         betas_row.layout().addWidget(self.adam_beta1_input)
-        betas_row.layout().addWidget(qwt.QLabel(text="Beta 2"))
+        betas_row.layout().addWidget(qwt.QLabel(text="beta 2"))
         self.adam_beta2_input = qwt.QLineEdit()
         self.adam_beta2_input.setText(str(0.999))
         betas_row.layout().addWidget(self.adam_beta2_input)
         self.adam_options.layout().addWidget(betas_row)
+        # eps
+        eps_row = HWidget()
+        eps_row.layout().addWidget(qwt.QLabel(text='eps'))
+        self.adam_eps_input = qwt.QLineEdit()
+        self.adam_eps_input.setText(str(1e-8))
+        eps_row.layout().addWidget(self.adam_eps_input)
+        self.adam_options.layout().addWidget(eps_row)
+        # weight_decay
+        weight_decay_row = HWidget()
+        weight_decay_row.layout().addWidget(qwt.QLabel(text='weight decay'))
+        self.adam_weight_decay_input = qwt.QLineEdit()
+        self.adam_weight_decay_input.setText(str(0))
+        weight_decay_row.layout().addWidget(self.adam_weight_decay_input)
+        self.adam_options.layout().addWidget(weight_decay_row)
 
         layout.addWidget(models_gb)
         layout.addWidget(optimizer_gb)
@@ -154,18 +170,80 @@ class TrainingConfiguration(qwt.QWidget):
             btn = getattr(self, f'input_{side}_directory_btn')
             btn.setToolTip(directory)
 
-    def optimizer_learning_rate(self) -> Union[float, None]:
-        optim = self.optimizer_selection.currentData().value.lower()
-        optim_lr_input = getattr(self, f'{optim}_lr_input')
+    @property
+    def batch_size(self) -> str:
+        """How many examples will be processed in one step.
+
+        Returns:
+            str: value from input
+        """
+        return self.batch_size_input.text()
+
+    @property
+    def epochs(self) -> str:
+        """How many epoch training process will last.
+
+        Returns:
+            str: value from input
+        """
+        return self.epochs_input.text()
+
+    @property
+    def selected_optimizer(self) -> OPTIMIZER:
+        """Currently selected optimizer.
+
+        Returns:
+            OPTIMIZER: optimizer enum
+        """
+        return self.optimizer_selection.currentData()
+
+    @property
+    def adam_beta1(self) -> str:
+        """First beta constant for Adam optimizer.
+
+        Returns:
+            str: value from input
+        """
+        return self.adam_beta1_input.text()
+
+    @property
+    def adam_beta2(self) -> str:
+        """Second beta constant for Adam optimizer.
+
+        Returns:
+            str: value from input
+        """
+        return self.adam_beta2_input.text()
+
+    @property
+    def adam_eps(self) -> str:
+        """Constant for numerical stability for Adam optimizer.
+
+        Returns:
+            str: value from input
+        """
+        return self.adam_eps_input.text()
+
+    @property
+    def adam_weight_decay(self) -> str:
+        """Constant for weight decay for Adam optimizer.
+
+        Returns:
+            str: value from input
+        """
+        return self.adam_weight_decay_input.text()
+
+    @property
+    def optimizer_learning_rate(self) -> str:
+        """Learning rate for the currently selected optimizer.
+
+        Returns:
+            str: value from input
+        """
+        optim = self.selected_optimizer.value.lower()
+        optim_lr_input: qwt.QLineEdit = getattr(self, f'{optim}_lr_input')
         text = optim_lr_input.text()
-        try:
-            val = float(text)
-        except ValueError:
-            logger.error(
-                'Learning rate can not be something that is not a number.'
-            )
-            val = None
-        return val
+        return text
 
 
 class TrainingTab(BaseWidget):
@@ -213,56 +291,67 @@ class TrainingTab(BaseWidget):
         layout.addWidget(self.preview)
         self.setLayout(layout)
 
+    def _optimizer_options(self) -> dict:
+        opts = {}
+        lr = self.training_conf.optimizer_learning_rate
+        opts['lr'] = float(lr)
+        if self.training_conf.selected_optimizer == OPTIMIZER.ADAM:
+            beta1 = float(self.training_conf.adam_beta1)
+            beta2 = float(self.training_conf.adam_beta2)
+            opts['betas'] = (beta1, beta2)
+            eps = float(self.training_conf.adam_eps)
+            opts['eps'] = eps
+            weight_decay = float(self.training_conf.adam_weight_decay)
+            opts['weight_decay'] = weight_decay
+
+        return opts
+
     def _start(self):
-        lr = self.training_conf.optimizer_learning_rate()
-        if lr is None:
-            return
-        # print(self.adam_lr_input.text())
-        # device = DEVICE.CPU
-        # if torch.cuda.is_available():
-        #     device = DEVICE.CUDA
+        optimizer_conf = OptimizerConfiguration(
+            self.training_conf.selected_optimizer,
+            self._optimizer_options(),
+        )
+        device = DEVICE.CPU
+        if torch.cuda.is_available():
+            device = DEVICE.CUDA
 
-        # input_shape = (3, 128, 128)
+        input_shape = (3, 128, 128)
 
-        # model_conf = ModelConfiguration(MODEL.ORIGINAL)
+        model_conf = ModelConfiguration(MODEL.ORIGINAL)
 
-        # optimizer_conf = DEFAULT_ADAM_CONF
-        # optimizer_conf.optimizer_args['lr'] = 5e-5
-        # optimizer_conf.optimizer_args['betas'] = (0.5, 0.999)
+        data_transforms = transforms.Compose([transforms.ToTensor()])
+        dataset_conf = DatasetConfiguration(
+            # faces_path=r'C:\Users\tonkec\Documents\deepfake\data\gen_faces\metadata',
+            metadata_path=r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\temp',
+            input_shape=input_shape[1],
+            batch_size=int(self.training_conf.batch_size),
+            load_into_memory=True,
+            data_transforms=data_transforms,
+        )
 
-        # data_transforms = transforms.Compose([transforms.ToTensor()])
-        # dataset_conf = DatasetConfiguration(
-        #     # faces_path=r'C:\Users\tonkec\Documents\deepfake\data\gen_faces\metadata',
-        #     metadata_path=r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\temp',
-        #     input_shape=input_shape[1],
-        #     batch_size=32,
-        #     load_into_memory=True,
-        #     data_transforms=data_transforms,
-        # )
+        comm_obj = TensorCommObject()
+        comm_obj.data_sig = self.preview.refresh_data_sig
+        preview_conf = PreviewConfiguration(True, comm_obj)
 
-        # comm_obj = TensorCommObject()
-        # comm_obj.data_sig = self.preview.refresh_data_sig
-        # preview_conf = PreviewConfiguration(True, comm_obj)
+        conf = TrainerConfiguration(
+            device=device,
+            input_shape=input_shape,
+            epochs=int(self.training_conf.epochs),
+            criterion=MSELoss(),
+            model_conf=model_conf,
+            optimizer_conf=optimizer_conf,
+            dataset_conf=dataset_conf,
+            preview_conf=preview_conf,
+        )
 
-        # conf = TrainerConfiguration(
-        #     device=device,
-        #     input_shape=input_shape,
-        #     epochs=10,
-        #     criterion=MSELoss(),
-        #     model_conf=model_conf,
-        #     optimizer_conf=optimizer_conf,
-        #     dataset_conf=dataset_conf,
-        #     preview_conf=preview_conf,
-        # )
-
-        # self.thread = qtc.QThread()
-        # self.worker = Worker(conf)
-        # self.worker.moveToThread(self.thread)
-        # self.thread.started.connect(self.worker.run)
-        # self.worker.finished.connect(self.thread.quit)
-        # self.worker.finished.connect(self.worker.deleteLater)
-        # self.thread.finished.connect(self.thread.deleteLater)
-        # self.thread.start()
+        self.thread = qtc.QThread()
+        self.worker = Worker(conf)
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.start()
 
     def _stop(self):
         ...
