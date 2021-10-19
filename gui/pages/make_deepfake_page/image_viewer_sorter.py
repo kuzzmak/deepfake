@@ -196,11 +196,13 @@ class ImageViewerSorter(BaseWidget):
             self.faces_cache,
             eps,
         )
-        faces_ok = itemgetter(*indices_ok)(self.faces_cache)
-        faces_not_ok = itemgetter(*indices_not_ok)(self.faces_cache)
         self.image_viewer_images_ok.clear()
         self.image_viewer_images_not_ok.clear()
-        self.image_viewer_images_ok.images_added_sig.emit(list(faces_ok))
-        self.image_viewer_images_not_ok.images_added_sig.emit(
-            list(faces_not_ok)
-        )
+        if len(indices_ok) > 0:
+            faces_ok = itemgetter(*indices_ok)(self.faces_cache)
+            self.image_viewer_images_ok.images_added_sig.emit(list(faces_ok))
+        if len(indices_not_ok) > 0:
+            faces_not_ok = itemgetter(*indices_not_ok)(self.faces_cache)
+            self.image_viewer_images_not_ok.images_added_sig.emit(
+                list(faces_not_ok)
+            )
