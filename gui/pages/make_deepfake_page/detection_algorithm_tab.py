@@ -320,15 +320,23 @@ class DetectionAlgorithmTab(BaseWidget):
 
     @qtc.pyqtSlot()
     def _save_sorted(self):
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self,
+            'getExistingDirectory',
+            './',
+        )
+        if not directory:
+            logger.warning('No directory selected.')
+            return
+        logger.info(f'Selected: {directory} for sorted metadata objects.')
+
         data: List[Face] = self.current_tab_ivs \
             .image_viewer_images_ok \
             .get_all_data(
             StandardItem.FaceRole
         )
-
         self.thread = qtc.QThread()
-        self.worker = IOWorker(
-            data, r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\temp')
+        self.worker = IOWorker(data, directory)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.finished.connect(self.thread.quit)
@@ -379,7 +387,7 @@ class DetectionAlgorithmTab(BaseWidget):
         #     'getExistingDirectory',
         #     './',
         # )
-        directory = "C:\\Users\\kuzmi\\Documents\\deepfake\\data\\gen_faces\\metadata"
+        directory = r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted'
         if not directory:
             logger.warning('No directory selected.')
             return
