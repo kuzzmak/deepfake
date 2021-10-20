@@ -10,8 +10,10 @@ class DatasetConfiguration:
 
     Parameters
     ----------
-    metadata_path : str
-        path of the directory containing `Face` metadata
+    metadata_path_A : str
+        path of the directory containing `Face` metadata of person A
+    metadata_path_B : str
+        path of the directory containing `Face` metadata of person B
     batch_size : int
         batch size
     input_shape : int
@@ -25,7 +27,8 @@ class DatasetConfiguration:
     num_workers : int
         number of threads used for dataset loading, by default 2
     """
-    metadata_path: str
+    metadata_path_A: str
+    metadata_path_B: str
     batch_size: int
     input_shape: int
     data_transforms: Optional[transforms.Compose] = None
