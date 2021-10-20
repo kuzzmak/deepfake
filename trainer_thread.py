@@ -57,7 +57,8 @@ class Worker(qtc.QObject):
     def _init_data_loader(self) -> DataLoader:
         conf = self.conf.dataset_conf
         dataset = DeepfakeDataset(
-            metadata_path=conf.metadata_path,
+            metadata_path_A=conf.metadata_path_A,
+            metadata_path_B=conf.metadata_path_B,
             input_shape=conf.input_shape,
             load_into_memory=conf.load_into_memory,
             device=self.conf.device,
