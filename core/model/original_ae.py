@@ -166,6 +166,5 @@ class OriginalAE(DeepfakeAEModel):
         for _ in range(len(self.encoder_channels)):
             w = int((shape[1] - kernel) / stride + 1)
             h = int((shape[0] - kernel) / stride + 1)
-            shape[0] = h
-            shape[1] = w
+            shape = [h, w]
         return shape[0] * shape[1] * last_conv_filters
