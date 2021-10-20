@@ -1,5 +1,4 @@
 import logging
-from typing import Union
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -10,7 +9,7 @@ from torch.nn import MSELoss
 from common_structures import TensorCommObject
 from core.dataset.configuration import DatasetConfiguration
 from core.model.configuration import ModelConfiguration
-from core.optimizer.configuration import DEFAULT_ADAM_CONF, OptimizerConfiguration
+from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
 from enums import DEVICE, MODEL, OPTIMIZER
 from gui.widgets.base_widget import BaseWidget
@@ -322,7 +321,8 @@ class TrainingTab(BaseWidget):
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
             # faces_path=r'C:\Users\tonkec\Documents\deepfake\data\gen_faces\metadata',
-            metadata_path=r'C:\Users\kuzmi\Documents\deepfake\data\gen_faces\temp',
+            metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
+            metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
             input_shape=input_shape[1],
             batch_size=int(self.training_conf.batch_size),
             load_into_memory=True,

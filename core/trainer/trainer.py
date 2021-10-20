@@ -35,11 +35,19 @@ def _prepare_batch(
 ) -> Tuple[Union[torch.Tensor, Sequence, Mapping, str, bytes], ...]:
     """Prepare batch for training: pass to a device with options.
     """
-    face, target, y = batch
+    face_A, target_A, mask_A, face_B, target_B, mask_B = batch
     return (
-        convert_tensor(face, device=device, non_blocking=non_blocking),
-        convert_tensor(target, device=device, non_blocking=non_blocking),
+        convert_tensor(face_A, device=device, non_blocking=non_blocking),
+        convert_tensor(target_A, device=device, non_blocking=non_blocking),
+        convert_tensor(face_B, device=device, non_blocking=non_blocking),
+        convert_tensor(target_B, device=device, non_blocking=non_blocking),
     )
+
+
+def _output_transform(face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A,
+                      face_B, target_B, y_pred_B_A, y_pred_B_B, loss_B):
+    return face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A.item(), \
+        face_B, target_B, y_pred_B_A, y_pred_B_B, loss_B.item()
 
 
 def _training_step(
@@ -49,8 +57,7 @@ def _training_step(
     device: Optional[Union[str, torch.device]] = None,
     non_blocking: bool = False,
     prepare_batch: Callable = _prepare_batch,
-    output_transform: Callable =
-    lambda x, y, y_pred, loss: (x, y, y_pred, loss.item()),
+    output_transform: Callable = _output_transform
 ) -> Callable:
     """ Function for executing one training step from the `Engine`.
 
@@ -87,16 +94,39 @@ def _training_step(
     ) -> Union[Any, Tuple[torch.Tensor]]:
         model.train()
         optimizer.zero_grad()
-        face, target = prepare_batch(
+        face_A, target_A, face_B, target_B = prepare_batch(
             batch,
             device=device,
             non_blocking=non_blocking,
         )
-        y_pred = model(face)
-        loss = loss_fn(y_pred, target)
-        loss.backward()
+        # first letter is the input person, second letter is the decoder
+        y_pred_A_A, y_pred_A_B = model(face_A)
+        y_pred_B_A, y_pred_B_B = model(face_B)
+
+        loss_A_A = loss_fn(y_pred_A_A, target_A)
+        loss_A_B = loss_fn(y_pred_A_B, target_A)
+
+        loss_B_A = loss_fn(y_pred_B_A, target_B)
+        loss_B_B = loss_fn(y_pred_B_B, target_B)
+
+        loss_A = loss_A_A + loss_A_B
+        loss_B = loss_B_A + loss_B_B
+
+        (loss_A + loss_B).backward()
         optimizer.step()
-        return output_transform(face, target, y_pred, loss)
+
+        return output_transform(
+            face_A,
+            target_A,
+            y_pred_A_A,
+            y_pred_A_B,
+            loss_A,
+            face_B,
+            target_B,
+            y_pred_B_A,
+            y_pred_B_B,
+            loss_B,
+        )
 
     return _train_step
 
@@ -108,8 +138,7 @@ def _trainer(
     device: Optional[Union[str, torch.device]] = None,
     non_blocking: bool = False,
     prepare_batch: Callable = _prepare_batch,
-    output_transform: Callable =
-    lambda x, y, y_pred, loss: (x, y, y_pred, loss.item()),
+    output_transform: Callable = _output_transform
 ) -> Engine:
     trainer = Engine(_training_step(
         model,
@@ -152,9 +181,26 @@ class Trainer:
         self.show_preview = show_preview
         self.show_preview_comm = show_preview_comm
 
-    def _refresh_preview(self, x, y_pred):
+    def _refresh_preview(
+        self,
+        face_A,
+        y_pred_A_A,
+        y_pred_A_B,
+        face_B,
+        y_pred_B_A,
+        y_pred_B_B,
+    ):
         if self.show_preview:
-            self.show_preview_comm.data_sig.emit([x, y_pred])
+            self.show_preview_comm.data_sig.emit(
+                [
+                    face_A,
+                    y_pred_A_A,
+                    y_pred_A_B,
+                    face_B,
+                    y_pred_B_A,
+                    y_pred_B_B,
+                ]
+            )
 
     def run(self) -> None:
         """Initiates learning process of the model.
@@ -170,10 +216,10 @@ class Trainer:
 
         # progress bars
         manager = enlighten.get_manager()
-        epoch_desc = 'Epoch: {}, loss: {:.6f}'
+        epoch_desc = 'Epoch: {}, loss_A: {:.6f}, loss_B: {:.6f}'
         epoch_pbar = manager.counter(
             total=self.epochs,
-            desc=epoch_desc.format(0, 0),
+            desc=epoch_desc.format(0, 0, 0),
             unit='ticks',
             leave=False,
         )
@@ -199,10 +245,14 @@ class Trainer:
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def on_epoch_completed(engine: Engine):
-            x, y, y_pred, loss = engine.state.output
+            face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A, \
+                face_B, target_B, y_pred_B_A, y_pred_B_B, loss_B = \
+                engine.state.output
+
             epoch_pbar.desc = epoch_desc.format(
                 engine.state.epoch,
-                loss,
+                loss_A,
+                loss_B,
             )
             epoch_pbar.update()
             # reset iteration progress bar
@@ -211,9 +261,18 @@ class Trainer:
 
             logger.info(epoch_desc.format(
                 engine.state.epoch,
-                loss,
+                loss_A,
+                loss_B,
             ))
-            self._refresh_preview(x[:n_images], y_pred[:n_images])
+            self._refresh_preview(
+                face_A[:n_images],
+                y_pred_A_A[:n_images],
+                y_pred_A_B[:n_images],
+
+                face_B[:n_images],
+                y_pred_B_A[:n_images],
+                y_pred_B_B[:n_images],
+            )
 
         @trainer.on(Events.ITERATION_COMPLETED)
         def on_iteration_completed(engine: Engine):
