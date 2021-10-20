@@ -25,7 +25,8 @@ class DeepfakeDataset(Dataset):
 
     def __init__(
         self,
-        metadata_path: str,
+        metadata_path_A: str,
+        metadata_path_B: str,
         input_shape: int,
         load_into_memory: bool = False,
         device: DEVICE = DEVICE.CPU,
@@ -35,8 +36,10 @@ class DeepfakeDataset(Dataset):
 
         Parameters
         ----------
-        metadata_path : str
-            path of the `Faces` metadata
+        metadata_path_A : str
+            path of the `Faces` metadata of person A
+        metadata_path_B : str
+            path of the `Faces` metadata of person B
         input_shape : int
             size of the square to which face and mask are resized
         load_into_memory : bool, optional
@@ -51,26 +54,34 @@ class DeepfakeDataset(Dataset):
         self.device = device
         self.transforms = transforms if transforms is not None \
             else default_transforms
-        self.metadata_paths = get_file_paths_from_dir(metadata_path, ['p'])
+        self.metadata_paths_A = get_file_paths_from_dir(metadata_path_A, ['p'])
+        self.metadata_paths_B = get_file_paths_from_dir(metadata_path_B, ['p'])
         if self.load_into_memory:
-            logger.info(
-                'Loading dataset into memory ' +
-                f"({'GPU' if device == DEVICE.CUDA else 'RAM'})."
-            )
             self._load()
-            logger.info(
-                f'Loaded: {len(self.faces)} face metadata into memory.'
-            )
 
     def _load(self):
         """Loads dataset into ram or gpu.
         """
-        self.faces = []
-        self.masks = []
-        for path in self.metadata_paths:
-            face, mask = self._load_from_path(path)
-            self.faces.append(face.to(self.device.value))
-            self.masks.append(mask.to(self.device.value))
+        self.faces_A = []
+        self.masks_A = []
+        self.faces_B = []
+        self.masks_B = []
+        logger.info(
+            'Loading dataset into memory ' +
+            f"({'GPU' if self.device == DEVICE.CUDA else 'RAM'})."
+        )
+        for path in self.metadata_paths_A:
+            face_A, mask_A = self._load_from_path(path)
+            self.faces_A.append(face_A.to(self.device.value))
+            self.masks_A.append(mask_A.to(self.device.value))
+        for path in self.metadata_paths_B:
+            face_B, mask_B = self._load_from_path(path)
+            self.faces_B.append(face_B.to(self.device.value))
+            self.masks_B.append(mask_B.to(self.device.value))
+        logger.info(
+            f'Loaded {len(self.faces_A)} face_A metadata ' +
+            f'and {len(self.faces_B)} face_B metadata into memory.'
+        )
 
     def _load_from_path(self, path: str) -> Tuple[torch.Tensor, torch.Tensor]:
         """Loads face and mask from `Face` metadata. They are then aligned and
@@ -139,7 +150,7 @@ class DeepfakeDataset(Dataset):
         return face, mask
 
     def __len__(self):
-        return len(self.metadata_paths)
+        return min(len(self.metadata_paths_A), len(self.metadata_paths_B))
 
     def __getitem__(
         self,
@@ -147,8 +158,18 @@ class DeepfakeDataset(Dataset):
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         if self.load_into_memory:
             # load from memory
-            return self.faces[index], self.faces[index], self.masks[index]
-        # laod from disk
-        path = self.metadata_paths[index]
-        face, mask = self._load_from_path(path)
-        return face, face, mask
+            return (
+                self.faces_A[index],
+                self.faces_A[index],
+                self.masks_A[index],
+
+                self.faces_B[index],
+                self.faces_B[index],
+                self.masks_B[index],
+            )
+        # load from disk
+        path_A = self.metadata_paths_A[index]
+        path_B = self.metadata_paths_B[index]
+        face_A, mask_A = self._load_from_path(path_A)
+        face_B, mask_B = self._load_from_path(path_B)
+        return face_A, face_A, mask_A, face_B, face_B, mask_B
