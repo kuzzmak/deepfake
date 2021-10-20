@@ -1,6 +1,7 @@
 from typing import Tuple, Union
 
 import torch
+import torch.nn as nn
 
 from core.activation import LeakyReLu, Sigmoid
 from core.layer import Conv2d, Linear, Flatten, ResBlock, Upscale
@@ -37,20 +38,17 @@ class OriginalAE(DeepfakeAEModel):
             (512, 1024),
         ]
 
-        conv_template = 'conv_{}_{}'
+        conv_template_encoder = 'conv_{}_{}'
 
         super().__init__(
             encoder_channels=encoder_channels,
-            conv_template=conv_template,
+            conv_template=conv_template_encoder,
             input_shape=input_shape,
             learn_mask=learn_mask,
         )
 
     def init_layers(self):
-
         lrelu_01 = LeakyReLu(0.1)
-        lrelu_02 = LeakyReLu(0.2)
-        sigmoid = Sigmoid()
 
         for channels in self.encoder_channels:
             in_ch, out_ch = channels
@@ -84,86 +82,25 @@ class OriginalAE(DeepfakeAEModel):
             activation=lrelu_01,
         )
 
-        self.upscale_512_d_1 = Upscale(
-            in_channels=512,
-            out_channels=512,
-            kernel_size=3,
-            activation=lrelu_01,
+        self.decoder_A = self._decoder()
+        self.decoder_B = self._decoder()
+
+    @staticmethod
+    def _decoder() -> nn.Sequential:
+        lrelu_01 = LeakyReLu(0.1)
+        lrelu_02 = LeakyReLu(0.2)
+        sigmoid = Sigmoid()
+        decoder = nn.Sequential(
+            Upscale(512, 512, 3, activation=lrelu_01),
+            ResBlock(512, 512, 3, activation=lrelu_02),
+            Upscale(512, 256, 3, activation=lrelu_01),
+            ResBlock(256, 256, 3, activation=lrelu_02),
+            Upscale(256, 128, 3, activation=lrelu_01),
+            ResBlock(128, 128, 3, activation=lrelu_02),
+            Upscale(128, 64, 3, activation=lrelu_01),
+            Conv2d(64, 3, 5, padding='same', activation=sigmoid)
         )
-        self.res_block_512_d_1 = ResBlock(
-            in_channels=512,
-            out_channels=512,
-            kernel_size=3,
-            activation=lrelu_02,
-        )
-        self.upscale_256_d_1 = Upscale(
-            in_channels=512,
-            out_channels=256,
-            kernel_size=3,
-            activation=lrelu_01,
-        )
-        self.res_block_256_d_1 = ResBlock(
-            in_channels=256,
-            out_channels=256,
-            kernel_size=3,
-            activation=lrelu_02,
-        )
-        self.upscale_128_d_1 = Upscale(
-            in_channels=256,
-            out_channels=128,
-            kernel_size=3,
-            activation=lrelu_01,
-        )
-        self.res_block_128_d_1 = ResBlock(
-            in_channels=128,
-            out_channels=128,
-            kernel_size=3,
-            activation=lrelu_02,
-        )
-        self.upscale_64_d_1 = Upscale(
-            in_channels=128,
-            out_channels=64,
-            kernel_size=3,
-            activation=lrelu_01,
-        )
-        self.conv_d_1 = Conv2d(
-            in_channels=64,
-            out_channels=3,
-            kernel_size=5,
-            padding='same',
-            activation=sigmoid,
-        )
-        self.upscale_512_d_2 = Upscale(
-            in_channels=512,
-            out_channels=512,
-            kernel_size=3,
-            activation=lrelu_01,
-        )
-        self.upscale_256_d_2 = Upscale(
-            in_channels=512,
-            out_channels=256,
-            kernel_size=3,
-            activation=lrelu_01,
-        )
-        self.upscale_128_d_2 = Upscale(
-            in_channels=256,
-            out_channels=128,
-            kernel_size=3,
-            activation=lrelu_01,
-        )
-        self.upscale_64_d_2 = Upscale(
-            in_channels=128,
-            out_channels=64,
-            kernel_size=3,
-            activation=lrelu_01,
-        )
-        self.conv_d_2 = Conv2d(
-            in_channels=64,
-            out_channels=1,
-            kernel_size=5,
-            padding='same',
-            activation=sigmoid,
-        )
+        return decoder
 
     def encoder(self, x: torch.Tensor) -> torch.Tensor:
         for channels in self.encoder_channels:
@@ -181,24 +118,25 @@ class OriginalAE(DeepfakeAEModel):
         self,
         x: torch.Tensor,
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        x1 = self.upscale_512_d_1(x)            # [bs, 512, 16, 16]
-        x1 = self.res_block_512_d_1(x1)         # [bs, 512, 16, 16]
-        x1 = self.upscale_256_d_1(x1)           # [bs, 256, 32, 32]
-        x1 = self.res_block_256_d_1(x1)         # [bs, 256, 32, 32]
-        x1 = self.upscale_128_d_1(x1)           # [bs, 128, 64, 64]
-        x1 = self.res_block_128_d_1(x1)         # [bs, 128, 64, 64]
-        x1 = self.upscale_64_d_1(x1)            # [bs, 64, 128, 128]
-        x1 = self.conv_d_1(x1)                  # [bs, 3, 128, 128]
+        return self.decoder_A(x), self.decoder_B(x)
+        # x1 = self.upscale_512_d_1(x)            # [bs, 512, 16, 16]
+        # x1 = self.res_block_512_d_1(x1)         # [bs, 512, 16, 16]
+        # x1 = self.upscale_256_d_1(x1)           # [bs, 256, 32, 32]
+        # x1 = self.res_block_256_d_1(x1)         # [bs, 256, 32, 32]
+        # x1 = self.upscale_128_d_1(x1)           # [bs, 128, 64, 64]
+        # x1 = self.res_block_128_d_1(x1)         # [bs, 128, 64, 64]
+        # x1 = self.upscale_64_d_1(x1)            # [bs, 64, 128, 128]
+        # x1 = self.conv_d_1(x1)                  # [bs, 3, 128, 128]
 
-        if self.learn_mask:
-            x2 = self.upscale_512_d_2(x)        # [bs, 512, 16, 16]
-            x2 = self.upscale_256_d_2(x2)       # [bs, 256, 32, 32]
-            x2 = self.upscale_128_d_2(x2)       # [bs, 128, 64, 64]
-            x2 = self.upscale_64_d_2(x2)        # [bs, 64, 128, 128]
-            x2 = self.conv_d_2(x2)              # [bs, 1, 128, 128]
-            return x1, x2
+        # if self.learn_mask:
+        #     x2 = self.upscale_512_d_2(x)        # [bs, 512, 16, 16]
+        #     x2 = self.upscale_256_d_2(x2)       # [bs, 256, 32, 32]
+        #     x2 = self.upscale_128_d_2(x2)       # [bs, 128, 64, 64]
+        #     x2 = self.upscale_64_d_2(x2)        # [bs, 64, 128, 128]
+        #     x2 = self.conv_d_2(x2)              # [bs, 1, 128, 128]
+        #     return x1, x2
 
-        return x1
+        # return x1
 
     def _calculate_linar_input_size(
         self,
