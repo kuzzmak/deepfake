@@ -7,15 +7,16 @@ from ignite.contrib.handlers.tensorboard_logger import (
     GradsScalarHandler,
     TensorboardLogger,
     WeightsScalarHandler,
-    # global_step_from_engine,
+    global_step_from_engine,
 )
 from ignite.engine import (
     Engine,
     Events,
-    # create_supervised_evaluator,
+    create_supervised_evaluator,
 )
-# from ignite.handlers import ModelCheckpoint
-# from ignite.metrics import Loss
+from ignite.engine.events import EventEnum
+from ignite.handlers import ModelCheckpoint
+from ignite.metrics import Loss
 from ignite.utils import convert_tensor
 import torch
 from torch.nn.modules.loss import _Loss
@@ -152,6 +153,10 @@ def _trainer(
     return trainer
 
 
+class SaveEvents(EventEnum):
+    MANUAL_SAVE = 'manual_save'
+
+
 class Trainer:
     """Class that manages everything that has to do with training of the
     particular model.
@@ -180,6 +185,7 @@ class Trainer:
         self.checkpoints_dir = checkpoints_dir
         self.show_preview = show_preview
         self.show_preview_comm = show_preview_comm
+        self._stop_training = False
 
     def _refresh_preview(
         self,
@@ -213,6 +219,10 @@ class Trainer:
             loss_fn=self.criterion,
             device=self.device.value,
         )
+        event_to_attr = {
+            SaveEvents.MANUAL_SAVE: 'manual_save',
+        }
+        trainer.register_events(*SaveEvents, event_to_attr=event_to_attr)
 
         # progress bars
         manager = enlighten.get_manager()
@@ -274,6 +284,14 @@ class Trainer:
                 y_pred_B_B[:n_images],
             )
 
+            if self._stop_training:
+                logger.info(
+                    'Terminating training process on epoch ' +
+                    f'{engine.state.epoch}.'
+                )
+                engine.fire_event(SaveEvents.MANUAL_SAVE)
+                engine.terminate()
+
         @trainer.on(Events.ITERATION_COMPLETED)
         def on_iteration_completed(engine: Engine):
             iteration_pbar.update()
@@ -301,15 +319,20 @@ class Trainer:
         # def score_function(engine: Engine):
         #     return engine.state.metrics["accuracy"]
 
-        # model_checkpoint = ModelCheckpoint(
-        #     self.log_dir,
-        #     n_saved=2,
-        #     filename_prefix="best",
-        #     score_function=score_function,
-        #     score_name="validation_accuracy",
-        #     global_step_transform=global_step_from_engine(trainer),
-        #     require_empty=False,
-        # )
+        model_checkpoint = ModelCheckpoint(
+            self.checkpoints_dir,
+            n_saved=2,
+            filename_prefix="best",
+            # score_function=score_function,
+            # score_name="validation_accuracy",
+            global_step_transform=global_step_from_engine(trainer),
+            require_empty=False,
+        )
+        trainer.add_event_handler(
+            SaveEvents.MANUAL_SAVE,
+            model_checkpoint,
+            {"model": self.model},
+        )
         # train_evaluator.add_event_handler(
         #     Events.EPOCH_COMPLETED,
         #     model_checkpoint,
@@ -320,3 +343,8 @@ class Trainer:
 
         tb_logger.close()
         manager.stop()
+
+    def stop(self) -> None:
+        """Terminates training process.
+        """
+        self._stop_training = True
