@@ -277,13 +277,14 @@ class TrainingTab(BaseWidget):
         button_row_layout = qwt.QHBoxLayout()
         button_row.setLayout(button_row_layout)
 
-        start_btn = qwt.QPushButton(text='Start')
-        start_btn.clicked.connect(self._start)
-        button_row_layout.addWidget(start_btn)
+        self.start_btn = qwt.QPushButton(text='Start')
+        self.start_btn.clicked.connect(self._start)
+        button_row_layout.addWidget(self.start_btn)
 
-        stop_btn = qwt.QPushButton(text='Stop')
-        stop_btn.clicked.connect(self._stop)
-        button_row_layout.addWidget(stop_btn)
+        self.stop_btn = qwt.QPushButton(text='Stop')
+        self.stop_btn.clicked.connect(self._stop)
+        self.enable_widget(self.stop_btn, True)
+        button_row_layout.addWidget(self.stop_btn)
 
         left_part_layout.addWidget(button_row)
         layout.addWidget(left_part)
@@ -361,7 +362,18 @@ class TrainingTab(BaseWidget):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.finished.connect(
+            lambda: self.enable_widget(self.start_btn, True)
+        )
+        self.thread.finished.connect(
+            lambda: self.enable_widget(self.stop_btn, False)
+        )
+
         self.thread.start()
+
+        self.enable_widget(self.start_btn, False)
+        self.enable_widget(self.stop_btn, True)
 
     def _stop(self):
         """Stops training process.
