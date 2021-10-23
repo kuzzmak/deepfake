@@ -29,9 +29,12 @@ class Worker(qtc.QObject):
         model = self._init_model()
         optimizer = self._init_optimizer(model.parameters())
         data_loader = self._init_data_loader()
-        trainer = self._init_trainer(model, data_loader, optimizer)
-        trainer.run()
+        self.trainer = self._init_trainer(model, data_loader, optimizer)
+        self.trainer.run()
         self.finished.emit()
+
+    def stop_training(self):
+        self.trainer.stop()
 
     def _init_model(self) -> DeepfakeModel:
         logger.info(
