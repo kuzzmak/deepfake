@@ -362,6 +362,7 @@ class TrainingTab(BaseWidget):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.start()
 
         self.thread.finished.connect(
             lambda: self.enable_widget(self.start_btn, True)
@@ -369,9 +370,6 @@ class TrainingTab(BaseWidget):
         self.thread.finished.connect(
             lambda: self.enable_widget(self.stop_btn, False)
         )
-
-        self.thread.start()
-
         self.enable_widget(self.start_btn, False)
         self.enable_widget(self.stop_btn, True)
 
