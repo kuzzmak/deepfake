@@ -247,6 +247,8 @@ class TrainingConfiguration(qwt.QWidget):
 
 class TrainingTab(BaseWidget):
 
+    stop_training_sig = qtc.pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self._init_ui()
@@ -291,6 +293,12 @@ class TrainingTab(BaseWidget):
         self.setLayout(layout)
 
     def _optimizer_options(self) -> dict:
+        """Constructs optimizer options based on the type of optimizer that's
+        selected.
+
+        Returns:
+            dict: optimizer options
+        """
         opts = {}
         lr = self.training_conf.optimizer_learning_rate
         opts['lr'] = float(lr)
@@ -306,6 +314,8 @@ class TrainingTab(BaseWidget):
         return opts
 
     def _start(self):
+        """Initiates training process.
+        """
         optimizer_conf = OptimizerConfiguration(
             self.training_conf.selected_optimizer,
             self._optimizer_options(),
@@ -320,7 +330,6 @@ class TrainingTab(BaseWidget):
 
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
-            # faces_path=r'C:\Users\tonkec\Documents\deepfake\data\gen_faces\metadata',
             metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
             metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
             input_shape=input_shape[1],
@@ -346,6 +355,7 @@ class TrainingTab(BaseWidget):
 
         self.thread = qtc.QThread()
         self.worker = Worker(conf)
+        self.stop_training_sig.connect(self.worker.stop_training)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.finished.connect(self.thread.quit)
@@ -354,4 +364,6 @@ class TrainingTab(BaseWidget):
         self.thread.start()
 
     def _stop(self):
-        ...
+        """Stops training process.
+        """
+        self.stop_training_sig.emit()
