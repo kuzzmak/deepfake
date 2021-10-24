@@ -9,3 +9,4 @@ data
 *.obj
 tensorboard_log
 logs
+*.pt
