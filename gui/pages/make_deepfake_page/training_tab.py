@@ -93,6 +93,14 @@ class TrainingConfiguration(qwt.QWidget):
         epochs_row.layout().addWidget(self.epochs_input)
         models_gb_layout.addWidget(epochs_row)
 
+        load_data_into_memory_row = HWidget()
+        self.ldim_chk = qwt.QCheckBox(
+            text='load datasets into memory (RAM or GPU)'
+        )
+        self.ldim_chk.setChecked(True)
+        load_data_into_memory_row.layout().addWidget(self.ldim_chk)
+        models_gb_layout.addWidget(load_data_into_memory_row)
+
         optimizer_gb = qwt.QGroupBox()
         optimizer_gb.setTitle('Optimizer configuration')
         optimizer_gb_layout = qwt.QVBoxLayout(optimizer_gb)
@@ -186,6 +194,17 @@ class TrainingConfiguration(qwt.QWidget):
             str: value from input
         """
         return self.epochs_input.text()
+
+    @property
+    def load_datasets_into_memory(self) -> bool:
+        """Should datasets A and B be loaded into memory (RAM if no grphics
+        card is available or GPU is it's available)
+
+        Returns:
+            bool: True if datasets should be loaded into memory, False
+                otherwise
+        """
+        return self.ldim_chk.isChecked()
 
     @property
     def selected_optimizer(self) -> OPTIMIZER:
@@ -335,7 +354,7 @@ class TrainingTab(BaseWidget):
             metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
             input_shape=input_shape[1],
             batch_size=int(self.training_conf.batch_size),
-            load_into_memory=True,
+            load_into_memory=self.training_conf.load_datasets_into_memory,
             data_transforms=data_transforms,
         )
 
