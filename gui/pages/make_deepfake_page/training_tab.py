@@ -308,7 +308,7 @@ class TrainingTab(BaseWidget):
         left_part_layout.addWidget(button_row)
         layout.addWidget(left_part)
 
-        self.preview = Preview()
+        self.preview = Preview(4)
         layout.addWidget(self.preview)
         self.setLayout(layout)
 
