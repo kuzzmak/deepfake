@@ -38,6 +38,7 @@ class ModelSelector(qwt.QWidget):
         bg.idPressed.connect(self._model_changed)
 
         original = qwt.QRadioButton('Original', models_gb)
+        original.setChecked(True)
         models_gb_layout.addWidget(original)
         bg.addButton(original)
 
