@@ -100,7 +100,7 @@ class Preview(BaseWidget):
             num_of_rows (int): how many rows of pictures on preview
         """
         super().__init__()
-        self._init_ui()
+        self._init_ui(num_of_rows)
         self.refresh_data_sig.connect(self._refresh_data)
 
     def _init_ui(self, num_of_rows: int):
