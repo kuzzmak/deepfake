@@ -1,4 +1,6 @@
+from functools import partial
 import logging
+from typing import Callable, List, Tuple, Union
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
@@ -8,6 +10,7 @@ from torch.nn import MSELoss
 
 from common_structures import TensorCommObject
 from core.dataset.configuration import DatasetConfiguration
+from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
@@ -59,6 +62,10 @@ class TrainingConfiguration(qwt.QWidget):
 
     def __init__(self):
         super().__init__()
+        # list of possible augmentations, when implementing a new augmentation,
+        # after creating a widget, augmentation name should be appended to this
+        # list in order to correctly augment images
+        self.possible_augmentations = []
         self._init_ui()
 
     def _init_ui(self):
@@ -166,59 +173,66 @@ class TrainingConfiguration(qwt.QWidget):
         image_augmentation_gb.setTitle('Image augmentations')
         image_augmentation_gb_layout = qwt.QVBoxLayout(image_augmentation_gb)
 
-        self.flip_image_chk = qwt.QCheckBox(text='flip')
-        image_augmentation_gb_layout.addWidget(self.flip_image_chk)
+        self.flip_chk = qwt.QCheckBox(text='flip')
+        image_augmentation_gb_layout.addWidget(self.flip_chk)
+        self.possible_augmentations.append('flip')
 
         self.sharpen_chk = qwt.QCheckBox(text='sharpen')
         image_augmentation_gb_layout.addWidget(self.sharpen_chk)
+        self.possible_augmentations.append('sharpen')
 
-        add_light_row = HWidget()
-        image_augmentation_gb_layout.addWidget(add_light_row)
-        add_light_row.layout().setContentsMargins(0, 0, 0, 0)
-        self.add_light_chk = qwt.QCheckBox(text='add light')
-        add_light_row.layout().addWidget(self.add_light_chk)
-        self.add_light_input = qwt.QLineEdit()
-        add_light_row.layout().addWidget(self.add_light_input)
+        light_row = HWidget()
+        image_augmentation_gb_layout.addWidget(light_row)
+        light_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.light_chk = qwt.QCheckBox(text='light')
+        light_row.layout().addWidget(self.light_chk)
+        light_row.layout().addWidget(qwt.QLabel(text='gamma'))
+        self.light_input = qwt.QLineEdit()
+        light_row.layout().addWidget(self.light_input)
+        self.possible_augmentations.append('light')
 
-        add_saturation_row = HWidget()
-        image_augmentation_gb_layout.addWidget(add_saturation_row)
-        add_saturation_row.layout().setContentsMargins(0, 0, 0, 0)
-        self.add_saturation_chk = qwt.QCheckBox(text='add saturation')
-        add_saturation_row.layout().addWidget(self.add_saturation_chk)
-        self.add_saturation_input = qwt.QLineEdit()
-        add_saturation_row.layout().addWidget(self.add_saturation_input)
+        saturation_row = HWidget()
+        image_augmentation_gb_layout.addWidget(saturation_row)
+        saturation_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.saturation_chk = qwt.QCheckBox(text='saturation')
+        saturation_row.layout().addWidget(self.saturation_chk)
+        self.saturation_input = qwt.QLineEdit()
+        saturation_row.layout().addWidget(self.saturation_input)
+        self.possible_augmentations.append('saturation')
 
-        add_gaussian_blur_row = HWidget()
-        image_augmentation_gb_layout.addWidget(add_gaussian_blur_row)
-        add_gaussian_blur_row.layout().setContentsMargins(0, 0, 0, 0)
-        self.add_gaussian_blur_chk = qwt.QCheckBox(text='add gaussian blur')
-        add_gaussian_blur_row.layout().addWidget(self.add_gaussian_blur_chk)
-        self.add_gaussian_blur_input = qwt.QLineEdit()
-        add_gaussian_blur_row.layout().addWidget(self.add_gaussian_blur_input)
+        gaussian_blur_row = HWidget()
+        image_augmentation_gb_layout.addWidget(gaussian_blur_row)
+        gaussian_blur_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.gaussian_blur_chk = qwt.QCheckBox(text='gaussian blur')
+        gaussian_blur_row.layout().addWidget(self.gaussian_blur_chk)
+        self.gaussian_blur_input = qwt.QLineEdit()
+        gaussian_blur_row.layout().addWidget(self.gaussian_blur_input)
+        self.possible_augmentations.append('gaussian_blur')
 
-        add_bilateral_blur_row = HWidget()
-        image_augmentation_gb_layout.addWidget(add_bilateral_blur_row)
-        add_bilateral_blur_row.layout().setContentsMargins(0, 0, 0, 0)
-        self.add_bilateral_blur_chk = qwt.QCheckBox(text='add bilateral blur')
-        add_bilateral_blur_row.layout().addWidget(self.add_bilateral_blur_chk)
-        add_bilateral_blur_row.layout().addWidget(qwt.QLabel(text='d'))
-        self.add_bilateral_blur_d_input = qwt.QLineEdit()
-        self.add_bilateral_blur_d_input.setMaximumWidth(25)
-        add_bilateral_blur_row.layout().addWidget(
-            self.add_bilateral_blur_d_input
+        bilateral_blur_row = HWidget()
+        image_augmentation_gb_layout.addWidget(bilateral_blur_row)
+        bilateral_blur_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.bilateral_blur_chk = qwt.QCheckBox(text='bilateral blur')
+        bilateral_blur_row.layout().addWidget(self.bilateral_blur_chk)
+        bilateral_blur_row.layout().addWidget(qwt.QLabel(text='d'))
+        self.bilateral_blur_d_input = qwt.QLineEdit()
+        self.bilateral_blur_d_input.setMaximumWidth(25)
+        bilateral_blur_row.layout().addWidget(
+            self.bilateral_blur_d_input
         )
-        add_bilateral_blur_row.layout().addWidget(qwt.QLabel(text='color'))
-        self.add_bilateral_blur_color_input = qwt.QLineEdit()
-        self.add_bilateral_blur_color_input.setMaximumWidth(25)
-        add_bilateral_blur_row.layout().addWidget(
-            self.add_bilateral_blur_color_input
+        bilateral_blur_row.layout().addWidget(qwt.QLabel(text='color'))
+        self.bilateral_blur_color_input = qwt.QLineEdit()
+        self.bilateral_blur_color_input.setMaximumWidth(25)
+        bilateral_blur_row.layout().addWidget(
+            self.bilateral_blur_color_input
         )
-        add_bilateral_blur_row.layout().addWidget(qwt.QLabel(text='space'))
-        self.add_bilateral_blur_space_input = qwt.QLineEdit()
-        self.add_bilateral_blur_space_input.setMaximumWidth(25)
-        add_bilateral_blur_row.layout().addWidget(
-            self.add_bilateral_blur_space_input
+        bilateral_blur_row.layout().addWidget(qwt.QLabel(text='space'))
+        self.bilateral_blur_space_input = qwt.QLineEdit()
+        self.bilateral_blur_space_input.setMaximumWidth(25)
+        bilateral_blur_row.layout().addWidget(
+            self.bilateral_blur_space_input
         )
+        self.possible_augmentations.append('bilateral_blur')
 
         erode_row = HWidget()
         image_augmentation_gb_layout.addWidget(erode_row)
@@ -228,6 +242,7 @@ class TrainingConfiguration(qwt.QWidget):
         erode_row.layout().addWidget(qwt.QLabel(text='kernel shape'))
         self.erode_input = qwt.QLineEdit()
         erode_row.layout().addWidget(self.erode_input)
+        self.possible_augmentations.append('erode')
 
         dilate_row = HWidget()
         image_augmentation_gb_layout.addWidget(dilate_row)
@@ -237,6 +252,7 @@ class TrainingConfiguration(qwt.QWidget):
         dilate_row.layout().addWidget(qwt.QLabel(text='kernel shape'))
         self.dilate_input = qwt.QLineEdit()
         dilate_row.layout().addWidget(self.dilate_input)
+        self.possible_augmentations.append('dilate')
 
     @qtc.pyqtSlot(str)
     def _select_input_directory(self, side: str):
@@ -347,6 +363,78 @@ class TrainingConfiguration(qwt.QWidget):
         text = optim_lr_input.text()
         return text
 
+    @property
+    def augmentations(
+        self
+    ) -> Tuple[List[Union[Callable, partial]], List[str]]:
+        """Getter for different image augmentation functions. It goes through
+        avaiilable augmentation functions and checks if the user checked it
+        and inputed valid value. If everything was fine, list of image
+        augmentation functions is returned.
+
+        Returns:
+            Tuple[List[Union[Callable, partial]], List[str]]: first element of
+                the tuple is a list of image augmentation functions if all user
+                inputs for parameters were valid and the second value in tuple
+                is a list of errors that tell user which parameters are not
+                valid
+        """
+        augs = []
+        input_errors = []
+        for aug in self.possible_augmentations:
+            # checkbox which is supposed to be selected if some particular
+            # augmentation is supposed to be used
+            chk: qwt.QCheckBox = getattr(self, f'{aug}_chk')
+            if not chk.isChecked():
+                continue
+            # augmentations with no parameters
+            if aug in ['flip', 'sharpen']:
+                augs.append(getattr(ImageAugmentation, aug))
+            # specific augmentation with multiple parameters
+            elif aug == 'bilateral_blur':
+                props = ['d', 'color', 'space']
+                prop_values = []
+                for prop in props:
+                    p: qwt.QLineEdit = getattr(
+                        self,
+                        f'bilateral_blur_{prop}_input',
+                    )
+                    try:
+                        prop_value = float(p.text())
+                    except ValueError:
+                        input_errors.append(
+                            'Unable to parse input for bilateral blur' +
+                            f' property: {prop}.'
+                        )
+                        break
+                    prop_values.append(prop_value)
+
+                if len(prop_values) != 3:
+                    continue
+                # partial augmentation function that only needs and image,
+                # other parameters are filled from the prop_values list
+                func = partial(ImageAugmentation.bilateral_blur, *prop_values)
+                augs.append(func)
+            # augmentations with one parameter
+            else:
+                aug_input: qwt.QLineEdit = getattr(self, f'{aug}_input')
+                try:
+                    input_value = float(aug_input.text())
+                except ValueError:
+                    # something in input widget that is not a number
+                    input_errors.append(f'Unable to parse input for {aug}.')
+                    continue
+                # partial augmentation function that only needs and image
+                func = partial(
+                    getattr(ImageAugmentation, aug),
+                    input_value,
+                )
+                augs.append(func)
+
+        if len(input_errors) > 0:
+            return [], input_errors
+        return augs, []
+
 
 class TrainingTab(BaseWidget):
 
@@ -417,61 +505,67 @@ class TrainingTab(BaseWidget):
     def _start(self):
         """Initiates training process.
         """
-        optimizer_conf = OptimizerConfiguration(
-            self.training_conf.selected_optimizer,
-            self._optimizer_options(),
-        )
-        device = DEVICE.CPU
-        if torch.cuda.is_available():
-            device = DEVICE.CUDA
+        augs, errs = self.training_conf.augmentations
+        if len(errs) > 0:
+            for err in errs:
+                logger.error(err)
+            return
+        print(augs)
+        # optimizer_conf = OptimizerConfiguration(
+        #     self.training_conf.selected_optimizer,
+        #     self._optimizer_options(),
+        # )
+        # device = DEVICE.CPU
+        # if torch.cuda.is_available():
+        #     device = DEVICE.CUDA
 
-        input_shape = (3, 128, 128)
+        # input_shape = (3, 128, 128)
 
-        model_conf = ModelConfiguration(MODEL.ORIGINAL)
+        # model_conf = ModelConfiguration(MODEL.ORIGINAL)
 
-        data_transforms = transforms.Compose([transforms.ToTensor()])
-        dataset_conf = DatasetConfiguration(
-            metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
-            metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
-            input_shape=input_shape[1],
-            batch_size=int(self.training_conf.batch_size),
-            load_into_memory=self.training_conf.load_datasets_into_memory,
-            data_transforms=data_transforms,
-        )
+        # data_transforms = transforms.Compose([transforms.ToTensor()])
+        # dataset_conf = DatasetConfiguration(
+        #     metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
+        #     metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
+        #     input_shape=input_shape[1],
+        #     batch_size=int(self.training_conf.batch_size),
+        #     load_into_memory=self.training_conf.load_datasets_into_memory,
+        #     data_transforms=data_transforms,
+        # )
 
-        comm_obj = TensorCommObject()
-        comm_obj.data_sig = self.preview.refresh_data_sig
-        preview_conf = PreviewConfiguration(True, comm_obj)
+        # comm_obj = TensorCommObject()
+        # comm_obj.data_sig = self.preview.refresh_data_sig
+        # preview_conf = PreviewConfiguration(True, comm_obj)
 
-        conf = TrainerConfiguration(
-            device=device,
-            input_shape=input_shape,
-            epochs=int(self.training_conf.epochs),
-            criterion=MSELoss(),
-            model_conf=model_conf,
-            optimizer_conf=optimizer_conf,
-            dataset_conf=dataset_conf,
-            preview_conf=preview_conf,
-        )
+        # conf = TrainerConfiguration(
+        #     device=device,
+        #     input_shape=input_shape,
+        #     epochs=int(self.training_conf.epochs),
+        #     criterion=MSELoss(),
+        #     model_conf=model_conf,
+        #     optimizer_conf=optimizer_conf,
+        #     dataset_conf=dataset_conf,
+        #     preview_conf=preview_conf,
+        # )
 
-        self.thread = qtc.QThread()
-        self.worker = Worker(conf)
-        self.stop_training_sig.connect(self.worker.stop_training)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.start()
+        # self.thread = qtc.QThread()
+        # self.worker = Worker(conf)
+        # self.stop_training_sig.connect(self.worker.stop_training)
+        # self.worker.moveToThread(self.thread)
+        # self.thread.started.connect(self.worker.run)
+        # self.worker.finished.connect(self.thread.quit)
+        # self.worker.finished.connect(self.worker.deleteLater)
+        # self.thread.finished.connect(self.thread.deleteLater)
+        # self.thread.start()
 
-        self.thread.finished.connect(
-            lambda: self.enable_widget(self.start_btn, True)
-        )
-        self.thread.finished.connect(
-            lambda: self.enable_widget(self.stop_btn, False)
-        )
-        self.enable_widget(self.start_btn, False)
-        self.enable_widget(self.stop_btn, True)
+        # self.thread.finished.connect(
+        #     lambda: self.enable_widget(self.start_btn, True)
+        # )
+        # self.thread.finished.connect(
+        #     lambda: self.enable_widget(self.stop_btn, False)
+        # )
+        # self.enable_widget(self.start_btn, False)
+        # self.enable_widget(self.stop_btn, True)
 
     def _stop(self):
         """Stops training process.
