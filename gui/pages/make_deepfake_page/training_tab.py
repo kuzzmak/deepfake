@@ -13,7 +13,7 @@ from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
 from enums import DEVICE, MODEL, OPTIMIZER
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.common import HWidget, VWidget, VerticalSpacer
+from gui.widgets.common import HWidget, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
 from trainer_thread import Worker
@@ -63,46 +63,53 @@ class TrainingConfiguration(qwt.QWidget):
 
     def _init_ui(self):
         layout = qwt.QVBoxLayout()
+        self.setLayout(layout)
+
+        model_selector = ModelSelector()
+        layout.addWidget(model_selector)
+        model_selector.layout().setContentsMargins(0, 0, 0, 0)
 
         models_gb = qwt.QGroupBox()
+        layout.addWidget(models_gb)
         models_gb.setTitle('Training configuration')
         models_gb_layout = qwt.QVBoxLayout(models_gb)
 
         self.input_A_directory_btn = qwt.QPushButton(text='Input A directory')
+        models_gb_layout.addWidget(self.input_A_directory_btn)
         self.input_A_directory_btn.setToolTip('Not yet selected.')
         self.input_A_directory_btn.clicked.connect(
             lambda: self._select_input_directory('A'))
-        models_gb_layout.addWidget(self.input_A_directory_btn)
 
         self.input_B_directory_btn = qwt.QPushButton(text='Input B directory')
+        models_gb_layout.addWidget(self.input_B_directory_btn)
         self.input_B_directory_btn.setToolTip('Not yet selected.')
         self.input_B_directory_btn.clicked.connect(
             lambda: self._select_input_directory('B'))
-        models_gb_layout.addWidget(self.input_B_directory_btn)
 
         batch_size_row = HWidget()
+        models_gb_layout.addWidget(batch_size_row)
         batch_size_row.layout().addWidget(qwt.QLabel(text="Batch size: "))
         self.batch_size_input = qwt.QLineEdit()
         self.batch_size_input.setText(str(32))
         batch_size_row.layout().addWidget(self.batch_size_input)
-        models_gb_layout.addWidget(batch_size_row)
 
         epochs_row = HWidget()
+        models_gb_layout.addWidget(epochs_row)
         epochs_row.layout().addWidget(qwt.QLabel(text='Number of epochs: '))
         self.epochs_input = qwt.QLineEdit()
         self.epochs_input.setText(str(10))
         epochs_row.layout().addWidget(self.epochs_input)
-        models_gb_layout.addWidget(epochs_row)
 
         load_data_into_memory_row = HWidget()
+        models_gb_layout.addWidget(load_data_into_memory_row)
         self.ldim_chk = qwt.QCheckBox(
             text='load datasets into memory (RAM or GPU)'
         )
         self.ldim_chk.setChecked(True)
         load_data_into_memory_row.layout().addWidget(self.ldim_chk)
-        models_gb_layout.addWidget(load_data_into_memory_row)
 
         optimizer_gb = qwt.QGroupBox()
+        layout.addWidget(optimizer_gb)
         optimizer_gb.setTitle('Optimizer configuration')
         optimizer_gb_layout = qwt.QVBoxLayout(optimizer_gb)
 
@@ -120,13 +127,14 @@ class TrainingConfiguration(qwt.QWidget):
         self.optimizer_options.addWidget(self.adam_options)
         # learning rate
         lr_row = HWidget()
+        self.adam_options.layout().addWidget(lr_row)
         lr_row.layout().addWidget(qwt.QLabel(text='learning rate'))
         self.adam_lr_input = qwt.QLineEdit()
         self.adam_lr_input.setText(str(5e-5))
         lr_row.layout().addWidget(self.adam_lr_input)
-        self.adam_options.layout().addWidget(lr_row)
         # betas
         betas_row = HWidget()
+        self.adam_options.layout().addWidget(betas_row)
         betas_row.layout().addWidget(qwt.QLabel(text="beta 1"))
         self.adam_beta1_input = qwt.QLineEdit()
         self.adam_beta1_input.setText(str(0.5))
@@ -135,25 +143,100 @@ class TrainingConfiguration(qwt.QWidget):
         self.adam_beta2_input = qwt.QLineEdit()
         self.adam_beta2_input.setText(str(0.999))
         betas_row.layout().addWidget(self.adam_beta2_input)
-        self.adam_options.layout().addWidget(betas_row)
         # eps
         eps_row = HWidget()
+        self.adam_options.layout().addWidget(eps_row)
         eps_row.layout().addWidget(qwt.QLabel(text='eps'))
         self.adam_eps_input = qwt.QLineEdit()
         self.adam_eps_input.setText(str(1e-8))
         eps_row.layout().addWidget(self.adam_eps_input)
-        self.adam_options.layout().addWidget(eps_row)
         # weight_decay
         weight_decay_row = HWidget()
+        self.adam_options.layout().addWidget(weight_decay_row)
         weight_decay_row.layout().addWidget(qwt.QLabel(text='weight decay'))
         self.adam_weight_decay_input = qwt.QLineEdit()
         self.adam_weight_decay_input.setText(str(0))
         weight_decay_row.layout().addWidget(self.adam_weight_decay_input)
-        self.adam_options.layout().addWidget(weight_decay_row)
 
-        layout.addWidget(models_gb)
-        layout.addWidget(optimizer_gb)
-        self.setLayout(layout)
+        ####################
+        # IMAGE AUGMENTATION
+        ####################
+        image_augmentation_gb = qwt.QGroupBox()
+        layout.addWidget(image_augmentation_gb)
+        image_augmentation_gb.setTitle('Image augmentations')
+        image_augmentation_gb_layout = qwt.QVBoxLayout(image_augmentation_gb)
+
+        self.flip_image_chk = qwt.QCheckBox(text='flip')
+        image_augmentation_gb_layout.addWidget(self.flip_image_chk)
+
+        self.sharpen_chk = qwt.QCheckBox(text='sharpen')
+        image_augmentation_gb_layout.addWidget(self.sharpen_chk)
+
+        add_light_row = HWidget()
+        image_augmentation_gb_layout.addWidget(add_light_row)
+        add_light_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.add_light_chk = qwt.QCheckBox(text='add light')
+        add_light_row.layout().addWidget(self.add_light_chk)
+        self.add_light_input = qwt.QLineEdit()
+        add_light_row.layout().addWidget(self.add_light_input)
+
+        add_saturation_row = HWidget()
+        image_augmentation_gb_layout.addWidget(add_saturation_row)
+        add_saturation_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.add_saturation_chk = qwt.QCheckBox(text='add saturation')
+        add_saturation_row.layout().addWidget(self.add_saturation_chk)
+        self.add_saturation_input = qwt.QLineEdit()
+        add_saturation_row.layout().addWidget(self.add_saturation_input)
+
+        add_gaussian_blur_row = HWidget()
+        image_augmentation_gb_layout.addWidget(add_gaussian_blur_row)
+        add_gaussian_blur_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.add_gaussian_blur_chk = qwt.QCheckBox(text='add gaussian blur')
+        add_gaussian_blur_row.layout().addWidget(self.add_gaussian_blur_chk)
+        self.add_gaussian_blur_input = qwt.QLineEdit()
+        add_gaussian_blur_row.layout().addWidget(self.add_gaussian_blur_input)
+
+        add_bilateral_blur_row = HWidget()
+        image_augmentation_gb_layout.addWidget(add_bilateral_blur_row)
+        add_bilateral_blur_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.add_bilateral_blur_chk = qwt.QCheckBox(text='add bilateral blur')
+        add_bilateral_blur_row.layout().addWidget(self.add_bilateral_blur_chk)
+        add_bilateral_blur_row.layout().addWidget(qwt.QLabel(text='d'))
+        self.add_bilateral_blur_d_input = qwt.QLineEdit()
+        self.add_bilateral_blur_d_input.setMaximumWidth(25)
+        add_bilateral_blur_row.layout().addWidget(
+            self.add_bilateral_blur_d_input
+        )
+        add_bilateral_blur_row.layout().addWidget(qwt.QLabel(text='color'))
+        self.add_bilateral_blur_color_input = qwt.QLineEdit()
+        self.add_bilateral_blur_color_input.setMaximumWidth(25)
+        add_bilateral_blur_row.layout().addWidget(
+            self.add_bilateral_blur_color_input
+        )
+        add_bilateral_blur_row.layout().addWidget(qwt.QLabel(text='space'))
+        self.add_bilateral_blur_space_input = qwt.QLineEdit()
+        self.add_bilateral_blur_space_input.setMaximumWidth(25)
+        add_bilateral_blur_row.layout().addWidget(
+            self.add_bilateral_blur_space_input
+        )
+
+        erode_row = HWidget()
+        image_augmentation_gb_layout.addWidget(erode_row)
+        erode_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.erode_chk = qwt.QCheckBox(text='erode')
+        erode_row.layout().addWidget(self.erode_chk)
+        erode_row.layout().addWidget(qwt.QLabel(text='kernel shape'))
+        self.erode_input = qwt.QLineEdit()
+        erode_row.layout().addWidget(self.erode_input)
+
+        dilate_row = HWidget()
+        image_augmentation_gb_layout.addWidget(dilate_row)
+        dilate_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.dilate_chk = qwt.QCheckBox(text='dilate')
+        dilate_row.layout().addWidget(self.dilate_chk)
+        dilate_row.layout().addWidget(qwt.QLabel(text='kernel shape'))
+        self.dilate_input = qwt.QLineEdit()
+        dilate_row.layout().addWidget(self.dilate_input)
 
     @qtc.pyqtSlot(str)
     def _select_input_directory(self, side: str):
@@ -277,21 +360,17 @@ class TrainingTab(BaseWidget):
         layout = qwt.QHBoxLayout()
 
         left_part = qwt.QWidget()
-        left_part.setMaximumWidth(300)
-        # left_part.setAutoFillBackground(True)
-        # p = left_part.palette()
-        # p.setColor(left_part.backgroundRole(), qtc.Qt.red)
-        # left_part.setPalette(p)
+        left_part.setMaximumWidth(350)
         left_part_layout = qwt.QVBoxLayout()
         left_part.setLayout(left_part_layout)
 
-        model_selector = ModelSelector()
-        left_part_layout.addWidget(model_selector)
-
+        scroll = qwt.QScrollArea()
+        scroll.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+        scroll.setWidgetResizable(True)
         self.training_conf = TrainingConfiguration()
-        left_part_layout.addWidget(self.training_conf)
-
-        left_part_layout.addItem(VerticalSpacer)
+        scroll.setWidget(self.training_conf)
+        left_part_layout.addWidget(scroll)
 
         button_row = qwt.QWidget()
         button_row_layout = qwt.QHBoxLayout()
@@ -310,6 +389,7 @@ class TrainingTab(BaseWidget):
         layout.addWidget(left_part)
 
         self.preview = Preview(4)
+        self.preview.layout().setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.preview)
         self.setLayout(layout)
 
