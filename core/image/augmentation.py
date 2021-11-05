@@ -22,13 +22,13 @@ class ImageAugmentation:
         return image
 
     @staticmethod
-    def add_light(image: np.ndarray, gamma: float) -> np.ndarray:
+    def light(gamma: float, image: np.ndarray) -> np.ndarray:
         """Adds or removed light from image.
 
         Args:
-            image (np.ndarray): image to add light to
             gamma (float): constant defining how much light is added or
                 removed from the image
+            image (np.ndarray): image to add light to
 
         Returns:
             np.ndarray: image
@@ -43,12 +43,12 @@ class ImageAugmentation:
         return image
 
     @staticmethod
-    def add_saturation(image: np.ndarray, saturation: float) -> np.ndarray:
+    def saturation(saturation: float, image: np.ndarray) -> np.ndarray:
         """Adds saturation to the image.
 
         Args:
-            image (np.ndarray): image to add saturation to
             saturation (float): saturation value
+            image (np.ndarray): image to add saturation to
 
         Returns:
             np.ndarray: image with saturation
@@ -59,12 +59,12 @@ class ImageAugmentation:
         return image
 
     @staticmethod
-    def gaussian_blur(image: np.ndarray, blur: float) -> np.ndarray:
+    def gaussian_blur(blur: float, image: np.ndarray) -> np.ndarray:
         """Blurs image using Gaussian.
 
         Args:
-            image (np.ndarray): image to blur
             blur (float): blur amount
+            image (np.ndarray): image to blur
 
         Returns:
             np.ndarray: blurred image
@@ -74,19 +74,19 @@ class ImageAugmentation:
 
     @staticmethod
     def bilateral_blur(
-        image: np.ndarray,
         d: int,
         sigma_color: int,
         sigma_space: int,
+        image: np.ndarray,
     ) -> np.ndarray:
         """Applies the bilateral filter to an image.
 
         Args:
-            image (np.ndarray): image to blur
             d (int): diameter of each pixel neighborhood that is used during
                 filtering
             sigma_color (int): filter sigma in the color space
             sigma_space (int): filter sigma in the coordinate space
+            image (np.ndarray): image to blur
 
         Returns:
             np.ndarray: blurred image
@@ -94,13 +94,13 @@ class ImageAugmentation:
         image = cv.bilateralFilter(image, d, sigma_color, sigma_space)
         return image
 
-    def erode(image: np.ndarray, kernel_shape: Tuple[int, int]) -> np.ndarray:
+    def erode(kernel_shape: Tuple[int, int], image: np.ndarray) -> np.ndarray:
         """Erodes an image by using a specific structuring element, kernel of
         shape `kernel_shape` which consists of ones.
 
         Args:
-            image (np.ndarray): image to erode
             kernel_shape (Tuple[int, int]): eroding kernel shape
+            image (np.ndarray): image to erode
 
         Returns:
             np.ndarray: eroded image
@@ -109,13 +109,13 @@ class ImageAugmentation:
         image = cv.erode(image, kernel, iterations=1)
         return image
 
-    def dilate(image: np.ndarray, kernel_shape: Tuple[int, int]) -> np.ndarray:
+    def dilate(kernel_shape: Tuple[int, int], image: np.ndarray) -> np.ndarray:
         """Dilates an image by using a specific structuring element, kernel of
         shape `kernel_shape` which consists of ones.
 
         Args:
-            image (np.ndarray): image to dilate
             kernel_shape (Tuple[int, int]): dilation kernel shape
+            image (np.ndarray): image to dilate
 
         Returns:
             np.ndarray: eroded image
