@@ -2,6 +2,7 @@ from functools import partial
 import logging
 from typing import Callable, List, Tuple, Union
 
+import cv2 as cv
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 import torch
@@ -9,6 +10,7 @@ from torchvision import transforms
 from torch.nn import MSELoss
 
 from common_structures import TensorCommObject
+from config import APP_CONFIG
 from core.dataset.configuration import DatasetConfiguration
 from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
@@ -185,6 +187,7 @@ class TrainingConfiguration(qwt.QWidget):
         image_augmentation_gb_layout.addWidget(light_row)
         light_row.layout().setContentsMargins(0, 0, 0, 0)
         self.light_chk = qwt.QCheckBox(text='light')
+        self.light_chk.setToolTip('Add light to the image')
         light_row.layout().addWidget(self.light_chk)
         light_row.layout().addWidget(qwt.QLabel(text='gamma'))
         self.light_input = qwt.QLineEdit()
@@ -253,6 +256,27 @@ class TrainingConfiguration(qwt.QWidget):
         self.dilate_input = qwt.QLineEdit()
         dilate_row.layout().addWidget(self.dilate_input)
         self.possible_augmentations.append('dilate')
+
+        show_augmentations_btn = qwt.QPushButton(
+            text='see augmentations on example image'
+        )
+        show_augmentations_btn.clicked.connect(self._show_augmentations)
+        image_augmentation_gb_layout.addWidget(show_augmentations_btn)
+
+    def _show_augmentations(self):
+        augs, errs = self.augmentations
+        if len(errs) > 0:
+            for err in errs:
+                logger.error(err)
+            return
+        image = cv.imread(
+            APP_CONFIG.app.resources.face_example_path,
+            cv.IMREAD_COLOR,
+        )
+        for aug in augs:
+            image = aug(image)
+        cv.imshow('augmentations on face example', image)
+        cv.waitKey()
 
     @qtc.pyqtSlot(str)
     def _select_input_directory(self, side: str):
@@ -418,12 +442,33 @@ class TrainingConfiguration(qwt.QWidget):
             # augmentations with one parameter
             else:
                 aug_input: qwt.QLineEdit = getattr(self, f'{aug}_input')
-                try:
-                    input_value = float(aug_input.text())
-                except ValueError:
-                    # something in input widget that is not a number
-                    input_errors.append(f'Unable to parse input for {aug}.')
-                    continue
+
+                if aug in ['erode', 'dilate']:
+                    split = aug_input.text().split(',')
+                    split = [s.strip() for s in split]
+                    if len(split) != 2:
+                        input_errors.append(
+                            f'Unable to parse input for {aug}, ' +
+                            'invalid kernel shape.'
+                        )
+                        continue
+
+                    try:
+                        input_value = tuple([int(s) for s in split])
+                    except ValueError:
+                        input_errors.append(
+                            f'Unable to parse input for {aug}.'
+                        )
+                        continue
+
+                else:
+                    try:
+                        input_value = float(aug_input.text())
+                    except ValueError:
+                        # something in input widget that is not a number
+                        input_errors.append(
+                            f'Unable to parse input for {aug}.')
+                        continue
                 # partial augmentation function that only needs and image
                 func = partial(
                     getattr(ImageAugmentation, aug),
@@ -505,67 +550,68 @@ class TrainingTab(BaseWidget):
     def _start(self):
         """Initiates training process.
         """
-        augs, errs = self.training_conf.augmentations
-        if len(errs) > 0:
-            for err in errs:
-                logger.error(err)
-            return
-        print(augs)
-        # optimizer_conf = OptimizerConfiguration(
-        #     self.training_conf.selected_optimizer,
-        #     self._optimizer_options(),
-        # )
-        # device = DEVICE.CPU
-        # if torch.cuda.is_available():
-        #     device = DEVICE.CUDA
+        # # image augmentation
+        # augs, errs = self.training_conf.augmentations
+        # if len(errs) > 0:
+        #     for err in errs:
+        #         logger.error(err)
+        #     return
 
-        # input_shape = (3, 128, 128)
+        optimizer_conf = OptimizerConfiguration(
+            self.training_conf.selected_optimizer,
+            self._optimizer_options(),
+        )
+        device = DEVICE.CPU
+        if torch.cuda.is_available():
+            device = DEVICE.CUDA
 
-        # model_conf = ModelConfiguration(MODEL.ORIGINAL)
+        input_shape = (3, 128, 128)
 
-        # data_transforms = transforms.Compose([transforms.ToTensor()])
-        # dataset_conf = DatasetConfiguration(
-        #     metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
-        #     metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
-        #     input_shape=input_shape[1],
-        #     batch_size=int(self.training_conf.batch_size),
-        #     load_into_memory=self.training_conf.load_datasets_into_memory,
-        #     data_transforms=data_transforms,
-        # )
+        model_conf = ModelConfiguration(MODEL.ORIGINAL)
 
-        # comm_obj = TensorCommObject()
-        # comm_obj.data_sig = self.preview.refresh_data_sig
-        # preview_conf = PreviewConfiguration(True, comm_obj)
+        data_transforms = transforms.Compose([transforms.ToTensor()])
+        dataset_conf = DatasetConfiguration(
+            metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
+            metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
+            input_shape=input_shape[1],
+            batch_size=int(self.training_conf.batch_size),
+            load_into_memory=self.training_conf.load_datasets_into_memory,
+            data_transforms=data_transforms,
+        )
 
-        # conf = TrainerConfiguration(
-        #     device=device,
-        #     input_shape=input_shape,
-        #     epochs=int(self.training_conf.epochs),
-        #     criterion=MSELoss(),
-        #     model_conf=model_conf,
-        #     optimizer_conf=optimizer_conf,
-        #     dataset_conf=dataset_conf,
-        #     preview_conf=preview_conf,
-        # )
+        comm_obj = TensorCommObject()
+        comm_obj.data_sig = self.preview.refresh_data_sig
+        preview_conf = PreviewConfiguration(True, comm_obj)
 
-        # self.thread = qtc.QThread()
-        # self.worker = Worker(conf)
-        # self.stop_training_sig.connect(self.worker.stop_training)
-        # self.worker.moveToThread(self.thread)
-        # self.thread.started.connect(self.worker.run)
-        # self.worker.finished.connect(self.thread.quit)
-        # self.worker.finished.connect(self.worker.deleteLater)
-        # self.thread.finished.connect(self.thread.deleteLater)
-        # self.thread.start()
+        conf = TrainerConfiguration(
+            device=device,
+            input_shape=input_shape,
+            epochs=int(self.training_conf.epochs),
+            criterion=MSELoss(),
+            model_conf=model_conf,
+            optimizer_conf=optimizer_conf,
+            dataset_conf=dataset_conf,
+            preview_conf=preview_conf,
+        )
 
-        # self.thread.finished.connect(
-        #     lambda: self.enable_widget(self.start_btn, True)
-        # )
-        # self.thread.finished.connect(
-        #     lambda: self.enable_widget(self.stop_btn, False)
-        # )
-        # self.enable_widget(self.start_btn, False)
-        # self.enable_widget(self.stop_btn, True)
+        self.thread = qtc.QThread()
+        self.worker = Worker(conf)
+        self.stop_training_sig.connect(self.worker.stop_training)
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.start()
+
+        self.thread.finished.connect(
+            lambda: self.enable_widget(self.start_btn, True)
+        )
+        self.thread.finished.connect(
+            lambda: self.enable_widget(self.stop_btn, False)
+        )
+        self.enable_widget(self.start_btn, False)
+        self.enable_widget(self.stop_btn, True)
 
     def _stop(self):
         """Stops training process.
