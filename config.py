@@ -87,11 +87,17 @@ class _Gui:
 
 
 @dataclass
+class _Resources:
+    face_example_path: str
+
+
+@dataclass
 class _App:
     input_faces_directory: str
     output_faces_directory: str
     core: _Core
     gui: _Gui
+    resources: _Resources
 
 
 @dataclass
@@ -150,6 +156,9 @@ def _load_config():
         font_name = _console['font_name']
         text_size = _console['text_size']
 
+        _resources = _app['resources']
+        face_example_path = _resources['face_example_path']
+
         devices = [DEVICE.CPU]
         if torch.cuda.device_count() > 0:
             devices.append(DEVICE.CUDA)
@@ -162,7 +171,7 @@ def _load_config():
                     _FaceDetection(
                         _FaceDetectionAlgorithms(
                             _S3FD(s3fd_gd_id),
-                            _FaceBoxes(faceboxes_gd_id)
+                            _FaceBoxes(faceboxes_gd_id),
                         )
                     ),
                     _LandmarkDetection(
@@ -186,8 +195,9 @@ def _load_config():
                             font_name,
                             text_size,
                         )
-                    )
-                )
+                    ),
+                ),
+                _Resources(face_example_path),
             )
         )
 

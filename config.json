@@ -36,6 +36,9 @@
                     "text_size": 10
                 }
             }
+        },
+        "resources": {
+            "face_example_path": "resources/images/face_example.jpg"
         }
     }
 }
