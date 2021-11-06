@@ -16,7 +16,7 @@ from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
-from enums import DEVICE, MODEL, OPTIMIZER
+from enums import DEVICE, INTERPOLATION, MODEL, OPTIMIZER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
@@ -257,6 +257,19 @@ class TrainingConfiguration(qwt.QWidget):
         dilate_row.layout().addWidget(self.dilate_input)
         self.possible_augmentations.append('dilate')
 
+        warp_row = HWidget()
+        image_augmentation_gb_layout.addWidget(warp_row)
+        warp_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.warp_chk = qwt.QCheckBox(text='warp')
+        warp_row.layout().addWidget(self.warp_chk)
+        self.interpolations_dropdown = qwt.QComboBox()
+        warp_row.layout().addWidget(self.interpolations_dropdown)
+        for index, inter in enumerate(INTERPOLATION):
+            self.interpolations_dropdown.addItem(inter.name, inter.value)
+            if inter == INTERPOLATION.CUBIC:
+                self.interpolations_dropdown.setCurrentIndex(index)
+        self.possible_augmentations.append('warp')
+
         show_augmentations_btn = qwt.QPushButton(
             text='see augmentations on example image'
         )
@@ -264,7 +277,7 @@ class TrainingConfiguration(qwt.QWidget):
         image_augmentation_gb_layout.addWidget(show_augmentations_btn)
 
     def _show_augmentations(self):
-        augs, errs = self.augmentations
+        augs, errs = self.augmentations()
         if len(errs) > 0:
             for err in errs:
                 logger.error(err)
@@ -387,7 +400,6 @@ class TrainingConfiguration(qwt.QWidget):
         text = optim_lr_input.text()
         return text
 
-    @property
     def augmentations(
         self
     ) -> Tuple[List[Union[Callable, partial]], List[str]]:
@@ -424,7 +436,7 @@ class TrainingConfiguration(qwt.QWidget):
                         f'bilateral_blur_{prop}_input',
                     )
                     try:
-                        prop_value = float(p.text())
+                        prop_value = int(p.text())
                     except ValueError:
                         input_errors.append(
                             'Unable to parse input for bilateral blur' +
@@ -439,6 +451,12 @@ class TrainingConfiguration(qwt.QWidget):
                 # other parameters are filled from the prop_values list
                 func = partial(ImageAugmentation.bilateral_blur, *prop_values)
                 augs.append(func)
+            # augmentation with dropdown
+            elif aug == 'warp':
+                input_value = self.interpolations_dropdown.currentIndex()
+                func = partial(ImageAugmentation.warp, input_value)
+                augs.append(func)
+                continue
             # augmentations with one parameter
             else:
                 aug_input: qwt.QLineEdit = getattr(self, f'{aug}_input')
@@ -460,7 +478,6 @@ class TrainingConfiguration(qwt.QWidget):
                             f'Unable to parse input for {aug}.'
                         )
                         continue
-
                 else:
                     try:
                         input_value = float(aug_input.text())
