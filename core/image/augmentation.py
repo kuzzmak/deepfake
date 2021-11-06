@@ -94,6 +94,7 @@ class ImageAugmentation:
         image = cv.bilateralFilter(image, d, sigma_color, sigma_space)
         return image
 
+    @staticmethod
     def erode(kernel_shape: Tuple[int, int], image: np.ndarray) -> np.ndarray:
         """Erodes an image by using a specific structuring element, kernel of
         shape `kernel_shape` which consists of ones.
@@ -109,6 +110,7 @@ class ImageAugmentation:
         image = cv.erode(image, kernel, iterations=1)
         return image
 
+    @staticmethod
     def dilate(kernel_shape: Tuple[int, int], image: np.ndarray) -> np.ndarray:
         """Dilates an image by using a specific structuring element, kernel of
         shape `kernel_shape` which consists of ones.
@@ -124,6 +126,7 @@ class ImageAugmentation:
         image = cv.dilate(image, kernel, iterations=1)
         return image
 
+    @staticmethod
     def sharpen(image: np.ndarray) -> np.ndarray:
         """Sharpens image using specific kernel.
 
@@ -135,4 +138,41 @@ class ImageAugmentation:
         """
         kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
         image = cv.filter2D(image, -1, kernel)
+        return image
+
+    @staticmethod
+    def warp(interpolation: int, image: np.ndarray) -> np.ndarray:
+        """Applies mild warp effect on the image.
+
+        Args:
+            interpolation (int): which interpolation to use
+            image (np.ndarray): image to warp
+
+        Returns:
+            np.ndarray: warped image
+        """
+        h, w, c = image.shape
+        cell_size = [w // (2**i) for i in range(1, 4)][np.random.randint(3)]
+        cell_count = w // cell_size + 1
+        grid_points = np.linspace(0, w, cell_count)
+        mapx = np.broadcast_to(grid_points, (cell_count, cell_count)).copy()
+        mapy = mapx.T
+        mapx[1:-1, 1:-1] = mapx[1:-1, 1:-1] + \
+            np.random.normal(
+                size=(cell_count-2, cell_count-2), scale=0.2)*(cell_size*0.24)
+        mapy[1:-1, 1:-1] = mapy[1:-1, 1:-1] + \
+            np.random.normal(size=(cell_count-2, cell_count-2),
+                             scale=0.2)*(cell_size*0.24)
+        half_cell_size = cell_size // 2
+        mapx = cv.resize(
+            mapx,
+            (w+cell_size,)*2,
+        )[half_cell_size:-half_cell_size, half_cell_size:-half_cell_size] \
+            .astype(np.float32)
+        mapy = cv.resize(
+            mapy,
+            (w+cell_size,)*2,
+        )[half_cell_size:-half_cell_size, half_cell_size:-half_cell_size] \
+            .astype(np.float32)
+        image = cv.remap(image, mapx, mapy, interpolation)
         return image
