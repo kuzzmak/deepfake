@@ -197,3 +197,10 @@ class MODEL(Enum):
 
 class OPTIMIZER(Enum):
     ADAM = 'Adam'
+
+
+class INTERPOLATION(Enum):
+    NEAREST = 0
+    LINEAR = 1
+    CUBIC = 2
+    AREA = 3
