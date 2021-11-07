@@ -16,7 +16,6 @@ from ignite.engine import (
 )
 from ignite.engine.events import EventEnum
 from ignite.handlers import ModelCheckpoint
-from ignite.metrics import Loss
 from ignite.utils import convert_tensor
 import torch
 from torch.nn.modules.loss import _Loss
