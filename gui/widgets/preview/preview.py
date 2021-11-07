@@ -22,8 +22,8 @@ class CustomFigCanvas(FigureCanvasQTAgg, TimedAnimation):
             'A->A',
             'A->B',
             'Face B',
-            'B->A',
             'B->B',
+            'B->A',
         ]
         self.num_of_rows = num_of_rows
         self.num_of_cols = len(self.subplot_titles)

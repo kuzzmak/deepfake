@@ -12,7 +12,7 @@ from ignite.contrib.handlers.tensorboard_logger import (
 from ignite.engine import (
     Engine,
     Events,
-    create_supervised_evaluator,
+    # create_supervised_evaluator,
 )
 from ignite.engine.events import EventEnum
 from ignite.handlers import ModelCheckpoint
@@ -46,9 +46,9 @@ def _prepare_batch(
 
 
 def _output_transform(face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A,
-                      face_B, target_B, y_pred_B_A, y_pred_B_B, loss_B):
+                      face_B, target_B, y_pred_B_B, y_pred_B_A, loss_B):
     return face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A.item(), \
-        face_B, target_B, y_pred_B_A, y_pred_B_B, loss_B.item()
+        face_B, target_B, y_pred_B_B, y_pred_B_A, loss_B.item()
 
 
 def _training_step(
@@ -105,9 +105,9 @@ def _training_step(
         y_pred_B_A, y_pred_B_B = model(face_B)
 
         loss_A_A = loss_fn(y_pred_A_A, target_A)
-        loss_A_B = loss_fn(y_pred_A_B, target_A)
+        loss_A_B = loss_fn(y_pred_A_B, target_B)
 
-        loss_B_A = loss_fn(y_pred_B_A, target_B)
+        loss_B_A = loss_fn(y_pred_B_A, target_A)
         loss_B_B = loss_fn(y_pred_B_B, target_B)
 
         loss_A = loss_A_A + loss_A_B
@@ -124,8 +124,8 @@ def _training_step(
             loss_A,
             face_B,
             target_B,
-            y_pred_B_A,
             y_pred_B_B,
+            y_pred_B_A,
             loss_B,
         )
 
@@ -193,8 +193,8 @@ class Trainer:
         y_pred_A_A,
         y_pred_A_B,
         face_B,
-        y_pred_B_A,
         y_pred_B_B,
+        y_pred_B_A,
     ):
         if self.show_preview:
             self.show_preview_comm.data_sig.emit(
@@ -203,8 +203,8 @@ class Trainer:
                     y_pred_A_A,
                     y_pred_A_B,
                     face_B,
-                    y_pred_B_A,
                     y_pred_B_B,
+                    y_pred_B_A,
                 ]
             )
 
@@ -256,7 +256,7 @@ class Trainer:
         @trainer.on(Events.EPOCH_COMPLETED)
         def on_epoch_completed(engine: Engine):
             face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A, \
-                face_B, target_B, y_pred_B_A, y_pred_B_B, loss_B = \
+                face_B, target_B, y_pred_B_B, y_pred_B_A, loss_B = \
                 engine.state.output
 
             epoch_pbar.desc = epoch_desc.format(
@@ -280,8 +280,8 @@ class Trainer:
                 y_pred_A_B[:n_images],
 
                 face_B[:n_images],
-                y_pred_B_A[:n_images],
                 y_pred_B_B[:n_images],
+                y_pred_B_A[:n_images],
             )
 
             if self._stop_training:
