@@ -10,7 +10,6 @@ from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
 from core.image.image import Image
 from core.landmark_detection.algorithms.fan.fan_ldm import FANLDM
-
 from enums import (
     DEVICE,
     FACE_DETECTION_ALGORITHM,

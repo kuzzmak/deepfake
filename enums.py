@@ -204,3 +204,17 @@ class INTERPOLATION(Enum):
     LINEAR = 1
     CUBIC = 2
     AREA = 3
+
+
+class INDEX_TYPE(Enum):
+    QMODELINDEX = 'qmodelindex'
+    INT = 'int'
+
+
+class IMAGE_SORT(Enum):
+    IMAGE_HASH = 'image_hash'
+
+
+class NUMBER_TYPE(Enum):
+    INT = 'int'
+    FLOAT = 'float'

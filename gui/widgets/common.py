@@ -28,3 +28,9 @@ def VWidget() -> qwt.QWidget:
     wgt_layout = qwt.QVBoxLayout()
     wgt.setLayout(wgt_layout)
     return wgt
+
+
+MinimalSizePolicy = qwt.QSizePolicy(
+    qwt.QSizePolicy.Fixed,
+    qwt.QSizePolicy.Fixed,
+)
