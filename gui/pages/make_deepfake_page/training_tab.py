@@ -6,11 +6,12 @@ import cv2 as cv
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 import torch
+import torch.nn as nn
 from torchvision import transforms
-from torch.nn import MSELoss
 
 from common_structures import TensorCommObject
 from config import APP_CONFIG
+from core import loss
 from core.dataset.configuration import DatasetConfiguration
 from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
@@ -97,20 +98,32 @@ class TrainingConfiguration(qwt.QWidget):
 
         batch_size_row = HWidget()
         models_gb_layout.addWidget(batch_size_row)
-        batch_size_row.layout().addWidget(qwt.QLabel(text="Batch size: "))
+        batch_size_row.layout().setContentsMargins(0, 0, 0, 0)
+        batch_size_row.layout().addWidget(qwt.QLabel(text="batch size: "))
         self.batch_size_input = qwt.QLineEdit()
         self.batch_size_input.setText(str(32))
         batch_size_row.layout().addWidget(self.batch_size_input)
 
         epochs_row = HWidget()
         models_gb_layout.addWidget(epochs_row)
-        epochs_row.layout().addWidget(qwt.QLabel(text='Number of epochs: '))
+        epochs_row.layout().setContentsMargins(0, 0, 0, 0)
+        epochs_row.layout().addWidget(qwt.QLabel(text='number of epochs: '))
         self.epochs_input = qwt.QLineEdit()
         self.epochs_input.setText(str(10))
         epochs_row.layout().addWidget(self.epochs_input)
 
+        loss_function_row = HWidget()
+        models_gb_layout.addWidget(loss_function_row)
+        loss_function_row.layout().setContentsMargins(0, 0, 0, 0)
+        loss_function_row.layout().addWidget(qwt.QLabel(text='loss function'))
+        self.loss_dropdown = qwt.QComboBox()
+        loss_function_row.layout().addWidget(self.loss_dropdown)
+        self.loss_dropdown.addItem('MSE', 'MSE')
+        self.loss_dropdown.addItem('DSSIM', 'DSSIM')
+
         load_data_into_memory_row = HWidget()
         models_gb_layout.addWidget(load_data_into_memory_row)
+        load_data_into_memory_row.layout().setContentsMargins(0, 0, 0, 0)
         self.ldim_chk = qwt.QCheckBox(
             text='load datasets into memory (RAM or GPU)'
         )
@@ -497,6 +510,18 @@ class TrainingConfiguration(qwt.QWidget):
             return [], input_errors
         return augs, []
 
+    @property
+    def loss_function(self) -> nn.Module:
+        """Constructs loss function based on the loss function user selected.
+
+        Returns:
+            nn.Module: loss function
+        """
+        selected = self.loss_dropdown.currentIndex()
+        loss_fn = self.loss_dropdown.itemData(selected, 0)
+        loss_fn = getattr(loss, loss_fn)()
+        return loss_fn
+
 
 class TrainingTab(BaseWidget):
 
@@ -567,12 +592,12 @@ class TrainingTab(BaseWidget):
     def _start(self):
         """Initiates training process.
         """
-        # # image augmentation
-        # augs, errs = self.training_conf.augmentations
-        # if len(errs) > 0:
-        #     for err in errs:
-        #         logger.error(err)
-        #     return
+        # image augmentation
+        augs, errs = self.training_conf.augmentations()
+        if len(errs) > 0:
+            for err in errs:
+                logger.error(err)
+            return
 
         optimizer_conf = OptimizerConfiguration(
             self.training_conf.selected_optimizer,
@@ -591,6 +616,7 @@ class TrainingTab(BaseWidget):
             metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
             metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
             input_shape=input_shape[1],
+            image_augmentations=augs,
             batch_size=int(self.training_conf.batch_size),
             load_into_memory=self.training_conf.load_datasets_into_memory,
             data_transforms=data_transforms,
@@ -600,11 +626,13 @@ class TrainingTab(BaseWidget):
         comm_obj.data_sig = self.preview.refresh_data_sig
         preview_conf = PreviewConfiguration(True, comm_obj)
 
+        criterion = self.training_conf.loss_function
+
         conf = TrainerConfiguration(
             device=device,
             input_shape=input_shape,
             epochs=int(self.training_conf.epochs),
-            criterion=MSELoss(),
+            criterion=criterion,
             model_conf=model_conf,
             optimizer_conf=optimizer_conf,
             dataset_conf=dataset_conf,
