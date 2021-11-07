@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Optional
+from dataclasses import dataclass, field
+from typing import Callable, List, Optional
 
 from torchvision import transforms
 
@@ -18,6 +18,8 @@ class DatasetConfiguration:
         batch size
     input_shape : int
         size of the square image on the input
+    image_augmentaions : List[Callable]
+        list of functions for image augmentation
     data_transforms : Optional[transforms.Compose], optional
         transformations for the dataset, by default None
     load_into_memory : bool
@@ -31,6 +33,7 @@ class DatasetConfiguration:
     metadata_path_B: str
     batch_size: int
     input_shape: int
+    image_augmentations: List[Callable] = field()
     data_transforms: Optional[transforms.Compose] = None
     load_into_memory: bool = False
     shuffle: bool = True
