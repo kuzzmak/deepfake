@@ -1,38 +1,4 @@
-import cv2 as cv
-
 import numpy as np
-
-
-def transform(
-    image: np.ndarray,
-    mat: np.ndarray,
-    size: int,
-    padding: int = 0,
-) -> np.ndarray:
-    """Transforms image based on the transformation matrix into a square one.
-
-    Parameters
-    ----------
-    image : np.ndarray
-        image being transformed
-    mat : np.ndarray
-        transformation matrix
-    size : int
-        size of the square in which image will be transformed
-    padding : int, optional
-        add padding to image, by default 0
-
-    Returns
-    -------
-    np.ndarray
-        transformed image
-    """
-    mat = mat * size
-    mat[:, 2] += padding
-    new_size = int(size + padding * 2)
-    warped = cv.warpAffine(image, mat, (new_size, new_size))
-    # TODO cange resizing type when image is smaller or bigger
-    return cv.resize(warped, (size, size), cv.INTER_CUBIC)
 
 
 def umeyama(src, dst, estimate_scale):
