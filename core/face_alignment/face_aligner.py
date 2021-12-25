@@ -1,12 +1,41 @@
+import cv2 as cv
 import numpy as np
 
 from core.exception import NoLandmarksError
 from core.face import Face
-from core.face_alignment.utils import transform, umeyama
+from core.face_alignment.utils import umeyama
 from core.landmarks import MEAN_FACE_2D
 
 
 class FaceAligner:
+
+    @staticmethod
+    def align_face(face: Face, image_size: int) -> None:
+        """Function for aligning face to the mean face i.e. raw image is
+        aligned and resized to the `image_size x image_size`, face landmarks
+        are aligned and face mask is also aligned.
+
+        Parameters
+        ----------
+        face : Face
+            face which is getting aligned
+        image_size : int
+            size of the square image to which face will be aligned
+        """
+        if face.alignment is None:
+            FaceAligner._calculate_alignment(face)
+        padding = image_size // 4
+        alignment = np.copy(face.alignment) * image_size
+        alignment[:, 2] += padding
+        new_size = int(image_size + padding * 2)
+        FaceAligner._align_face_image(face, alignment, new_size, image_size)
+        FaceAligner._align_face_landmarks(
+            face,
+            alignment,
+            new_size,
+            image_size,
+        )
+        FaceAligner._align_mask(face)
 
     @staticmethod
     def _calculate_alignment(face: Face):
@@ -27,82 +56,68 @@ class FaceAligner:
         face.alignment = alignment
 
     @staticmethod
-    def get_aligned_face(face: Face, image_size: int) -> np.ndarray:
-        """Transforms face from the raw image into the cropped image where
-        face is centered. If `face` object has no alignments, they are being
-        calculated and then transformation is done.
-
-        Parameters
-        ----------
-        face : Face
-            face object containing necesary data for face alignment
-        image_size : int
-            size of the square in which face will be transformed
-
-        Returns
-        -------
-        np.ndarray
-            aligned image of the face
-        """
-        return FaceAligner._get_aligned(face, image_size, False)
-
-    @staticmethod
-    def get_aligned_mask(face: Face, image_size: int) -> np.ndarray:
-        """Transforms mask which is taken from the `face` object into a
-        centered one and cropped to the `image_size`.
-
-        Parameters
-        ----------
-        face : Face
-            face object containing necessary data
-        image_size : int
-            size of the square in which face mask will be transformed
-
-        Returns
-        -------
-        np.ndarray
-            transformed mask
-        """
-        return FaceAligner._get_aligned(face, image_size, True)
-
-    @staticmethod
-    def _get_aligned(
+    def _align_face_image(
         face: Face,
-        image_size: int,
-        mask: bool = False,
-    ) -> np.ndarray:
-        """Resizes detected face or face mask to the size `image_size`. If
-        face objects contains no alignment, it is being calculated.
+        alignment,
+        new_size: int,
+        size: int,
+    ) -> None:
+        """Alignes raw face image to the new size based on the `alignment` matrix.
 
         Parameters
         ----------
         face : Face
-            face object
-        image_size : int
-            size of the square to which image is being resized
-        mask : bool, optional
-            return aligned mask, if false, then aligned face is returned, by
-            default False
-
-        Returns
-        -------
-        np.ndarray
-            aligned face or mask
+            face object containing raw image
+        alignment : [type]
+            alignment matrix
+        new_size : int
+            size of the image which takes into account image padding
+        size : int
+            size of the new square image
         """
-        if face.alignment is None:
-            FaceAligner._calculate_alignment(face)
+        warped = cv.warpAffine(
+            face.raw_image.data,
+            alignment,
+            (new_size, new_size),
+        )
+        face.aligned_image = cv.resize(warped, (size, size), cv.INTER_CUBIC)
 
-        image = face.raw_image.data
+    @staticmethod
+    def _align_face_landmarks(
+        face: Face,
+        alignment: np.ndarray,
+        new_size: int,
+        size: int,
+    ) -> None:
+        """Function for aligning detected face landmarks.
 
-        if mask:
-            # Mask contains ones on places where face should be so in order to
-            # extract only face from the raw image, mask is multiplied with
-            # the raw image so only pixels on places where mask is one, appear
-            # in final image. OpenCV uses H,W,C convention so image is
-            # transposed in order to be able to do matrix multiplication.
-            image = image.transpose(2, 0, 1) * face.mask
-            image = image.transpose(1, 2, 0).astype('uint8')
+        Parameters
+        ----------
+        face : Face
+            face object containing landmarks
+        alignment : np.ndarray
+            alignment matrix
+        new_size : int
+            size of the image before resizing to size
+        size : int
+            size of the image after resizing
+        """
+        scale = new_size / size
+        dots = cv.transform(face.landmarks.dots.reshape(1, -1, 2), alignment)
+        dots = dots.reshape(-1, 2).astype(int)
+        dots = np.divide(dots, scale).astype(int)
+        face.aligned_landmarks = dots
 
-        padding = image_size // 4
-        aligned_image = transform(image, face.alignment, image_size, padding)
-        return aligned_image
+    @staticmethod
+    def _align_mask(face: Face):
+        """Function for aligning face mask.
+
+        Parameters
+        ----------
+        face : Face
+            face object containing aligned landmarks and aligned image
+        """
+        hull = cv.convexHull(face.aligned_landmarks)
+        mask = np.zeros(face.aligned_image.shape[:2])
+        cv.fillConvexPoly(mask, hull, 1)
+        face.aligned_mask = mask
