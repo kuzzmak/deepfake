@@ -1,4 +1,28 @@
+import cv2 as cv
 import numpy as np
+
+
+def get_face_mask(image: np.ndarray, landmarks: np.ndarray) -> np.ndarray:
+    """Creates image where everything is black except the pixels which make
+    the face. These pixels are contained in the convex polygon which is
+    constructed around face landmarks.
+
+    Parameters
+    ----------
+    image : np.ndarray
+        image for which face mask is being constructed
+    landmarks : np.ndarray
+        landmarks based on which mask is constructed
+
+    Returns
+    -------
+    np.ndarray
+        image where only face has pixel values of 1, everything else is 0
+    """
+    hull = cv.convexHull(landmarks)
+    mask = np.zeros(image.shape)
+    cv.fillConvexPoly(mask, hull, (1, 1, 1))
+    return mask
 
 
 def umeyama(src, dst, estimate_scale):
