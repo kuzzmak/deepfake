@@ -47,7 +47,7 @@ class Landmarks:
         landmarks : np.ndarray
             68 landmarks detected by landmark detection algorithm
         """
-        self._dots = landmarks
+        self._dots = landmarks.astype(int)
 
     @property
     def dots(self) -> np.ndarray:
