@@ -3,7 +3,7 @@ import numpy as np
 
 from core.exception import NoLandmarksError
 from core.face import Face
-from core.face_alignment.utils import umeyama
+from core.face_alignment.utils import get_face_mask, umeyama
 from core.landmarks import MEAN_FACE_2D
 
 
@@ -117,7 +117,7 @@ class FaceAligner:
         face : Face
             face object containing aligned landmarks and aligned image
         """
-        hull = cv.convexHull(face.aligned_landmarks)
-        mask = np.zeros(face.aligned_image.shape[:2])
-        cv.fillConvexPoly(mask, hull, 1)
-        face.aligned_mask = mask
+        face.aligned_mask = get_face_mask(
+            face.aligned_image,
+            face.aligned_landmarks,
+        )
