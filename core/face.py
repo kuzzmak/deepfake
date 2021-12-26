@@ -4,7 +4,6 @@ import cv2 as cv
 import numpy as np
 
 from core.bounding_box import BoundingBox
-from core.exception import NoLandmarksError
 from core.image.image import Image
 from core.landmarks import Landmarks
 
