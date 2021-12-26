@@ -6,6 +6,7 @@ from typing import List, Union
 from tqdm import tqdm
 
 from core.face import Face
+from core.face_alignment.utils import get_face_mask
 from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
 from core.image.image import Image
@@ -140,6 +141,7 @@ class Extractor:
         """
         landmarks = self.ldm.detect_landmarks(face)
         face.landmarks = landmarks
+        face.mask = get_face_mask(face.raw_image.data, landmarks.dots)
 
     def run(self):
         """Initiates process of face and landmark extraction."""
