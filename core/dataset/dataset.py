@@ -1,20 +1,17 @@
 import logging
 from typing import Callable, List, Optional, Tuple
 
+import cv2 as cv
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
+from core.image.augmentation import ImageAugmentation
 from enums import DEVICE
 from serializer.face_serializer import FaceSerializer
 from utils import get_file_paths_from_dir
-
-# if no transformation are passed on class initialization, this default
-# transformation is used
-default_transforms = transforms.Compose([transforms.ToTensor()])
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +26,8 @@ class DeepfakeDataset(Dataset):
         metadata_path_B: str,
         input_shape: int,
         image_augmentations: List[Callable] = [],
-        load_into_memory: bool = False,
         device: DEVICE = DEVICE.CPU,
-        transforms: Optional[transforms.Compose] = None,
+        transformations: Optional[transforms.Compose] = None,
     ):
         """Constructor.
 
@@ -45,136 +41,69 @@ class DeepfakeDataset(Dataset):
             size of the square to which face and mask are resized
         image_augmentations : List[Callable]
             list of functions for doing augmentations on image
-        load_into_memory : bool, optional
-            should dataset be loaded into memory, by default False
         device : DEVICE, optional
             where to send loaded faces and masks, by default DEVICE.CPU
-        transforms : Optional[transforms.Compose], optional
+        transformations : Optional[transforms.Compose], optional
             transformations for the dataset, by default None
         """
         self.input_shape = input_shape
-        self.load_into_memory = load_into_memory
         self.device = device
         self.image_augmentations = image_augmentations
-        self.transforms = transforms if transforms is not None \
-            else default_transforms
+        self.transformations = transformations if transformations is not None \
+            else transforms.Compose([transforms.ToTensor()])
         self.metadata_paths_A = get_file_paths_from_dir(metadata_path_A, ['p'])
         self.metadata_paths_B = get_file_paths_from_dir(metadata_path_B, ['p'])
-        if self.load_into_memory:
-            self._load()
+        self._similarity_indices = dict()
+        self._load()
+        self._align()
+        self._find_nearest_faces()
 
     def _load(self):
-        """Loads dataset into ram or gpu.
+        """Loads dataset into memory.
         """
-        self.faces_A = []
-        self.masks_A = []
-        self.faces_B = []
-        self.masks_B = []
-        logger.info(
-            'Loading dataset into memory ' +
-            f"({'GPU' if self.device == DEVICE.CUDA else 'RAM'})."
-        )
-        for path in self.metadata_paths_A:
-            face_A, mask_A = self._load_from_path(path)
-            self.faces_A.append(face_A)
-            self.masks_A.append(mask_A)
-        for path in self.metadata_paths_B:
-            face_B, mask_B = self._load_from_path(path)
-            self.faces_B.append(face_B)
-            self.masks_B.append(mask_B)
-        logger.info(
-            f'Loaded {len(self.faces_A)} face_A metadata ' +
-            f'and {len(self.faces_B)} face_B metadata into memory.'
-        )
+        logger.info('Loading faces A, please wait...')
+        self.A_faces = [FaceSerializer.load(path)
+                        for path in self.metadata_paths_A]
+        logger.info(f'Loaded {len(self.A_faces)} faces A.')
+        logger.info('Loading faces B, please wait...')
+        self.B_faces = [FaceSerializer.load(path)
+                        for path in self.metadata_paths_B]
+        logger.info(f'Loaded {len(self.B_faces)} faces B.')
 
-    def _load_from_path(self, path: str) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Loads face and mask from `Face` metadata. They are then aligned and
-        transformed if some kind of transformations were passed as an argument,
-        else default transformation (to vector) is done.
-
-        Parameters
-        ----------
-        path : str
-            path of the `Face` metadata
-
-        Returns
-        -------
-        Tuple[torch.Tensor, torch.Tensor]
-            face and mask tensors
+    def _align(self) -> None:
+        """Aligns face to the mean face i.e. aligned face, landmarks and
+        mask are resized to the `input_shape`.
         """
-        face = FaceSerializer.load(path)
-        aligned_face, aligned_mask = self._align(face)
-        aligned_face, aligned_mask = self._transform(
-            aligned_face,
-            aligned_mask,
-        )
-        aligned_face = aligned_face.to(self.device.value)
-        aligned_mask = aligned_mask.to(self.device.value)
-        return aligned_face, aligned_mask
+        logger.info('Aligning faces A, please wait...')
+        [FaceAligner.align_face(face, self.input_shape)
+         for face in self.A_faces]
+        logger.info('Aligned faces A.')
+        logger.info('Aligning faces B, please wait...')
+        [FaceAligner.align_face(face, self.input_shape)
+         for face in self.B_faces]
+        logger.info('Aligned faces B.')
 
-    def _align(self, face: Face) -> Tuple[np.ndarray, np.ndarray]:
-        """Aligns face and mask with the help of the `FaceAligner` class.
-
-        Parameters
-        ----------
-        face : Face
-            `Face` object containing face and mask
-
-        Returns
-        -------
-        Tuple[np.ndarray, np.ndarray]
-            aligned face and mask
+    def _find_nearest_faces(self) -> None:
+        """Function which constructs a dictionary where each key is the ordinal
+        number of the face A in the list of A faces and the value is the
+        ordinal number of the face in list of B faces that is most similar to
+        the face A.
         """
-        aligned_face = FaceAligner.get_aligned_face(face, self.input_shape)
-        aligned_mask = FaceAligner.get_aligned_mask(face, self.input_shape)
-        return aligned_face, aligned_mask
-
-    def _augment(self, image: np.ndarray) -> np.ndarray:
-        """Augments every image in the batch based on the image augmentation
-        function and parameters user chose.
-
-        Args:
-            image (np.ndarray): image to be augmented
-
-        Returns:
-            np.ndarray: augmented image if augmentations were chosen, normal
-                image otherwise
-        """
-        # for aug in self.image_augmentations:
-        #     image = aug(image)
-        return image
-
-    def _transform(
-        self,
-        face: np.ndarray,
-        mask: np.ndarray,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Transforms face and mask which are passed as an argument based on
-        the transformations of this class.
-
-        Parameters
-        ----------
-        face : np.ndarray
-            face array
-        mask : np.ndarray
-            mask array
-
-        Returns
-        -------
-        Tuple[torch.Tensor, torch.Tensor]
-            transformed face and mask tensor
-        """
-        face = self.transforms(face)
-        mask = self.transforms(mask)
-        return face, mask
+        logger.info('Finding nearest faces, please wait...')
+        b_landmarks = [f.aligned_landmarks for f in self.B_faces]
+        for i, f in enumerate(self.A_faces):
+            diff = np.average(
+                np.square(f.aligned_landmarks - b_landmarks),
+                axis=(1, 2),
+            )
+            best_indices = diff.argsort()
+            self._similarity_indices[i] = best_indices[0]
+        logger.info('Finding nearest faces done.')
 
     def __len__(self):
-        return min(len(self.metadata_paths_A), len(self.metadata_paths_B))
+        return len(self.A_faces)
 
-    def __getitem__(
-        self,
-        index: int,
-    ) -> Tuple[
+    def __getitem__(self, index: int) -> Tuple[
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
@@ -182,27 +111,21 @@ class DeepfakeDataset(Dataset):
         torch.Tensor,
         torch.Tensor,
     ]:
-        if self.load_into_memory:
-            # load from memory
-            return (
-                self._augment(self.faces_A[index]),
-                self.faces_A[index],
-                self.masks_A[index],
-
-                self._augment(self.faces_B[index]),
-                self.faces_B[index],
-                self.masks_B[index],
+        face_A = self.A_faces[index]
+        face_B = self.B_faces[self._similarity_indices[index]]
+        target_A = face_A.aligned_image
+        target_B = face_B.aligned_image
+        warped_A, warped_mask_A, warped_B, warped_mask_B = \
+            ImageAugmentation.warp_faces_and_masks(
+                cv.INTER_LINEAR,
+                face_A,
+                face_B,
             )
-        # load from disk
-        path_A = self.metadata_paths_A[index]
-        path_B = self.metadata_paths_B[index]
-        face_A, mask_A = self._load_from_path(path_A)
-        face_B, mask_B = self._load_from_path(path_B)
         return (
-            self._augment(face_A),
-            face_A,
-            mask_A,
-            self._augment(face_B),
-            face_B,
-            mask_B,
+            warped_A,
+            warped_mask_A,
+            target_A,
+            warped_B,
+            warped_mask_B,
+            target_B,
         )
