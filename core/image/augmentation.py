@@ -3,6 +3,8 @@ from typing import Tuple
 import cv2 as cv
 import numpy as np
 
+from core.face import Face
+
 
 class ImageAugmentation:
 
@@ -141,17 +143,26 @@ class ImageAugmentation:
         return image
 
     @staticmethod
-    def warp(interpolation: int, image: np.ndarray) -> np.ndarray:
-        """Applies mild warp effect on the image.
+    def warp_faces_and_masks(interpolation: int, face_A: Face, face_B: Face) \
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Applies sligt warp effect on the aligned image and aligned mask for
+        every face.
 
-        Args:
-            interpolation (int): which interpolation to use
-            image (np.ndarray): image to warp
+        Parameters
+        ----------
+        interpolation : int
+            which interpolation to use
+        face_A : Face
+            face A
+        face_B : Face
+            face B
 
-        Returns:
-            np.ndarray: warped image
+        Returns
+        -------
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+            warped face A, warped mask A, warped face B, wapred mask B
         """
-        h, w, c = image.shape
+        h, w, _ = face_A.aligned_image.shape
         cell_size = [w // (2**i) for i in range(1, 4)][np.random.randint(3)]
         cell_count = w // cell_size + 1
         grid_points = np.linspace(0, w, cell_count)
@@ -174,5 +185,49 @@ class ImageAugmentation:
             (w+cell_size,)*2,
         )[half_cell_size:-half_cell_size, half_cell_size:-half_cell_size] \
             .astype(np.float32)
-        image = cv.remap(image, mapx, mapy, interpolation)
-        return image
+        return (
+            cv.remap(face_A.aligned_image, mapx, mapy, interpolation),
+            cv.remap(face_A.aligned_mask, mapx, mapy, interpolation),
+            cv.remap(face_B.aligned_image, mapx, mapy, interpolation),
+            cv.remap(face_B.aligned_mask, mapx, mapy, interpolation),
+        )
+
+    # @staticmethod
+    # def _get_2d_grid_for_shape(shape: int) -> Tuple[np.ndarray, np.ndarray]:
+    #     return np.mgrid[0:shape - 1:shape * 1j, 0:shape - 1:shape * 1j]
+
+    # @staticmethod
+    # def _get_edge_points(shape: int) -> List[Tuple[int, int]]:
+    #     return [
+    #         (0, 0),
+    #         (0, shape - 1),
+    #         (shape - 1, shape - 1),
+    #         (shape - 1, 0),
+    #         (shape // 2 - 1, 0),
+    #         (shape // 2 - 1, shape - 1),
+    #         (shape - 1, shape // 2 - 1),
+    #         (0, shape // 2 - 1),
+    #     ]
+
+    # @staticmethod
+    # def warp_faces_and_masks(face_A: Face, face_B: Face) -> np.ndarray:
+    #     shape = face_A.aligned_image.shape[1]
+    #     grid_x, grid_y = ImageAugmentation._get_2d_grid_for_shape(shape)
+    #     edge_points = ImageAugmentation._get_edge_points(shape)
+    #     source = face_A.aligned_landmarks
+    #     destination = face_B.aligned_landmarks
+    #     source = np.append(np.flip(source, axis=1), edge_points, 0)
+    #     destination = np.append(np.flip(destination, axis=1), edge_points, 0)
+    #     grid_z = griddata(destination, source, (grid_x, grid_y))
+    #     map_x = np.array([ar[:, 1] for ar in grid_z], dtype=np.float32) \
+    #         .reshape(shape, shape)
+    #     map_y = np.array([ar[:, 0] for ar in grid_z], dtype=np.float32) \
+    #         .reshape(shape, shape)
+    #     inter = cv.INTER_LINEAR
+    #     border = cv.BORDER_TRANSPARENT
+    #     return (
+    #         cv.remap(face_A.aligned_image, map_x, map_y, inter, border),
+    #         cv.remap(face_B.aligned_image, map_x, map_y, inter, border),
+    #         cv.remap(face_A.aligned_mask, map_x, map_y, inter, border),
+    #         cv.remap(face_B.aligned_mask, map_x, map_y, inter, border),
+    #     )
