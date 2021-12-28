@@ -4,6 +4,7 @@ from typing import Callable, List, Optional, Tuple
 import cv2 as cv
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset
 from torchvision import transforms
 
@@ -25,9 +26,10 @@ class DeepfakeDataset(Dataset):
         metadata_path_A: str,
         metadata_path_B: str,
         input_shape: int,
+        output_shape: int,
+        transformations: Optional[nn.Module] = None,
         image_augmentations: List[Callable] = [],
         device: DEVICE = DEVICE.CPU,
-        transformations: Optional[transforms.Compose] = None,
     ):
         """Constructor.
 
@@ -38,15 +40,21 @@ class DeepfakeDataset(Dataset):
         metadata_path_B : str
             path of the `Faces` metadata of person B
         input_shape : int
-            size of the square to which face and mask are resized
+            size of the square to which input face will be resized for the
+                model input
+        output_shape : int
+            size of the square to which output will be resized that represents
+                models target
+        transformations : Optional[torch.Module]
+            transformations for the output of the dataset like converting
+                numpy arrays to torch tensors
         image_augmentations : List[Callable]
             list of functions for doing augmentations on image
         device : DEVICE, optional
             where to send loaded faces and masks, by default DEVICE.CPU
-        transformations : Optional[transforms.Compose], optional
-            transformations for the dataset, by default None
         """
         self.input_shape = input_shape
+        self.output_shape = output_shape
         self.device = device
         self.image_augmentations = image_augmentations
         self.transformations = transformations if transformations is not None \
@@ -103,7 +111,58 @@ class DeepfakeDataset(Dataset):
     def __len__(self):
         return len(self.A_faces)
 
-    def __getitem__(self, index: int) -> Tuple[
+    def _resize(
+        self,
+        warped_A: np.ndarray,
+        mask_A: np.ndarray,
+        target_A: np.ndarray,
+        warped_B: np.ndarray,
+        mask_B: np.ndarray,
+        target_B: np.ndarray,
+    ) -> Tuple[
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+    ]:
+        """Resizes input arrays so they can be used for model input and error
+        calculation when model makes forward pass. `warped_A` and `warped_B`
+        are resized to the model input and other ones to the model output size.
+
+        Args:
+            warped_A (np.ndarray): warped image input for person A
+            mask_A (np.ndarray): mask for person A
+            target_A (np.ndarray): target image for person A
+            warped_B (np.ndarray): warped image input for person B
+            mask_B (np.ndarray): mask for person B
+            target_B (np.ndarray): target image for person B
+
+        Returns:
+            Tuple[ np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+            np.ndarray, ]: resized input arrays
+        """
+        input_shape = (self.input_shape, self.input_shape)
+        output_shape = (self.output_shape, self.output_shape)
+        return (
+            cv.resize(warped_A, input_shape),
+            cv.resize(mask_A, output_shape),
+            cv.resize(target_A, output_shape),
+            cv.resize(warped_B, input_shape),
+            cv.resize(mask_B, output_shape),
+            cv.resize(target_B, output_shape),
+        )
+
+    def _transform(
+        self,
+        warped_A: np.ndarray,
+        mask_A: np.ndarray,
+        target_A: np.ndarray,
+        warped_B: np.ndarray,
+        mask_B: np.ndarray,
+        target_B: np.ndarray,
+    ) -> Tuple[
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
@@ -111,21 +170,54 @@ class DeepfakeDataset(Dataset):
         torch.Tensor,
         torch.Tensor,
     ]:
+        """Makes transformations on the input arrays. Transformation to torch
+        tensor and similar.
+
+        Args:
+            warped_A (np.ndarray): warped image input for person A
+            mask_A (np.ndarray): mask for person A
+            target_A (np.ndarray): target image for person A
+            warped_B (np.ndarray): warped image input for person B
+            mask_B (np.ndarray): mask for person B
+            target_B (np.ndarray): target image for person B
+
+        Returns:
+            Tuple[ torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
+            torch.Tensor, torch.Tensor, ]: transformed input arrays
+        """
+        return (
+            self.transformations(warped_A),
+            self.transformations(mask_A),
+            self.transformations(target_A),
+            self.transformations(warped_B),
+            self.transformations(mask_B),
+            self.transformations(target_B)
+        )
+
+    def __getitem__(self, index: int) -> Tuple[
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+        np.ndarray,
+    ]:
         face_A = self.A_faces[index]
         face_B = self.B_faces[self._similarity_indices[index]]
         target_A = face_A.aligned_image
         target_B = face_B.aligned_image
-        warped_A, warped_mask_A, warped_B, warped_mask_B = \
-            ImageAugmentation.warp_faces_and_masks(
-                cv.INTER_LINEAR,
-                face_A,
-                face_B,
+        warped_A, warped_B = ImageAugmentation.warp_faces(
+            cv.INTER_LINEAR,
+            face_A,
+            face_B,
+        )
+        return self._transform(
+            *self._resize(
+                warped_A,
+                face_A.aligned_mask,
+                target_A,
+                warped_B,
+                face_B.aligned_mask,
+                target_B,
             )
-        return (
-            warped_A,
-            warped_mask_A,
-            target_A,
-            warped_B,
-            warped_mask_B,
-            target_B,
         )
