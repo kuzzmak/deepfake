@@ -319,13 +319,13 @@ class TrainingConfiguration(qwt.QWidget):
         if not directory:
             logger.warning(f'No directory selected for side {side}.')
             return
-        else:
-            logger.info(
-                f'Selected input directory ({directory}) for ' +
-                f'side {side}.'
-            )
-            btn = getattr(self, f'input_{side}_directory_btn')
-            btn.setToolTip(directory)
+
+        logger.info(
+            f'Selected input directory ({directory}) for ' +
+            f'side {side}.'
+        )
+        btn = getattr(self, f'input_{side}_directory_btn')
+        btn.setToolTip(directory)
 
     @property
     def batch_size(self) -> str:
@@ -618,7 +618,6 @@ class TrainingTab(BaseWidget):
             input_shape=input_shape[1],
             image_augmentations=augs,
             batch_size=int(self.training_conf.batch_size),
-            load_into_memory=self.training_conf.load_datasets_into_memory,
             data_transforms=data_transforms,
         )
 
