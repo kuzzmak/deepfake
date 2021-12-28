@@ -18,6 +18,7 @@ class Worker(qtc.QObject):
         self.faces = faces
         self.metadata_path = metadata_path
 
+    @qtc.pyqtSlot()
     def run(self):
         logger.info(
             f'Saving {len(self.faces)} faces metadata objects. ' +
@@ -25,5 +26,5 @@ class Worker(qtc.QObject):
         )
         for face in self.faces:
             FaceSerializer.save(face, self.metadata_path)
-        self.finished.emit()
         logger.info('Finished saving.')
+        self.finished.emit()
