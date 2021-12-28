@@ -37,7 +37,7 @@ class StandardItem(qtg.QStandardItem):
 
     def __init__(self) -> None:
         """Single item displayed in `ImageViewer`. Serves also as a container
-        for `Face` metadata. To get data of a particular type from the item, 
+        for `Face` metadata. To get data of a particular type from the item,
         appropriate `qtc.Qt.ItemDataRole` role must be passed to the `data`
         function.
 
