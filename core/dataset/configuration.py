@@ -22,8 +22,6 @@ class DatasetConfiguration:
         list of functions for image augmentation
     data_transforms : Optional[transforms.Compose], optional
         transformations for the dataset, by default None
-    load_into_memory : bool
-        should all dataser be loaded into RAM or GPU?, by default False
     shuffle : bool
         should the dataset be shuffled, by default True
     num_workers : int
@@ -35,6 +33,5 @@ class DatasetConfiguration:
     input_shape: int
     image_augmentations: List[Callable] = field()
     data_transforms: Optional[transforms.Compose] = None
-    load_into_memory: bool = False
     shuffle: bool = True
     num_workers: int = 2
