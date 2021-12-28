@@ -82,11 +82,13 @@ class OriginalAE(DeepfakeAEModel):
             activation=lrelu_01,
         )
 
-        self.decoder_A = self._decoder()
-        self.decoder_B = self._decoder()
+        self._face_decoder_A = self._face_decoder()
+        self._face_decoder_B = self._face_decoder()
+        self._mask_decoder_A = self._mask_decoder()
+        self._mask_decoder_B = self._mask_decoder()
 
     @staticmethod
-    def _decoder() -> nn.Sequential:
+    def _face_decoder() -> nn.Sequential:
         lrelu_01 = LeakyReLu(0.1)
         lrelu_02 = LeakyReLu(0.2)
         sigmoid = Sigmoid()
@@ -99,6 +101,19 @@ class OriginalAE(DeepfakeAEModel):
             ResBlock(128, 128, 3, activation=lrelu_02),
             Upscale(128, 64, 3, activation=lrelu_01),
             Conv2d(64, 3, 5, padding='same', activation=sigmoid)
+        )
+        return decoder
+
+    @staticmethod
+    def _mask_decoder() -> nn.Sequential:
+        lrelu_01 = LeakyReLu(0.1)
+        sigmoid = Sigmoid()
+        decoder = nn.Sequential(
+            Upscale(512, 512, 3, activation=lrelu_01),
+            Upscale(512, 256, 3, activation=lrelu_01),
+            Upscale(256, 128, 3, activation=lrelu_01),
+            Upscale(128, 64, 3, activation=lrelu_01),
+            Conv2d(64, 1, 3, padding='same', activation=sigmoid)
         )
         return decoder
 
@@ -117,8 +132,13 @@ class OriginalAE(DeepfakeAEModel):
     def decoder(
         self,
         x: torch.Tensor,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
-        return self.decoder_A(x), self.decoder_B(x)
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        return (
+            self._face_decoder_A(x),
+            self._mask_decoder_A(x),
+            self._face_decoder_B(x),
+            self._mask_decoder_B(x),
+        )
         # x1 = self.upscale_512_d_1(x)            # [bs, 512, 16, 16]
         # x1 = self.res_block_512_d_1(x1)         # [bs, 512, 16, 16]
         # x1 = self.upscale_256_d_1(x1)           # [bs, 256, 32, 32]
