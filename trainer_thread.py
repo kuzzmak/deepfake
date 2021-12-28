@@ -47,7 +47,7 @@ class Worker(qtc.QObject):
         if model == MODEL.ORIGINAL:
             model = OriginalAE(input_shape).to(device.value)
         model = model.to(device.value)
-        logger.debug('Model loaded.')
+        logger.info('Model loaded.')
         return model
 
     def _init_optimizer(self, parameters: Iterator[Parameter]) -> Optimizer:
