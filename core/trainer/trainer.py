@@ -35,11 +35,13 @@ def _prepare_batch(
 ) -> Tuple[Union[torch.Tensor, Sequence, Mapping, str, bytes], ...]:
     """Prepare batch for training: pass to a device with options.
     """
-    face_A, target_A, mask_A, face_B, target_B, mask_B = batch
+    warped_A, mask_A, target_A, warped_B, mask_B, target_B = batch
     return (
-        convert_tensor(face_A, device=device, non_blocking=non_blocking),
+        convert_tensor(warped_A, device=device, non_blocking=non_blocking),
+        convert_tensor(mask_A, device=device, non_blocking=non_blocking),
         convert_tensor(target_A, device=device, non_blocking=non_blocking),
-        convert_tensor(face_B, device=device, non_blocking=non_blocking),
+        convert_tensor(warped_B, device=device, non_blocking=non_blocking),
+        convert_tensor(mask_B, device=device, non_blocking=non_blocking),
         convert_tensor(target_B, device=device, non_blocking=non_blocking),
     )
 
@@ -94,38 +96,39 @@ def _training_step(
     ) -> Union[Any, Tuple[torch.Tensor]]:
         model.train()
         optimizer.zero_grad()
-        face_A, target_A, face_B, target_B = prepare_batch(
+        warped_A, mask_A, target_A, warped_B, mask_B, target_B = prepare_batch(
             batch,
             device=device,
             non_blocking=non_blocking,
         )
         # first letter is the input person, second letter is the decoder
-        y_pred_A_A, y_pred_A_B = model(face_A)
-        y_pred_B_A, y_pred_B_B = model(face_B)
+        y_pred_A_A, y_pred_A_B = model(warped_A)
+        y_pred_B_A, y_pred_B_B = model(warped_B)
 
         loss_A_A = loss_fn(y_pred_A_A, target_A)
-        loss_A_B = loss_fn(y_pred_A_B, target_B)
+        # loss_A_B = loss_fn(y_pred_A_B, target_B)
 
-        loss_B_A = loss_fn(y_pred_B_A, target_A)
+        # loss_B_A = loss_fn(y_pred_B_A, target_A)
         loss_B_B = loss_fn(y_pred_B_B, target_B)
 
-        loss_A = loss_A_A + loss_A_B
-        loss_B = loss_B_A + loss_B_B
+        # loss_A = loss_A_A + loss_A_B
+        # loss_B = loss_B_A + loss_B_B
 
-        (loss_A + loss_B).backward()
+        # (loss_A + loss_B).backward()
+        (loss_A_A + loss_B_B).backward()
         optimizer.step()
 
         return output_transform(
-            face_A,
+            warped_A,
             target_A,
             y_pred_A_A,
             y_pred_A_B,
-            loss_A,
-            face_B,
+            loss_A_A,
+            warped_B,
             target_B,
             y_pred_B_B,
             y_pred_B_A,
-            loss_B,
+            loss_B_B,
         )
 
     return _train_step
@@ -188,20 +191,20 @@ class Trainer:
 
     def _refresh_preview(
         self,
-        face_A,
+        warped_A,
         y_pred_A_A,
         y_pred_A_B,
-        face_B,
+        warped_B,
         y_pred_B_B,
         y_pred_B_A,
-    ):
+    ) -> None:
         if self.show_preview:
             self.show_preview_comm.data_sig.emit(
                 [
-                    face_A,
+                    warped_A,
                     y_pred_A_A,
                     y_pred_A_B,
-                    face_B,
+                    warped_B,
                     y_pred_B_B,
                     y_pred_B_A,
                 ]
@@ -254,8 +257,8 @@ class Trainer:
 
         @trainer.on(Events.EPOCH_COMPLETED)
         def on_epoch_completed(engine: Engine):
-            face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A, \
-                face_B, target_B, y_pred_B_B, y_pred_B_A, loss_B = \
+            warped_A, target_A, y_pred_A_A, y_pred_A_B, loss_A, \
+                warped_B, target_B, y_pred_B_B, y_pred_B_A, loss_B = \
                 engine.state.output
 
             epoch_pbar.desc = epoch_desc.format(
@@ -274,11 +277,11 @@ class Trainer:
                 loss_B,
             ))
             self._refresh_preview(
-                face_A[:n_images],
+                warped_A[:n_images],
                 y_pred_A_A[:n_images],
                 y_pred_A_B[:n_images],
 
-                face_B[:n_images],
+                warped_B[:n_images],
                 y_pred_B_B[:n_images],
                 y_pred_B_A[:n_images],
             )
