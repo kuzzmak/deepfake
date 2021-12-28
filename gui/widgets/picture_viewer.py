@@ -342,8 +342,8 @@ class ImageViewer(qwt.QWidget):
 
     @qtc.pyqtSlot(list)
     def _images_added(self, images: List[Union[np.ndarray, Face]]):
-        """`qtc.pyqtSlot` which triggers when new images in form of an `np.ndarray`
-        or `Face` object are emitted to show in `ImageViewer`.
+        """`qtc.pyqtSlot` which triggers when new images in form of an
+        `np.ndarray` or `Face` object are emitted to show in `ImageViewer`.
 
         Parameters
         ----------
