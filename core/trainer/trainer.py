@@ -102,19 +102,12 @@ def _training_step(
             non_blocking=non_blocking,
         )
         # first letter is the input person, second letter is the decoder
-        y_pred_A_A, y_pred_A_B = model(warped_A)
-        y_pred_B_A, y_pred_B_B = model(warped_B)
+        y_pred_A_A, mask_A_A, y_pred_A_B, mask_A_B = model(warped_A)
+        y_pred_B_A, mask_B_A, y_pred_B_B, mask_B_B = model(warped_B)
 
-        loss_A_A = loss_fn(y_pred_A_A, target_A)
-        # loss_A_B = loss_fn(y_pred_A_B, target_B)
+        loss_A_A = loss_fn(y_pred_A_A, target_A, mask_A)
+        loss_B_B = loss_fn(y_pred_B_B, target_B, mask_B)
 
-        # loss_B_A = loss_fn(y_pred_B_A, target_A)
-        loss_B_B = loss_fn(y_pred_B_B, target_B)
-
-        # loss_A = loss_A_A + loss_A_B
-        # loss_B = loss_B_A + loss_B_B
-
-        # (loss_A + loss_B).backward()
         (loss_A_A + loss_B_B).backward()
         optimizer.step()
 
