@@ -63,10 +63,10 @@ class Worker(qtc.QObject):
             metadata_path_A=conf.metadata_path_A,
             metadata_path_B=conf.metadata_path_B,
             input_shape=conf.input_shape,
+            output_shape=conf.output_shape,
             image_augmentations=conf.image_augmentations,
-            load_into_memory=conf.load_into_memory,
             device=self.conf.device,
-            transforms=conf.data_transforms,
+            transformations=conf.data_transforms,
         )
         data_loader = DataLoader(
             dataset=dataset,
