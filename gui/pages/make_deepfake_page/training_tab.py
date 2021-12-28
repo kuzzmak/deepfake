@@ -120,6 +120,7 @@ class TrainingConfiguration(qwt.QWidget):
         loss_function_row.layout().addWidget(self.loss_dropdown)
         self.loss_dropdown.addItem('MSE', 'MSE')
         self.loss_dropdown.addItem('DSSIM', 'DSSIM')
+        self.loss_dropdown.setCurrentIndex(1)
 
         load_data_into_memory_row = HWidget()
         models_gb_layout.addWidget(load_data_into_memory_row)
@@ -467,6 +468,7 @@ class TrainingConfiguration(qwt.QWidget):
             # augmentation with dropdown
             elif aug == 'warp':
                 input_value = self.interpolations_dropdown.currentIndex()
+                # TODO fix this non existing function
                 func = partial(ImageAugmentation.warp, input_value)
                 augs.append(func)
                 continue
@@ -607,7 +609,7 @@ class TrainingTab(BaseWidget):
         if torch.cuda.is_available():
             device = DEVICE.CUDA
 
-        input_shape = (3, 128, 128)
+        input_shape = (3, 64, 64)
 
         model_conf = ModelConfiguration(MODEL.ORIGINAL)
 
@@ -616,6 +618,7 @@ class TrainingTab(BaseWidget):
             metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
             metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
             input_shape=input_shape[1],
+            output_shape=128,
             image_augmentations=augs,
             batch_size=int(self.training_conf.batch_size),
             data_transforms=data_transforms,
@@ -638,20 +641,20 @@ class TrainingTab(BaseWidget):
             preview_conf=preview_conf,
         )
 
-        self.thread = qtc.QThread()
+        self.training_thread = qtc.QThread()
         self.worker = Worker(conf)
         self.stop_training_sig.connect(self.worker.stop_training)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
+        self.worker.moveToThread(self.training_thread)
+        self.training_thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.training_thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.start()
+        self.training_thread.finished.connect(self.training_thread.deleteLater)
+        self.training_thread.start()
 
-        self.thread.finished.connect(
+        self.training_thread.finished.connect(
             lambda: self.enable_widget(self.start_btn, True)
         )
-        self.thread.finished.connect(
+        self.training_thread.finished.connect(
             lambda: self.enable_widget(self.stop_btn, False)
         )
         self.enable_widget(self.start_btn, False)
