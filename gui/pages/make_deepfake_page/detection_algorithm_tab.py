@@ -50,6 +50,7 @@ class DetectionAlgorithmTab(BaseWidget):
 
         self._image_hash_eps = 18
         self._current_tab = 0
+        self._threads = []
 
         self.init_ui()
         # self.add_signals()
@@ -335,14 +336,20 @@ class DetectionAlgorithmTab(BaseWidget):
             .get_all_data(
             StandardItem.FaceRole
         )
-        self.thread = qtc.QThread()
-        self.worker = IOWorker(data, directory)
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.start()
+        worker_thread = qtc.QThread(self)
+        sort_worker = IOWorker(data, directory)
+        self._threads.append((worker_thread, sort_worker))
+        sort_worker.moveToThread(worker_thread)
+        worker_thread.started.connect(sort_worker.run)
+        sort_worker.finished.connect(self._on_sort_worker_finished)
+        worker_thread.start()
+
+    @qtc.pyqtSlot()
+    def _on_sort_worker_finished(self):
+        for thread, worker in self._threads:
+            thread.quit()
+            thread.wait()
+        self._threads = []
 
     @qtc.pyqtSlot(int)
     def algorithm_selected(self, id: int) -> None:
@@ -387,7 +394,7 @@ class DetectionAlgorithmTab(BaseWidget):
         #     'getExistingDirectory',
         #     './',
         # )
-        directory = r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted'
+        directory = r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata'
         if not directory:
             logger.warning('No directory selected.')
             return
