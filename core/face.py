@@ -184,7 +184,10 @@ class Face:
         if not aligned:
             face = self.raw_image.data
             face_mask = self.mask
-        return np.multiply(face, face_mask).astype(np.uint8)
+        masked = np.zeros_like(face, dtype=np.uint8)
+        for i in range(3):
+            masked[:, :, i] = np.multiply(face[:, :, i], face_mask)
+        return masked
 
     def draw_landmarks(self) -> np.ndarray:
         """Draws small dots which represent face landmarks on the raw image

@@ -20,8 +20,8 @@ def get_face_mask(image: np.ndarray, landmarks: np.ndarray) -> np.ndarray:
         image where only face has pixel values of 1, everything else is 0
     """
     hull = cv.convexHull(landmarks)
-    mask = np.zeros(image.shape)
-    cv.fillConvexPoly(mask, hull, (1, 1, 1))
+    mask = np.zeros(image.shape[:2])
+    cv.fillConvexPoly(mask, hull, 1)
     return mask
 
 
