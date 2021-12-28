@@ -143,10 +143,9 @@ class ImageAugmentation:
         return image
 
     @staticmethod
-    def warp_faces_and_masks(interpolation: int, face_A: Face, face_B: Face) \
-            -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """Applies sligt warp effect on the aligned image and aligned mask for
-        every face.
+    def warp_faces(interpolation: int, face_A: Face, face_B: Face) \
+            -> Tuple[np.ndarray, np.ndarray]:
+        """Applies sligt warp effect on the aligned image for every face.
 
         Parameters
         ----------
@@ -159,8 +158,8 @@ class ImageAugmentation:
 
         Returns
         -------
-        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-            warped face A, warped mask A, warped face B, wapred mask B
+        Tuple[np.ndarray, np.ndarray]
+            warped face A, warped face B
         """
         h, w, _ = face_A.aligned_image.shape
         cell_size = [w // (2**i) for i in range(1, 4)][np.random.randint(3)]
@@ -187,9 +186,7 @@ class ImageAugmentation:
             .astype(np.float32)
         return (
             cv.remap(face_A.aligned_image, mapx, mapy, interpolation),
-            cv.remap(face_A.aligned_mask, mapx, mapy, interpolation),
             cv.remap(face_B.aligned_image, mapx, mapy, interpolation),
-            cv.remap(face_B.aligned_mask, mapx, mapy, interpolation),
         )
 
     # @staticmethod
