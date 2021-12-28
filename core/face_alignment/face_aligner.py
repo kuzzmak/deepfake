@@ -62,7 +62,8 @@ class FaceAligner:
         new_size: int,
         size: int,
     ) -> None:
-        """Alignes raw face image to the new size based on the `alignment` matrix.
+        """Alignes raw face image to the new size based on the `alignment`
+        matrix.
 
         Parameters
         ----------
