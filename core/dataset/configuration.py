@@ -17,7 +17,9 @@ class DatasetConfiguration:
     batch_size : int
         batch size
     input_shape : int
-        size of the square image on the input
+        size of the square image on the model input
+    output_shape : int
+        size of the square image on the model output
     image_augmentaions : List[Callable]
         list of functions for image augmentation
     data_transforms : Optional[transforms.Compose], optional
@@ -31,6 +33,7 @@ class DatasetConfiguration:
     metadata_path_B: str
     batch_size: int
     input_shape: int
+    output_shape: int
     image_augmentations: List[Callable] = field()
     data_transforms: Optional[transforms.Compose] = None
     shuffle: bool = True
