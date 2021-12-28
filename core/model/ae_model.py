@@ -36,7 +36,7 @@ class DeepfakeAEModel(DeepfakeModel):
     def decoder(
         self,
         x: torch.Tensor,
-    ) -> Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Decoder part of the autoencoder network.
 
         Parameters
@@ -46,9 +46,7 @@ class DeepfakeAEModel(DeepfakeModel):
 
         Returns
         -------
-        Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]
-            decoded input from encoder, if `learn_mask` if `True`, then
-            decoded face and mask are returned, else only decoded face is
-            returned
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+            decoded tensors in following order: face A, mask A, face B, mask B
         """
         ...
