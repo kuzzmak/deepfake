@@ -356,8 +356,9 @@ class ImageViewer(qwt.QWidget):
                 name = image.raw_image.name
                 item.setData(image, StandardItem.FaceRole)
                 item.setData(name, StandardItem.NameRole)
+                FaceAligner.align_face(image, 64)
                 item.setData(
-                    FaceAligner.get_aligned_face(image, 64),
+                    image.aligned_image,
                     StandardItem.DataRole,
                 )
             else:
