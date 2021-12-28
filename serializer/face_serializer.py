@@ -1,3 +1,4 @@
+import gzip
 import os
 import pickle
 
@@ -32,7 +33,7 @@ class FaceSerializer(Serializer):
         if not os.path.exists(path):
             raise FileDoesNotExistsError(path)
 
-        face = pickle.load(open(path, "rb"))
+        face = pickle.load(gzip.open(path, "rb"))
 
         return face
 
@@ -65,4 +66,4 @@ class FaceSerializer(Serializer):
             'metadata_' + image_name + '.p',
         )
         image_path = construct_file_path(image_path)
-        pickle.dump(obj, open(image_path, 'wb'))
+        pickle.dump(obj, gzip.open(image_path, 'wb'))
