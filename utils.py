@@ -2,7 +2,7 @@ import builtins
 import errno
 import logging
 import os
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import cv2 as cv
 import gdown
@@ -299,3 +299,32 @@ def parse_number(
     except ValueError:
         return None
     return num
+
+
+def parse_tuple(
+    string: str,
+    element_type: NUMBER_TYPE = NUMBER_TYPE.INT,
+    separator: str = ',',
+) -> Tuple[Any, ...]:
+    """Parses some string that into tuple where each element is of type
+    `element_type`. Each element that is parsed is separated from another
+    element by `separator`.
+
+    Parameters
+    ----------
+    string : str
+        string which is being parsed
+    element_type : NUMBER_TYPE, optional
+        parse each element to which type, by default NUMBER_TYPE.INT
+    separator : str, optional
+        with what is each element separated from another, by default ','
+
+    Returns
+    -------
+    Tuple[Any, ...]
+        parsed tuple of values
+    """
+    split = string.split(separator)
+    split = [s.strip() for s in split]
+    split = [parse_number(s, element_type) for s in split]
+    return tuple(split)
