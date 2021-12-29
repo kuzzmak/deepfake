@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Dict, Optional
 
+import cv2 as cv
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
@@ -15,18 +16,15 @@ from enums import (
     SIGNAL_OWNER,
     BODY_KEY,
 )
-
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.picture_viewer import ImageViewer
 from gui.widgets.video_player import VideoPlayer
-
 from message.message import (
     Body,
     Message,
     Messages,
 )
 from serializer.face_serializer import FaceSerializer
-
 from utils import get_file_paths_from_dir
 from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
@@ -109,13 +107,16 @@ class DataSelector(BaseWidget):
 
         self.resize_frames_chk = qwt.QCheckBox(text='Resize frames')
         self.resize_frames_chk.stateChanged.connect(
-            self.resize_frames_chk_changed)
+            self.resize_frames_chk_changed
+        )
         right_part_layout.addWidget(self.resize_frames_chk)
 
         self.biggest_frame_dim_input = qwt.QLineEdit()
         self.biggest_frame_dim_input.textChanged.connect(
-            self.biggest_frame_dim_input_text_changed)
+            self.biggest_frame_dim_input_text_changed
+        )
         self.biggest_frame_dim_input.setText(str(640))
+        self.biggest_frame_dim_input.setMaximumWidth(50)
         self.enable_widget(self.biggest_frame_dim_input, False)
         right_part_layout.addWidget(self.biggest_frame_dim_input)
 
@@ -125,6 +126,13 @@ class DataSelector(BaseWidget):
         image_format_dropdown.addItem(IMAGE_FORMAT.PNG.value)
         image_format_dropdown.addItem(IMAGE_FORMAT.JPG.value)
         right_part_layout.addWidget(image_format_dropdown)
+
+        right_part_layout.addWidget(qwt.QLabel(text='every n-th frame'))
+        self.every_frame = qwt.QLineEdit()
+        self.every_frame.setAlignment(qtc.Qt.AlignCenter)
+        self.every_frame.setText(str(4))
+        self.every_frame.setMaximumWidth(50)
+        right_part_layout.addWidget(self.every_frame)
 
         row = qwt.QWidget()
         row_layout = qwt.QHBoxLayout()
@@ -150,7 +158,7 @@ class DataSelector(BaseWidget):
         """Select video from which individual frames would be extracted
         and then these frames will be used for face extraction process.
         """
-        # video_path = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\videos\\interview_woman.mp4"
+        # video_path = r'C:\Users\kuzmi\Documents\deepfake\data\interview_woman.mp4'
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
         video_path, _ = qwt.QFileDialog.getOpenFileName(
@@ -158,18 +166,16 @@ class DataSelector(BaseWidget):
             'Select video file',
             "data/videos",
             "Video files (*.mp4)",
-            options=options)
-
+            options=options,
+        )
         if video_path:
             logger.info(
                 f'{self.data_type.value} video selected from: {video_path}.')
-
             self.video_player.video_selection.emit(video_path)
             video_name = video_path.split(os.sep)[-1]
             self.preview_label.setText(f'Preview of the: {video_name}')
             self.preview_widget.setCurrentWidget(self.video_player_wgt)
             self.video_path = video_path
-
         else:
             logger.warning('No directory selected.')
 
@@ -177,72 +183,65 @@ class DataSelector(BaseWidget):
         """Select directory with faces which would be used for face
         extraction process.
         """
-        # directory = qwt.QFileDialog.getExistingDirectory(
-        #     self,
-        #     "getExistingDirectory",
-        #     "./"
-        # )
-        directory = "C:\\Users\\kuzmi\\Documents\\deepfake\\data\\gen_faces\\temp"
-
-        if directory:
-
-            logger.info(f'Selected pictures folder: {directory}.')
-
-            self.preview_widget.setCurrentWidget(self.picture_viewer)
-
-            image_paths = get_file_paths_from_dir(directory)
-            if len(image_paths) == 0:
-                logger.warning(
-                    f'No supported pictures were found in: {directory}.'
-                )
-
-            else:
-
-                faces = []
-                for i_p in image_paths:
-                    face = FaceSerializer.load(i_p)
-                    faces.append(face)
-
-                self.picture_viewer.images_added_sig.emit(faces)
-
-                logger.info(
-                    f'Selected {directory} as a ' +
-                    f'{self.data_type.value.lower()} data directory.' +
-                    f' This directory contains {len(image_paths)} ' +
-                    'supported pictures.'
-                )
-
-                self.preview_label.setText(
-                    f'Preview of pictures in {directory} directory.'
-                )
-
-                self.data_directory = directory
-
-                if self.data_type == DATA_TYPE.INPUT:
-                    self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
-                        directory
-                    )
-                else:
-                    self.signals[SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY].emit(
-                        directory
-                    )
-
-        else:
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self,
+            "getExistingDirectory",
+            "./"
+        )
+        # directory = r'C:\Users\\kuzmi\\Documents\\deepfake\\data\face_A'
+        if not directory:
             logger.warning('No directory selected.')
+            return
+
+        logger.info(f'Selected pictures folder: {directory}.')
+
+        self.preview_widget.setCurrentWidget(self.picture_viewer)
+
+        image_paths = get_file_paths_from_dir(directory)
+        if len(image_paths) == 0:
+            logger.warning(
+                f'No supported pictures were found in: {directory}.'
+            )
+            return
+
+        faces = []
+        for i_p in image_paths:
+            face = cv.imread(i_p, cv.IMREAD_COLOR)
+            faces.append(face)
+
+        self.picture_viewer.images_added_sig.emit(faces)
+
+        logger.info(
+            f'Selected {directory} as a ' +
+            f'{self.data_type.value.lower()} data directory.' +
+            f' This directory contains {len(image_paths)} ' +
+            'supported pictures.'
+        )
+
+        self.preview_label.setText(
+            f'Preview of pictures in {directory} directory.'
+        )
+
+        self.data_directory = directory
+
+        if self.data_type == DATA_TYPE.INPUT:
+            self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
+                directory
+            )
+        else:
+            self.signals[SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY].emit(
+                directory
+            )
 
     def select_frames_directory(self):
         """Selects where extracted frames from video will go.
         """
-        # directory = qwt.QFileDialog.getExistingDirectory(
-        #     self, "getExistingDirectory", "./")
-        directory = "C:\\Users\\tonkec\\Documents\\deepfake\\data\\gen_faces"
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self,
+            'Select directory for extracted frames',
+            "./",
+        )
         if directory:
-            msg = Messages.CONSOLE_PRINT(
-                CONSOLE_MESSAGE_TYPE.LOG,
-                f'Selected {self.data_type.value.lower()} ' +
-                f'directory: {directory} for extracted frames.'
-            )
-
             logger.info(
                 f'Selected {self.data_type.value.lower()} ' +
                 f'directory: {directory} for extracted frames.'
@@ -295,6 +294,7 @@ class DataSelector(BaseWidget):
             BODY_KEY.RESIZE: False,
             BODY_KEY.DATA_TYPE: self.data_type,
             BODY_KEY.VIDEO_PATH: self.video_path,
+            BODY_KEY.EVERY_N_TH_FRAME: int(self.every_frame.text()),
         }
         if self.resize_frames_chk.isChecked():
             body_data[BODY_KEY.RESIZE] = True
