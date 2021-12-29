@@ -4,12 +4,14 @@ from typing import Dict, List, Optional
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
+import torch
 
 from config import APP_CONFIG
 from core.face import Face
 from enums import (
     BODY_KEY,
     DATA_TYPE,
+    DEVICE,
     FACE_DETECTION_ALGORITHM,
     JOB_TYPE,
     MESSAGE_STATUS,
@@ -37,6 +39,9 @@ logger = logging.getLogger(__name__)
 
 class DetectionAlgorithmTab(BaseWidget):
 
+    input_picture_added_sig = qtc.pyqtSignal()
+    output_picture_added_sig = qtc.pyqtSignal()
+
     def __init__(
         self,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
@@ -53,7 +58,7 @@ class DetectionAlgorithmTab(BaseWidget):
         self._threads = []
 
         self.init_ui()
-        # self.add_signals()
+        self.add_signals()
 
     def init_ui(self):
         layout = qwt.QHBoxLayout()
@@ -389,12 +394,11 @@ class DetectionAlgorithmTab(BaseWidget):
         data_type : DATA_TYPE
             input or output data directory
         """
-        # directory = qwt.QFileDialog.getExistingDirectory(
-        #     self,
-        #     'getExistingDirectory',
-        #     './',
-        # )
-        directory = r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata'
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self,
+            'Select faces directory',
+            './',
+        )
         if not directory:
             logger.warning('No directory selected.')
             return
@@ -434,6 +438,9 @@ class DetectionAlgorithmTab(BaseWidget):
     def start_detection(self) -> None:
         """Sends message with faces directories to make deepfake page.
         """
+        device = DEVICE.CPU
+        if torch.cuda.is_available():
+            device = DEVICE.CUDA
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             MESSAGE_STATUS.OK,
@@ -446,6 +453,7 @@ class DetectionAlgorithmTab(BaseWidget):
                     BODY_KEY.OUTPUT_FACES_DIRECTORY:
                     self.output_faces_directory,
                     BODY_KEY.ALGORITHM: self.algorithm_selected_value,
+                    BODY_KEY.DEVICE: device,
                 }
             )
         )
