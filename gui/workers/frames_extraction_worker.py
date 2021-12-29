@@ -1,18 +1,15 @@
 import os
 from typing import Dict, Optional
 
+import cv2 as cv
 import PyQt5.QtCore as qtc
 
-import cv2 as cv
-
 from gui.workers.worker import Worker
-
 from message.message import (
     IOOperationBody,
     Message,
     Messages,
 )
-
 from enums import (
     BODY_KEY,
     FILE_TYPE,
@@ -39,11 +36,12 @@ class FramesExtractionWorker(Worker):
         video_path = data[BODY_KEY.VIDEO_PATH]
         data_directory = data[BODY_KEY.DATA_DIRECTORY]
         resize = data[BODY_KEY.RESIZE]
+        every_n_th = data[BODY_KEY.EVERY_N_TH_FRAME]
 
         vidcap = cv.VideoCapture(video_path)
         success, image = vidcap.read()
 
-        total_frames = int(vidcap.get(cv.CAP_PROP_FRAME_COUNT))
+        total_frames = int(vidcap.get(cv.CAP_PROP_FRAME_COUNT)) // every_n_th
 
         msg = Messages.CONFIGURE_WIDGET(
             SIGNAL_OWNER.FACE_DETECTION_WORKER,
@@ -78,6 +76,9 @@ class FramesExtractionWorker(Worker):
                 msg.body.data[BODY_KEY.NEW_SIZE] = data[BODY_KEY.NEW_SIZE]
 
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+
+            for _ in range(every_n_th - 1):
+                success, image = vidcap.read()
 
             success, image = vidcap.read()
             count += 1
