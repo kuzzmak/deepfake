@@ -204,19 +204,19 @@ class DataSelector(BaseWidget):
             )
             return
 
-        faces = []
-        for i_p in image_paths:
-            face = cv.imread(i_p, cv.IMREAD_COLOR)
-            faces.append(face)
+        # faces = []
+        # for i_p in image_paths:
+        #     face = cv.imread(i_p, cv.IMREAD_COLOR)
+        #     faces.append(face)
 
-        self.picture_viewer.images_added_sig.emit(faces)
+        # self.picture_viewer.images_added_sig.emit(faces)
 
-        logger.info(
-            f'Selected {directory} as a ' +
-            f'{self.data_type.value.lower()} data directory.' +
-            f' This directory contains {len(image_paths)} ' +
-            'supported pictures.'
-        )
+        # logger.info(
+        #     f'Selected {directory} as a ' +
+        #     f'{self.data_type.value.lower()} data directory.' +
+        #     f' This directory contains {len(image_paths)} ' +
+        #     'supported pictures.'
+        # )
 
         self.preview_label.setText(
             f'Preview of pictures in {directory} directory.'
