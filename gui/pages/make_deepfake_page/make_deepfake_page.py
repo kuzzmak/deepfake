@@ -162,9 +162,6 @@ class MakeDeepfakePage(Page):
             self.input_data_directory
         msg.body.data[BODY_KEY.OUTPUT_DATA_DIRECTORY] = \
             self.output_data_directory
-        # TODO replace with real value from settings window
-        msg.body.data[BODY_KEY.DEVICE] = DEVICE.CPU
-
         msg.sender = SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE
         msg.recipient = SIGNAL_OWNER.FACE_DETECTION_WORKER
 
