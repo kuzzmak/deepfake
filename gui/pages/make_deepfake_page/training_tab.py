@@ -23,6 +23,7 @@ from gui.widgets.common import HWidget, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
 from trainer_thread import Worker
+from utils import parse_tuple
 
 logger = logging.getLogger(__name__)
 
@@ -79,22 +80,45 @@ class TrainingConfiguration(qwt.QWidget):
         layout.addWidget(model_selector)
         model_selector.layout().setContentsMargins(0, 0, 0, 0)
 
+        dataset_conf_gb = qwt.QGroupBox()
+        layout.addWidget(dataset_conf_gb)
+        dataset_conf_gb.setTitle('Dataset configuration')
+        dataset_conf_gb_layout = qwt.QVBoxLayout(dataset_conf_gb)
+
+        self.input_A_directory_btn = qwt.QPushButton(text='Input A directory')
+        dataset_conf_gb_layout.addWidget(self.input_A_directory_btn)
+        self.input_A_directory_btn.setToolTip('Not yet selected.')
+        self.input_A_directory_btn.clicked.connect(
+            lambda: self._select_input_directory('A')
+        )
+
+        self.input_B_directory_btn = qwt.QPushButton(text='Input B directory')
+        dataset_conf_gb_layout.addWidget(self.input_B_directory_btn)
+        self.input_B_directory_btn.setToolTip('Not yet selected.')
+        self.input_B_directory_btn.clicked.connect(
+            lambda: self._select_input_directory('B')
+        )
+
+        input_size_row = HWidget()
+        dataset_conf_gb_layout.addWidget(input_size_row)
+        input_size_row.layout().setContentsMargins(0, 0, 0, 0)
+        input_size_row.layout().addWidget(qwt.QLabel(text='input shape'))
+        self.input_shape_input = qwt.QLineEdit()
+        self.input_shape_input.setText('3, 64, 64')
+        input_size_row.layout().addWidget(self.input_shape_input)
+
+        output_size_row = HWidget()
+        dataset_conf_gb_layout.addWidget(output_size_row)
+        output_size_row.layout().setContentsMargins(0, 0, 0, 0,)
+        output_size_row.layout().addWidget(qwt.QLabel(text='output shape'))
+        self.output_shape_input = qwt.QLineEdit()
+        self.output_shape_input.setText('3, 128, 128')
+        output_size_row.layout().addWidget(self.output_shape_input)
+
         models_gb = qwt.QGroupBox()
         layout.addWidget(models_gb)
         models_gb.setTitle('Training configuration')
         models_gb_layout = qwt.QVBoxLayout(models_gb)
-
-        self.input_A_directory_btn = qwt.QPushButton(text='Input A directory')
-        models_gb_layout.addWidget(self.input_A_directory_btn)
-        self.input_A_directory_btn.setToolTip('Not yet selected.')
-        self.input_A_directory_btn.clicked.connect(
-            lambda: self._select_input_directory('A'))
-
-        self.input_B_directory_btn = qwt.QPushButton(text='Input B directory')
-        models_gb_layout.addWidget(self.input_B_directory_btn)
-        self.input_B_directory_btn.setToolTip('Not yet selected.')
-        self.input_B_directory_btn.clicked.connect(
-            lambda: self._select_input_directory('B'))
 
         batch_size_row = HWidget()
         models_gb_layout.addWidget(batch_size_row)
@@ -122,14 +146,28 @@ class TrainingConfiguration(qwt.QWidget):
         self.loss_dropdown.addItem('DSSIM', 'DSSIM')
         self.loss_dropdown.setCurrentIndex(1)
 
-        load_data_into_memory_row = HWidget()
-        models_gb_layout.addWidget(load_data_into_memory_row)
-        load_data_into_memory_row.layout().setContentsMargins(0, 0, 0, 0)
-        self.ldim_chk = qwt.QCheckBox(
-            text='load datasets into memory (RAM or GPU)'
-        )
-        self.ldim_chk.setChecked(True)
-        load_data_into_memory_row.layout().addWidget(self.ldim_chk)
+        device_row = HWidget()
+        models_gb_layout.addWidget(device_row)
+        device_row.layout().setContentsMargins(0, 0, 0, 0)
+        device_row.layout().addWidget(qwt.QLabel(text='device'))
+        device_bg = qwt.QButtonGroup(device_row)
+        device_bg.idPressed.connect(self._device_changed)
+        for device in APP_CONFIG.app.core.devices:
+            btn = qwt.QRadioButton(device.value, models_gb)
+            btn.setChecked(True)
+            models_gb_layout.addWidget(btn)
+            device_bg.addButton(btn)
+
+        layout.addWidget(models_gb)
+
+        # load_data_into_memory_row = HWidget()
+        # models_gb_layout.addWidget(load_data_into_memory_row)
+        # load_data_into_memory_row.layout().setContentsMargins(0, 0, 0, 0)
+        # self.ldim_chk = qwt.QCheckBox(
+        #     text='load datasets into memory (RAM or GPU)'
+        # )
+        # self.ldim_chk.setChecked(True)
+        # load_data_into_memory_row.layout().addWidget(self.ldim_chk)
 
         optimizer_gb = qwt.QGroupBox()
         layout.addWidget(optimizer_gb)
@@ -305,6 +343,9 @@ class TrainingConfiguration(qwt.QWidget):
         cv.imshow('augmentations on face example', image)
         cv.waitKey()
 
+    def _device_changed():
+        ...
+
     @qtc.pyqtSlot(str)
     def _select_input_directory(self, side: str):
         """Function for selecting input folder for side A or side B.
@@ -329,6 +370,14 @@ class TrainingConfiguration(qwt.QWidget):
         btn.setToolTip(directory)
 
     @property
+    def input_shape(self) -> str:
+        return self.input_shape_input.text()
+
+    @property
+    def output_shape(self) -> str:
+        return self.output_shape_input.text()
+
+    @property
     def batch_size(self) -> str:
         """How many examples will be processed in one step.
 
@@ -346,16 +395,16 @@ class TrainingConfiguration(qwt.QWidget):
         """
         return self.epochs_input.text()
 
-    @property
-    def load_datasets_into_memory(self) -> bool:
-        """Should datasets A and B be loaded into memory (RAM if no grphics
-        card is available or GPU is it's available)
+    # @property
+    # def load_datasets_into_memory(self) -> bool:
+    #     """Should datasets A and B be loaded into memory (RAM if no grphics
+    #     card is available or GPU is it's available)
 
-        Returns:
-            bool: True if datasets should be loaded into memory, False
-                otherwise
-        """
-        return self.ldim_chk.isChecked()
+    #     Returns:
+    #         bool: True if datasets should be loaded into memory, False
+    #             otherwise
+    #     """
+    #     return self.ldim_chk.isChecked()
 
     @property
     def selected_optimizer(self) -> OPTIMIZER:
@@ -537,7 +586,7 @@ class TrainingTab(BaseWidget):
         layout = qwt.QHBoxLayout()
 
         left_part = qwt.QWidget()
-        left_part.setMaximumWidth(350)
+        left_part.setMaximumWidth(400)
         left_part_layout = qwt.QVBoxLayout()
         left_part.setLayout(left_part_layout)
 
@@ -591,25 +640,47 @@ class TrainingTab(BaseWidget):
 
         return opts
 
-    def _start(self):
-        """Initiates training process.
+    def _make_trainer_configuration(self) -> Union[TrainerConfiguration, None]:
+        """Tries to construct trainer configuration. If anything user inputed
+        was wrong, configuration can not be made.
+
+        Returns
+        -------
+        Union[TrainerConfiguration, None]
+            trainer configuration is every input was valid, None otherwise
         """
-        # image augmentation
         augs, errs = self.training_conf.augmentations()
         if len(errs) > 0:
             for err in errs:
                 logger.error(err)
-            return
+            return None
 
         optimizer_conf = OptimizerConfiguration(
             self.training_conf.selected_optimizer,
             self._optimizer_options(),
         )
-        device = DEVICE.CPU
-        if torch.cuda.is_available():
-            device = DEVICE.CUDA
 
-        input_shape = (3, 64, 64)
+        input_shape = parse_tuple(self.training_conf.input_shape)
+        if None in input_shape:
+            logger.error(
+                'Input shape has values which are not ' +
+                'parsable to a numeric type.'
+            )
+            return None
+        if len(input_shape) != 3:
+            logger.error('Input shape is invalid, must have 3 numbers')
+            return None
+
+        output_shape = parse_tuple(self.training_conf.output_shape)
+        if None in output_shape:
+            logger.error(
+                'Output shape has values which are not ' +
+                'parsable to a numeric type.'
+            )
+            return None
+        if len(output_shape) != 3:
+            logger.error('Ouput shape is invalid, must have 3 numbers')
+            return None
 
         model_conf = ModelConfiguration(MODEL.ORIGINAL)
 
@@ -618,11 +689,15 @@ class TrainingTab(BaseWidget):
             metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
             metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
             input_shape=input_shape[1],
-            output_shape=128,
+            output_shape=output_shape[1],
             image_augmentations=augs,
             batch_size=int(self.training_conf.batch_size),
             data_transforms=data_transforms,
         )
+
+        device = DEVICE.CPU
+        if torch.cuda.is_available():
+            device = DEVICE.CUDA
 
         comm_obj = TensorCommObject()
         comm_obj.data_sig = self.preview.refresh_data_sig
@@ -640,6 +715,17 @@ class TrainingTab(BaseWidget):
             dataset_conf=dataset_conf,
             preview_conf=preview_conf,
         )
+        return conf
+
+    def _start(self):
+        """Initiates training process.
+        """
+        conf = self._make_trainer_configuration()
+        if conf is None:
+            return
+
+        print('pipica')
+        return
 
         self.training_thread = qtc.QThread()
         self.worker = Worker(conf)
