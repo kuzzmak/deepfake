@@ -352,7 +352,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
                 CONSOLE_MESSAGE_TYPE.LOG,
                 'Frames extraction finished.'
             )
-            Console.print(msg)
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
