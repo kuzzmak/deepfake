@@ -189,6 +189,7 @@ class BODY_KEY(Enum):
     ALGORITHM = 'algorithm'
     WORKER = 'worker'
     DEVICE = 'device'
+    EVERY_N_TH_FRAME = 'every_n_th_frame'
 
 
 class MODEL(Enum):
