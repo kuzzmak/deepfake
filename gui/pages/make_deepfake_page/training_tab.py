@@ -5,7 +5,6 @@ from typing import Callable, List, Tuple, Union
 import cv2 as cv
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
-import torch
 import torch.nn as nn
 from torchvision import transforms
 
@@ -150,13 +149,12 @@ class TrainingConfiguration(qwt.QWidget):
         models_gb_layout.addWidget(device_row)
         device_row.layout().setContentsMargins(0, 0, 0, 0)
         device_row.layout().addWidget(qwt.QLabel(text='device'))
-        device_bg = qwt.QButtonGroup(device_row)
-        device_bg.idPressed.connect(self._device_changed)
+        self.device_bg = qwt.QButtonGroup(device_row)
         for device in APP_CONFIG.app.core.devices:
             btn = qwt.QRadioButton(device.value, models_gb)
             btn.setChecked(True)
             models_gb_layout.addWidget(btn)
-            device_bg.addButton(btn)
+            self.device_bg.addButton(btn)
 
         layout.addWidget(models_gb)
 
@@ -343,9 +341,6 @@ class TrainingConfiguration(qwt.QWidget):
         cv.imshow('augmentations on face example', image)
         cv.waitKey()
 
-    def _device_changed():
-        ...
-
     @qtc.pyqtSlot(str)
     def _select_input_directory(self, side: str):
         """Function for selecting input folder for side A or side B.
@@ -394,6 +389,17 @@ class TrainingConfiguration(qwt.QWidget):
             str: value from input
         """
         return self.epochs_input.text()
+
+    @property
+    def device(self) -> DEVICE:
+        """Currently selected device on which training will commence.
+
+        Returns:
+            DEVICE: cpu or cuda
+        """
+        for but in self.device_bg.buttons():
+            if but.isChecked():
+                return DEVICE[but.text().upper()]
 
     # @property
     # def load_datasets_into_memory(self) -> bool:
@@ -695,10 +701,6 @@ class TrainingTab(BaseWidget):
             data_transforms=data_transforms,
         )
 
-        device = DEVICE.CPU
-        if torch.cuda.is_available():
-            device = DEVICE.CUDA
-
         comm_obj = TensorCommObject()
         comm_obj.data_sig = self.preview.refresh_data_sig
         preview_conf = PreviewConfiguration(True, comm_obj)
@@ -706,7 +708,7 @@ class TrainingTab(BaseWidget):
         criterion = self.training_conf.loss_function
 
         conf = TrainerConfiguration(
-            device=device,
+            device=self.training_conf.device,
             input_shape=input_shape,
             epochs=int(self.training_conf.epochs),
             criterion=criterion,
@@ -723,9 +725,6 @@ class TrainingTab(BaseWidget):
         conf = self._make_trainer_configuration()
         if conf is None:
             return
-
-        print('pipica')
-        return
 
         self.training_thread = qtc.QThread()
         self.worker = Worker(conf)
