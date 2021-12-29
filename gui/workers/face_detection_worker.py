@@ -10,6 +10,7 @@ from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 from core.face_detection.algorithms.face_detection_model \
     import FaceDetectionModel
 from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
+from core.image.image import Image
 
 from enums import (
     BODY_KEY,
@@ -45,7 +46,6 @@ class FaceDetectionWorker(Worker):
 
     def process(self, msg: Message):
         data = msg.body.data
-
         input_data_directory = data[BODY_KEY.INPUT_DATA_DIRECTORY]
         output_data_directory = data[BODY_KEY.OUTPUT_DATA_DIRECTORY]
         input_faces_directory = data[BODY_KEY.INPUT_FACES_DIRECTORY]
@@ -106,7 +106,7 @@ class FaceDetectionWorker(Worker):
 
             for img_path in images:
 
-                image = cv.imread(img_path, cv.IMREAD_COLOR)
+                image = Image.load(img_path)
                 faces = model.detect_faces(image)
 
                 logger.info(
@@ -115,19 +115,19 @@ class FaceDetectionWorker(Worker):
                 )
 
                 for face in faces:
-                    msg_image_display = Message(
-                        MESSAGE_TYPE.REQUEST,
-                        MESSAGE_STATUS.OK,
-                        SIGNAL_OWNER.FACE_DETECTION_WORKER,
-                        recipient,
-                        Body(
-                            JOB_TYPE.IMAGE_DISPLAY,
-                            {
-                                BODY_KEY.FILE: face.detected_face,
-                            }
-                        )
-                    )
-                    message_worker_sig.emit(msg_image_display)
+                    # msg_image_display = Message(
+                    #     MESSAGE_TYPE.REQUEST,
+                    #     MESSAGE_STATUS.OK,
+                    #     SIGNAL_OWNER.FACE_DETECTION_WORKER,
+                    #     recipient,
+                    #     Body(
+                    #         JOB_TYPE.IMAGE_DISPLAY,
+                    #         {
+                    #             BODY_KEY.FILE: face.detected_face,
+                    #         }
+                    #     )
+                    # )
+                    # message_worker_sig.emit(msg_image_display)
 
                     msg_save_face = Message(
                         MESSAGE_TYPE.REQUEST,
