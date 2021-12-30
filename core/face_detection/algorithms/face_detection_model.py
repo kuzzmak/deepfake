@@ -61,6 +61,9 @@ class FaceDetectionModel(BaseModel):
         for bb in bounding_boxes:
             (x1, y1), (x2, y2) = bb.upper_left, bb.lower_right
 
+            # TODO don't save detected face, save only bounding box
+            # and if the detected face is needed, it can be returned by some
+            # method of class Face
             f = Face()
             f.bounding_box = bb
             f.detected_face = img[y1:y2, x1:x2]
