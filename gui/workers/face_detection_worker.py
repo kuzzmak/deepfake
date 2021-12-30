@@ -104,15 +104,12 @@ class FaceDetectionWorker(Worker):
                 f'Face detection process started for {data_type.value} data.'
             )
 
-            for img_path in images:
+            for idx, img_path in enumerate(images):
 
                 image = Image.load(img_path)
                 faces = model.detect_faces(image)
 
-                logger.info(
-                    f'Extraced face progress: {images_counter}/' +
-                    f'{len(img_path)}.'
-                )
+                logger.info(f'Extraced face progress: {idx+1}/{len(images)}')
 
                 for face in faces:
                     # msg_image_display = Message(
@@ -143,7 +140,7 @@ class FaceDetectionWorker(Worker):
                             file=face.detected_face,
                             file_type=FILE_TYPE.IMAGE,
                             multipart=True,
-                            part=images_counter + 1,
+                            part=idx + 1,
                             total=len(images),
                         )
                     )
