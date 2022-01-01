@@ -1,22 +1,31 @@
 from operator import itemgetter
-from typing import List
+from typing import Dict, List, Optional
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from core.face import Face
 from core.sort import sort_faces_by_image_hash
-from enums import INDEX_TYPE
+from enums import INDEX_TYPE, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import MinimalSizePolicy
-from gui.widgets.picture_viewer import ImageViewer, ImageViewerAction
+from gui.widgets.picture_viewer import (
+    ImageViewer,
+    ImageViewerAction,
+    StandardItem,
+)
 
 
-class ImageViewerWithImageCount(qwt.QWidget):
+class ImageViewerWithImageCount(BaseWidget):
 
     label_value_sig = qtc.pyqtSignal(int)
+    data_paths_sig = qtc.pyqtSignal(list)  # list of str
 
-    def __init__(self, label: str):
+    def __init__(
+        self,
+        label: str,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+    ):
         """Widget containing `ImageViewer` and label which show how many
         images are in this `ImageViewer`.
 
@@ -24,10 +33,11 @@ class ImageViewerWithImageCount(qwt.QWidget):
             label (str): label describing which `ImageViewer` is this, shows
                 before image count
         """
-        super().__init__()
+        super().__init__(signals)
         self.label = label
         self._init_ui()
         self.label_value_sig.connect(self._label_value_changed)
+        self.data_paths_sig.connect(self._data_paths_changed)
 
     def _init_ui(self):
         """Constructs widget with `ImageViever` and label describing how many
@@ -42,17 +52,50 @@ class ImageViewerWithImageCount(qwt.QWidget):
         label_row_wgt_layout.addWidget(label)
         self.label_value = qwt.QLabel(text='0')
         label_row_wgt_layout.addWidget(self.label_value)
-        self.image_viewer = ImageViewer()
+
+        label_row_wgt_layout.addWidget(qwt.QLabel(text='shown images'))
+        self.num_of_images_in_viewer = qwt.QComboBox()
+        label_row_wgt_layout.addWidget(self.num_of_images_in_viewer)
+        self.num_of_images_in_viewer.addItem(str(50), 50)
+        self.num_of_images_in_viewer.addItem(str(100), 100)
+        self.num_of_images_in_viewer.addItem(str(200), 200)
+        self.num_of_images_in_viewer.addItem(str(500), 500)
+        self.num_of_images_in_viewer.currentTextChanged.connect(
+            self._images_per_page_changed
+        )
+
+        self.previous_page_btn = qwt.QPushButton(text='previous page')
+        label_row_wgt_layout.addWidget(self.previous_page_btn)
+        self.previous_page_btn.clicked.connect(self._previous_page_changed)
+
+        self.next_page_btn = qwt.QPushButton(text='next page')
+        label_row_wgt_layout.addWidget(self.next_page_btn)
+        self.next_page_btn.clicked.connect(self._next_page_changed)
+
+        self.image_viewer = ImageViewer(
+            signals={
+                SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                    SIGNAL_OWNER.MESSAGE_WORKER
+                ]
+            }
+        )
         self.image_viewer.number_of_images_sig.connect(
             self._label_value_changed
+        )
+        self.image_viewer.images_loading_sig.connect(
+            self._images_loading_changed
         )
         layout.addWidget(label_row_wgt)
         layout.addWidget(self.image_viewer)
         self.setLayout(layout)
 
+    @qtc.pyqtSlot(str)
+    def _images_per_page_changed(self, text: str) -> None:
+        self.image_viewer.images_per_page.emit(int(text))
+
     @qtc.pyqtSlot(int)
     def _label_value_changed(self, value: int):
-        """Changes value of the label which show how many images are in the 
+        """Changes value of the label which show how many images are in the
         `ImageViewer`.
 
         Args:
@@ -60,21 +103,43 @@ class ImageViewerWithImageCount(qwt.QWidget):
         """
         self.label_value.setText(str(value))
 
+    @qtc.pyqtSlot(list)
+    def _data_paths_changed(self, data_paths: List[str]) -> None:
+        self.image_viewer.data_paths_sig.emit(data_paths)
+
+    @qtc.pyqtSlot()
+    def _next_page_changed(self) -> None:
+        self.image_viewer.next_page_sig.emit()
+
+    @qtc.pyqtSlot()
+    def _previous_page_changed(self) -> None:
+        self.image_viewer.previous_page_sig.emit()
+
+    @qtc.pyqtSlot(bool)
+    def _images_loading_changed(self, status: bool) -> None:
+        self.previous_page_btn.setEnabled(not status)
+        self.next_page_btn.setEnabled(not status)
+
 
 class ImageViewerSorter(BaseWidget):
 
     sort_sig = qtc.pyqtSignal(int)
+    data_paths_sig = qtc.pyqtSignal(list)
 
-    def __init__(self):
+    def __init__(
+        self,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+    ):
         """Widget containing og two `ImageViewer` widgets where one on the
         left side serves as an `ImageViewer` where `Face` metadata objects
         reside which will be used for training. `ImageViewer` on the left
         contains `Face` object which will be removed/deleted/not used.
         """
-        super().__init__()
-        self._faces_cache: List[Face] = []
+        super().__init__(signals)
+        self._faces_cache = None
         self._init_ui()
         self.sort_sig.connect(self._sort)
+        self.data_paths_sig.connect(self._data_paths_changed)
 
     def _init_ui(self):
         """Construct ui with two `ImaveViewer`'s. Adds new action to the
@@ -85,14 +150,20 @@ class ImageViewerSorter(BaseWidget):
         viewers_wgt = qwt.QWidget()
         viewers_wgt_layout = qwt.QHBoxLayout()
         viewers_wgt.setLayout(viewers_wgt_layout)
-
+        signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER
+            ]
+        }
         self.left_viewer_wgt = ImageViewerWithImageCount(
-            'Number of images_ok: '
+            'Number of images_ok: ',
+            signals,
         )
         viewers_wgt_layout.addWidget(self.left_viewer_wgt)
 
         self.right_viewer_wgt = ImageViewerWithImageCount(
-            'Number of images_not_ok: '
+            'Number of images_not_ok: ',
+            signals,
         )
         viewers_wgt_layout.addWidget(self.right_viewer_wgt)
         layout.addWidget(viewers_wgt)
@@ -145,26 +216,6 @@ class ImageViewerSorter(BaseWidget):
         )
 
     @property
-    def faces_cache(self) -> List[Face]:
-        """List of `Face` metadata objects, used for easier sorting and then
-        later, easier saving of metadata objects which will be used for
-        training.
-
-        Returns:
-            List[Face]: list of `Face` objects metadata
-        """
-        return self._faces_cache
-
-    @faces_cache.setter
-    def faces_cache(self, faces: List[Face]) -> None:
-        """Sets `faces_metadata` property.
-
-        Args:
-            faces (List[Face]): list of `Face` objects metadata
-        """
-        self._faces_cache = faces
-
-    @property
     def image_viewer_images_ok(self) -> ImageViewer:
         """Getter for the left `ImageViewe` which contains `Face` metadata
         objects which will be used for training.
@@ -192,17 +243,24 @@ class ImageViewerSorter(BaseWidget):
             eps (int): [description]
         """
         # TODO implement other sorting methods and make this more generic
+        if self._faces_cache is None:
+            self._faces_cache = self.image_viewer_images_ok \
+                .get_all_data(StandardItem.FaceRole)
         indices_ok, indices_not_ok = sort_faces_by_image_hash(
-            self.faces_cache,
+            self._faces_cache,
             eps,
         )
         self.image_viewer_images_ok.clear()
         self.image_viewer_images_not_ok.clear()
         if len(indices_ok) > 0:
-            faces_ok = itemgetter(*indices_ok)(self.faces_cache)
+            faces_ok = itemgetter(*indices_ok)(self._faces_cache)
             self.image_viewer_images_ok.images_added_sig.emit(list(faces_ok))
         if len(indices_not_ok) > 0:
-            faces_not_ok = itemgetter(*indices_not_ok)(self.faces_cache)
+            faces_not_ok = itemgetter(*indices_not_ok)(self._faces_cache)
             self.image_viewer_images_not_ok.images_added_sig.emit(
                 list(faces_not_ok)
             )
+
+    @qtc.pyqtSlot(list)
+    def _data_paths_changed(self, data_paths: List[str]) -> None:
+        self.left_viewer_wgt.data_paths_sig.emit(data_paths)
