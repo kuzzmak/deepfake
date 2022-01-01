@@ -10,8 +10,10 @@ class BaseWidget(qwt.QWidget):
 
     _signals: Dict[SIGNAL_OWNER, qtc.pyqtSignal]
 
-    def __init__(self,
-                 signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict()):
+    def __init__(
+        self,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+    ):
         """Base widget class. Contains dictionary of signals
         where one could add signal for any kind of work.
         """
