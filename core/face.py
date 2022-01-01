@@ -23,6 +23,7 @@ class Face:
         self._aligned_landmarks = None
         self._aligned_image = None
         self._aligned_mask = None
+        self._path = None
 
     @property
     def raw_image(self) -> Union[Image, None]:
@@ -128,41 +129,54 @@ class Face:
         """
         return self._aligned_mask
 
+    @property
+    def path(self) -> Union[str, None]:
+        """Path for this particular `Face` object if it was saved to the disk.
+
+        Returns:
+            Union[str, None]: path if it was saved, None else
+        """
+        return self._path
+
     @raw_image.setter
-    def raw_image(self, raw_image: Image):
+    def raw_image(self, raw_image: Image) -> None:
         self._raw_image = raw_image
 
     @mask.setter
-    def mask(self, mask: np.ndarray):
+    def mask(self, mask: np.ndarray) -> None:
         self._mask = mask
 
     @bounding_box.setter
-    def bounding_box(self, bounding_box: BoundingBox):
+    def bounding_box(self, bounding_box: BoundingBox) -> None:
         self._bounding_box = bounding_box
 
     @detected_face.setter
-    def detected_face(self, detected_face: np.ndarray):
+    def detected_face(self, detected_face: np.ndarray) -> None:
         self._detected_face = detected_face
 
     @landmarks.setter
-    def landmarks(self, landmarks: Landmarks):
+    def landmarks(self, landmarks: Landmarks) -> None:
         self._landmarks = landmarks
 
     @alignment.setter
-    def alignment(self, alignment: np.ndarray):
+    def alignment(self, alignment: np.ndarray) -> None:
         self._alignment = alignment
 
     @aligned_landmarks.setter
-    def aligned_landmarks(self, aligned_landmarks: np.ndarray):
+    def aligned_landmarks(self, aligned_landmarks: np.ndarray) -> None:
         self._aligned_landmarks = aligned_landmarks
 
     @aligned_image.setter
-    def aligned_image(self, aligned_image: np.ndarray) -> np.ndarray:
+    def aligned_image(self, aligned_image: np.ndarray) -> None:
         self._aligned_image = aligned_image
 
     @aligned_mask.setter
-    def aligned_mask(self, aligned_mask: np.ndarray) -> np.ndarray:
+    def aligned_mask(self, aligned_mask: np.ndarray) -> None:
         self._aligned_mask = aligned_mask
+
+    @path.setter
+    def path(self, path: str) -> None:
+        self._path = path
 
     def masked_face_image(self, aligned: bool = True) -> np.ndarray:
         """Multiplies aligned image with the aligned mask and the result is
