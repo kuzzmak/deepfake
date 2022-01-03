@@ -84,6 +84,7 @@ class SIGNAL_OWNER(Enum):
     CONSOLE = 'console'
     JOB_PROGRESS = 'job_progress'
     DATA_SELECTOR = 'data_selector'
+    IMAGE_VIEWER = 'image_viewer'
     DETECTION_ALGORITHM_TAB = 'detection_algorithm_tab'
     DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER = \
         'detection_algorithm_tab_input_picture_viewer'
