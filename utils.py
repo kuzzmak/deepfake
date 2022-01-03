@@ -189,11 +189,11 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
     models_dir = os.path.join(hub_dir, 'checkpoints')
 
     try:
-        logger.debug('No models folder, creating...')
         os.makedirs(models_dir)
-        logger.debug(f'New models folder: {models_dir}')
+        logger.debug(f'Creded models folder: {models_dir}.')
     except OSError as e:
         if e.errno == errno.EEXIST:
+            logger.debug(f'Using existing models folder: {models_dir}.')
             # Directory already exists, ignore.
             pass
         else:
