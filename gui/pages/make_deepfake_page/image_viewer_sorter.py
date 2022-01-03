@@ -136,7 +136,6 @@ class ImageViewerSorter(BaseWidget):
         contains `Face` object which will be removed/deleted/not used.
         """
         super().__init__(signals)
-        self._faces_cache = None
         self._init_ui()
         self.sort_sig.connect(self._sort)
         self.data_paths_sig.connect(self._data_paths_changed)
@@ -167,6 +166,9 @@ class ImageViewerSorter(BaseWidget):
         )
         viewers_wgt_layout.addWidget(self.right_viewer_wgt)
         layout.addWidget(viewers_wgt)
+        self.image_viewer_images_ok.images_changed_sig.connect(
+            self._clear_images_not_ok_viewer
+        )
 
         self.setLayout(layout)
 
@@ -185,9 +187,9 @@ class ImageViewerSorter(BaseWidget):
             # viewer where selection is made, viewer where to send selected
             # faces
             from_viewer, to_viewer = viewers
-            selected = from_viewer.get_selected_indices(INDEX_TYPE.INT)
-            # tuple of selected Face metadata objects
-            selected_faces = itemgetter(*selected)(self.faces_cache)
+            selected_faces = from_viewer.get_data_from_selected_indices(
+                StandardItem.FaceRole,
+            )[1]
             # make list of the selected faces
             if isinstance(selected_faces, Face):
                 selected_faces = [selected_faces]
@@ -235,6 +237,11 @@ class ImageViewerSorter(BaseWidget):
         """
         return self.right_viewer_wgt.image_viewer
 
+    def _clear_images_not_ok_viewer(self) -> None:
+        """Clears viewer with images not ok when some data change happens.
+        """
+        self.image_viewer_images_not_ok.clear()
+
     @qtc.pyqtSlot(int)
     def _sort(self, eps: int) -> None:
         """Sorts `Face` metadata objects by some image sorting method.
@@ -242,24 +249,34 @@ class ImageViewerSorter(BaseWidget):
         Args:
             eps (int): [description]
         """
+        ok_images = self.image_viewer_images_ok.get_all_data(
+            StandardItem.FaceRole
+        )
+        not_ok_images = self.image_viewer_images_not_ok.get_all_data(
+            StandardItem.FaceRole
+        )
+        all_data = [*ok_images, *not_ok_images]
         # TODO implement other sorting methods and make this more generic
-        if self._faces_cache is None:
-            self._faces_cache = self.image_viewer_images_ok \
-                .get_all_data(StandardItem.FaceRole)
         indices_ok, indices_not_ok = sort_faces_by_image_hash(
-            self._faces_cache,
+            all_data,
             eps,
         )
         self.image_viewer_images_ok.clear()
         self.image_viewer_images_not_ok.clear()
         if len(indices_ok) > 0:
-            faces_ok = itemgetter(*indices_ok)(self._faces_cache)
-            self.image_viewer_images_ok.images_added_sig.emit(list(faces_ok))
+            faces_ok = itemgetter(*indices_ok)(all_data)
+            if not isinstance(faces_ok, tuple):
+                faces_ok = [faces_ok]
+            else:
+                faces_ok = list(faces_ok)
+            self.image_viewer_images_ok.images_added_sig.emit(faces_ok)
         if len(indices_not_ok) > 0:
-            faces_not_ok = itemgetter(*indices_not_ok)(self._faces_cache)
-            self.image_viewer_images_not_ok.images_added_sig.emit(
-                list(faces_not_ok)
-            )
+            faces_not_ok = itemgetter(*indices_not_ok)(all_data)
+            if not isinstance(faces_not_ok, tuple):
+                faces_not_ok = [faces_not_ok]
+            else:
+                faces_not_ok = list(faces_not_ok)
+            self.image_viewer_images_not_ok.images_added_sig.emit(faces_not_ok)
 
     @qtc.pyqtSlot(list)
     def _data_paths_changed(self, data_paths: List[str]) -> None:
