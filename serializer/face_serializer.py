@@ -59,11 +59,12 @@ class FaceSerializer(Serializer):
             raise NotDirectoryError(path)
 
         # image name, no extension
-        image_name = obj.raw_image.name.split('.')[0]
+        face_name = obj.raw_image.name.split('.')[0]
 
-        image_path = os.path.join(
+        face_path = os.path.join(
             path,
-            'metadata_' + image_name + '.p',
+            'metadata_' + face_name + '.p',
         )
-        image_path = construct_file_path(image_path)
-        pickle.dump(obj, gzip.open(image_path, 'wb'))
+        face_path = construct_file_path(face_path)
+        obj.path = face_path
+        pickle.dump(obj, gzip.open(face_path, 'wb'))
