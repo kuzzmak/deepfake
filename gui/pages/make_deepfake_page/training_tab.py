@@ -153,7 +153,7 @@ class TrainingConfiguration(qwt.QWidget):
         for device in APP_CONFIG.app.core.devices:
             btn = qwt.QRadioButton(device.value, models_gb)
             btn.setChecked(True)
-            models_gb_layout.addWidget(btn)
+            device_row.layout().addWidget(btn)
             self.device_bg.addButton(btn)
 
         layout.addWidget(models_gb)
