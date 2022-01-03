@@ -87,7 +87,8 @@ class MakeDeepfakePage(Page):
             ],
         }
         detection_algorithm_tab = DetectionAlgorithmTab(
-            detection_algorithm_tab_signals)
+            detection_algorithm_tab_signals
+        )
         self.tab_wgt.addTab(detection_algorithm_tab, 'Detection algorithm')
 
         training_tab = TrainingTab()
