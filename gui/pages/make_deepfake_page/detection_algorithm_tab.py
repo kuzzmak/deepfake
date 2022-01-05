@@ -4,9 +4,9 @@ from typing import Dict, List, Optional
 import PyQt5.QtGui as qtg
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
-import torch
 
 from config import APP_CONFIG
+from core.extractor import Extractor, ExtractorConfiguration
 from core.face import Face
 from enums import (
     BODY_KEY,
@@ -23,6 +23,7 @@ from enums import (
 from gui.pages.make_deepfake_page.image_viewer_sorter import ImageViewerSorter
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
+    HWidget,
     MinimalSizePolicy,
     VerticalSpacer,
     HorizontalSpacer,
@@ -35,6 +36,32 @@ from utils import get_file_paths_from_dir, parse_number
 from worker.io_worker import Worker as IOWorker
 
 logger = logging.getLogger(__name__)
+
+
+class FaceExtractionWorker(qtc.QObject):
+
+    finished = qtc.pyqtSignal()
+
+    def __init__(
+        self,
+        input_dir: str,
+        fda: FACE_DETECTION_ALGORITHM,
+        device: DEVICE = DEVICE.CPU,
+    ):
+        super().__init__()
+        self._input_dir = input_dir
+        self._fda = fda
+        self._device = device
+
+    def run(self) -> None:
+        conf = ExtractorConfiguration(
+            input_dir=self._input_dir,
+            fda=self._fda,
+            device=self._device,
+        )
+        extractor = Extractor(conf)
+        extractor.run()
+        self.finished.emit()
 
 
 class DetectionAlgorithmTab(BaseWidget):
@@ -70,20 +97,12 @@ class DetectionAlgorithmTab(BaseWidget):
         left_part_layout = qwt.QVBoxLayout()
         left_part.setLayout(left_part_layout)
 
-        algorithm_selection_wgt = qwt.QWidget()
-        algorithm_selection_wgt_layout = qwt.QHBoxLayout()
-        algorithm_selection_wgt.setLayout(algorithm_selection_wgt_layout)
-        size_policy = qwt.QSizePolicy(
-            qwt.QSizePolicy.Minimum,
-            qwt.QSizePolicy.Maximum,
+        algorithm_gb = qwt.QGroupBox(
+            title='Available face detection algorithms'
         )
-        algorithm_selection_wgt.setSizePolicy(size_policy)
-
-        algorithm_gb = qwt.QGroupBox()
-        algorithm_gb.setTitle('Available face detection algorithms')
         box_group_layout = qwt.QHBoxLayout(algorithm_gb)
 
-        algorithm_selection_wgt_layout.addWidget(algorithm_gb)
+        left_part_layout.addWidget(algorithm_gb)
 
         bg = qwt.QButtonGroup(algorithm_gb)
         bg.idPressed.connect(self.algorithm_selected)
@@ -101,7 +120,15 @@ class DetectionAlgorithmTab(BaseWidget):
         box_group_layout.addWidget(s3fd_btn)
         bg.addButton(s3fd_btn)
 
-        left_part_layout.addWidget(algorithm_selection_wgt)
+        device_gb = qwt.QGroupBox(title='Device')
+        self.device_bg = qwt.QButtonGroup(device_gb)
+        device_gb_layout = qwt.QHBoxLayout(device_gb)
+        left_part_layout.addWidget(device_gb)
+        for device in APP_CONFIG.app.core.devices:
+            btn = qwt.QRadioButton(device.value, device_gb)
+            btn.setChecked(True)
+            self.device_bg.addButton(btn)
+            device_gb_layout.addWidget(btn)
 
         input_directory_wgt = qwt.QWidget()
         input_directory_wgt_layout = qwt.QHBoxLayout()
@@ -203,11 +230,11 @@ class DetectionAlgorithmTab(BaseWidget):
 
         self.sort_btn = qwt.QPushButton(text='Sort')
         self.enable_widget(self.sort_btn, False)
-        # self.sort_btn.setFixedWidth(150)
         self.sort_btn.clicked.connect(self._sort)
         button_row_wgt_layout.addWidget(self.sort_btn)
 
         self.save_sorted_btn = qwt.QPushButton(text='Save sorted')
+        self.enable_widget(self.save_sorted_btn, False)
         self.save_sorted_btn.clicked.connect(self._save_sorted)
         button_row_wgt_layout.addWidget(self.save_sorted_btn)
 
@@ -230,13 +257,17 @@ class DetectionAlgorithmTab(BaseWidget):
         tab_wgt = qwt.QTabWidget()
         tab_wgt.currentChanged.connect(self._tab_changed)
 
-        self.input_image_viewer_sorter_wgt = ImageViewerSorter()
+        signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER
+            ]
+        }
+        self.input_image_viewer_sorter_wgt = ImageViewerSorter(signals)
         self.input_image_viewer_sorter_wgt \
             .image_viewer_images_ok \
-            .images_added_sig.connect(
-                self._images_added_to_image_viewer
-            )
-        self.output_image_viewer_sorter_wgt = ImageViewerSorter()
+            .images_loading_sig \
+            .connect(self._images_loading_changed)
+        self.output_image_viewer_sorter_wgt = ImageViewerSorter(signals)
 
         tab_wgt.addTab(self.input_image_viewer_sorter_wgt, 'Input faces')
         tab_wgt.addTab(self.output_image_viewer_sorter_wgt, 'Output faces')
@@ -251,6 +282,18 @@ class DetectionAlgorithmTab(BaseWidget):
         layout.addWidget(line)
         layout.addWidget(right_part)
         self.setLayout(layout)
+
+    @property
+    def device(self) -> DEVICE:
+        """Currently selected device on which face extraction process
+        will be executed.
+
+        Returns:
+            DEVICE: cpu or cuda
+        """
+        for but in self.device_bg.buttons():
+            if but.isChecked():
+                return DEVICE[but.text().upper()]
 
     def add_signals(self):
         """Adds input picture viewer and output picture viewer signals
@@ -290,10 +333,16 @@ class DetectionAlgorithmTab(BaseWidget):
         )
         self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
-    @qtc.pyqtSlot(list)
-    def _images_added_to_image_viewer(self, images: List[Face]):
-        if len(images) > 0:
-            self.enable_widget(self.sort_btn, True)
+    @qtc.pyqtSlot(bool)
+    def _images_loading_changed(self, status: bool) -> None:
+        """Disable buttons for sorting and saving sorted images when images
+        are loading.
+
+        Args:
+            status (bool): loading status
+        """
+        self.enable_widget(self.sort_btn, not status)
+        self.enable_widget(self.save_sorted_btn, not status)
 
     @qtc.pyqtSlot(int)
     def _tab_changed(self, index: int):
@@ -346,11 +395,11 @@ class DetectionAlgorithmTab(BaseWidget):
         self._threads.append((worker_thread, sort_worker))
         sort_worker.moveToThread(worker_thread)
         worker_thread.started.connect(sort_worker.run)
-        sort_worker.finished.connect(self._on_sort_worker_finished)
+        sort_worker.finished.connect(self._on_worker_finished)
         worker_thread.start()
 
     @qtc.pyqtSlot()
-    def _on_sort_worker_finished(self):
+    def _on_worker_finished(self):
         for thread, worker in self._threads:
             thread.quit()
             thread.wait()
@@ -397,12 +446,11 @@ class DetectionAlgorithmTab(BaseWidget):
         directory = qwt.QFileDialog.getExistingDirectory(
             self,
             'Select faces directory',
-            './',
+            r'E:\deepfake_data',
         )
         if not directory:
             logger.warning('No directory selected.')
             return
-
         image_paths = get_file_paths_from_dir(directory, ['p'])
         data_type = data_type.value.lower()
         # if path exists and some face metadata exists in this folder,
@@ -413,16 +461,12 @@ class DetectionAlgorithmTab(BaseWidget):
                 'can now sort this metadata and save which ' +
                 'suits you.'
             )
-            faces = [FaceSerializer.load(i_p) for i_p in image_paths]
             # get input or output ImageViewerSorter
             ivs: ImageViewerSorter = getattr(
                 self,
                 f'{data_type}_image_viewer_sorter_wgt'
             )
-            ivs.faces_cache = faces
-            # get images_ok ImageViewer on appropriate ImageViewerSorter
-            viewer: ImageViewer = ivs.image_viewer_images_ok
-            viewer.images_added_sig.emit(faces)
+            ivs.data_paths_sig.emit(image_paths)
 
         setattr(
             self,
@@ -438,23 +482,14 @@ class DetectionAlgorithmTab(BaseWidget):
     def start_detection(self) -> None:
         """Sends message with faces directories to make deepfake page.
         """
-        device = DEVICE.CPU
-        if torch.cuda.is_available():
-            device = DEVICE.CUDA
-        msg = Message(
-            MESSAGE_TYPE.REQUEST,
-            MESSAGE_STATUS.OK,
-            SIGNAL_OWNER.DETECTION_ALGORITHM_TAB,
-            SIGNAL_OWNER.MAKE_DEEPFAKE_PAGE_DETECT_FACES,
-            Body(
-                JOB_TYPE.FACE_DETECTION,
-                {
-                    BODY_KEY.INPUT_FACES_DIRECTORY: self.input_faces_directory,
-                    BODY_KEY.OUTPUT_FACES_DIRECTORY:
-                    self.output_faces_directory,
-                    BODY_KEY.ALGORITHM: self.algorithm_selected_value,
-                    BODY_KEY.DEVICE: device,
-                }
-            )
+        thread = qtc.QThread()
+        worker = FaceExtractionWorker(
+            self.input_faces_directory,
+            self.algorithm_selected_value,
+            self.device,
         )
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        self._threads.append((thread, worker))
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(self._on_worker_finished)
+        thread.start()
