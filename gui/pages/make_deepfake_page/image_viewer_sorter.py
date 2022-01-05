@@ -8,7 +8,7 @@ from core.face import Face
 from core.sort import sort_faces_by_image_hash
 from enums import INDEX_TYPE, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.common import MinimalSizePolicy
+from gui.widgets.common import HWidget, HorizontalSpacer, MinimalSizePolicy
 from gui.widgets.picture_viewer import (
     ImageViewer,
     ImageViewerAction,
@@ -38,6 +38,7 @@ class ImageViewerWithImageCount(BaseWidget):
         self._init_ui()
         self.label_value_sig.connect(self._label_value_changed)
         self.data_paths_sig.connect(self._data_paths_changed)
+        self.image_viewer.current_page_sig.connect(self._current_page_changed)
 
     def _init_ui(self):
         """Constructs widget with `ImageViever` and label describing how many
@@ -87,7 +88,26 @@ class ImageViewerWithImageCount(BaseWidget):
         )
         layout.addWidget(label_row_wgt)
         layout.addWidget(self.image_viewer)
+
+        page_row = HWidget()
+        layout.addWidget(page_row)
+        page_row.layout().setContentsMargins(0, 0, 0, 0)
+        page_row.layout().addItem(HorizontalSpacer)
+        page_label = qwt.QLabel(text='page ')
+        page_row.layout().addWidget(page_label)
+        self.current_page_label = qwt.QLabel(text='0')
+        page_row.layout().addWidget(self.current_page_label)
+        divider_label = qwt.QLabel(text='/')
+        page_row.layout().addWidget(divider_label)
+        self.total_pages_label = qwt.QLabel(text='0')
+        page_row.layout().addWidget(self.total_pages_label)
+        page_row.layout().addItem(HorizontalSpacer)
+
         self.setLayout(layout)
+
+    @qtc.pyqtSlot(int)
+    def _current_page_changed(self, page: int) -> None:
+        self.current_page_label.setText(str(page))
 
     @qtc.pyqtSlot(str)
     def _images_per_page_changed(self, text: str) -> None:
