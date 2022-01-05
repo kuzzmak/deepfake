@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, Callable, List, Tuple, Union
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import PyQt5.QtGui as qtg
@@ -9,11 +10,38 @@ import PyQt5.QtWidgets as qwt
 from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
 from common_structures import DialogMessages
-from enums import INDEX_TYPE
+from enums import (
+    BODY_KEY,
+    INDEX_TYPE,
+    IO_OPERATION_TYPE,
+    JOB_TYPE,
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
+    SIGNAL_OWNER,
+)
+from gui.widgets.base_widget import BaseWidget
 from gui.widgets.dialog import Dialog
+from message.message import Body, Message
+from serializer.face_serializer import FaceSerializer
 from utils import np_array_to_qicon
 
 DEFAULT_ROLE = qtc.Qt.UserRole + 1
+
+
+class LoaderWorker(qtc.QObject):
+
+    finished = qtc.pyqtSignal()
+
+    def __init__(self, data_paths: List[str], sig: qtc.pyqtSignal):
+        super().__init__()
+        self._data_paths = data_paths
+        self._sig = sig
+
+    def run(self) -> None:
+        for i_p in self._data_paths:
+            face = FaceSerializer.load(i_p)
+            self._sig.emit([face])
+        self.finished.emit()
 
 
 @dataclass
@@ -129,12 +157,23 @@ class ContextMenuEventFilter(qtc.QObject):
         return super().eventFilter(source, event)
 
 
-class ImageViewer(qwt.QWidget):
+class ImageViewer(BaseWidget):
 
     number_of_images_sig = qtc.pyqtSignal(int)
     images_added_sig = qtc.pyqtSignal(list)
+    images_per_page = qtc.pyqtSignal(int)
+    data_paths_sig = qtc.pyqtSignal(list)
+    next_page_sig = qtc.pyqtSignal()
+    previous_page_sig = qtc.pyqtSignal()
+    images_loading_sig = qtc.pyqtSignal(bool)
+    images_changed_sig = qtc.pyqtSignal()
+    current_page_sig = qtc.pyqtSignal(int)
 
-    def __init__(self, icon_size: Tuple[int, int] = (64, 64)) -> None:
+    def __init__(
+        self,
+        icon_size: Tuple[int, int] = (64, 64),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+    ) -> None:
         """Widget for displaying some sort of the images. Images can be sent
         to this widget in a form of the `np.ndarray` or like path to the image
         on disk.
@@ -149,10 +188,20 @@ class ImageViewer(qwt.QWidget):
             icon_size (Tuple[int, int], optional): size of the icons displayed
                 in widget. Defaults to (64, 64).
         """
-        super().__init__()
+        super().__init__(signals)
         self.icon_size = icon_size
         self._number_of_images = 0
+        # TODO get this value from config
+        self._data_paths = []
+        self._images_per_page = 50
+        self._current_page = 0
+        self._threads = []
+        self._images_loading = False
         self.images_added_sig.connect(self._images_added)
+        self.images_per_page.connect(self._images_per_page_changed)
+        self.data_paths_sig.connect(self._data_paths_changed)
+        self.next_page_sig.connect(self._next_page_changed)
+        self.previous_page_sig.connect(self._previous_page_changed)
         self._init_ui()
 
     def _init_ui(self) -> None:
@@ -304,6 +353,7 @@ class ImageViewer(qwt.QWidget):
             row (int): index on which to remove item
         """
         self.ui_image_viewer.model().removeRow(row)
+        self.number_of_images -= 1
 
     def remove_selected(self) -> None:
         """Removes selected images from the `ImageViewer`.
@@ -323,22 +373,143 @@ class ImageViewer(qwt.QWidget):
         """Function for removing selected images from the `PictureViewer` and
         from the disk.
         """
-        def remove_fn(remove: bool) -> None:
-            if remove:
-                self.remove_selected()
-
-                # op = IO_OP(IO_OPERATION_TYPE.DELETE, path)
-                # self.app.io_op_sig.emit(op)
-
-        dialog_msg = DialogMessages.DELETE(
-            'Do you really want to delete selected images?'
+        # TODO this role may need to be changed in the future
+        data: List[Face] = self.get_data_from_selected_indices(
+            StandardItem.FaceRole
         )
-        dialog = Dialog(dialog_msg, self)
-        dialog.remove_sig.connect(remove_fn)
-        dialog.exec()
+        self.remove_selected()
+        mapped_paths = [Path(p) for p in self._data_paths]
+        for face in data[1]:
+            msg = Message(
+                MESSAGE_TYPE.REQUEST,
+                MESSAGE_STATUS.OK,
+                SIGNAL_OWNER.IMAGE_VIEWER,
+                SIGNAL_OWNER.IO_WORKER,
+                Body(
+                    JOB_TYPE.IO_OPERATION,
+                    data={
+                        BODY_KEY.IO_OPERATION_TYPE: IO_OPERATION_TYPE.DELETE,
+                        BODY_KEY.FILE_PATH: face.path,
+                    }
+                )
+            )
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+            # TODO use Path objects instead of this
+            # TODO fix issue with removing entry from paths when image is
+            # deleted in other image viewer
+            try:
+                idx = mapped_paths.index(Path(face.path))
+                self._data_paths.pop(idx)
+                mapped_paths.pop(idx)
+            except ValueError:
+                ...
+        # def remove_fn(remove: bool) -> None:
+        #     if remove:
+        #         self.remove_selected()
+        #         print(self.signals[SIGNAL_OWNER.MESSAGE_WORKER])
+
+        #         # op = IO_OP(IO_OPERATION_TYPE.DELETE, path)
+        #         # self.app.io_op_sig.emit(op)
+
+        # dialog_msg = DialogMessages.DELETE(
+        #     'Do you really want to delete selected images?'
+        # )
+        # dialog = Dialog(dialog_msg, self)
+        # dialog.remove_sig.connect(remove_fn)
+        # dialog.exec()
 
     def _rename_selected_picture(self):
         ...
+
+    @property
+    def images_loading(self) -> bool:
+        return self._images_loading
+
+    @images_loading.setter
+    def images_loading(self, status: bool) -> None:
+        self._images_loading = status
+        self.images_loading_sig.emit(status)
+
+    @property
+    def current_page(self) -> int:
+        return self._current_page
+
+    @current_page.setter
+    def current_page(self, page: int) -> None:
+        self._current_page = page
+        self.current_page_sig.emit(page)
+
+    @qtc.pyqtSlot()
+    def _next_page_changed(self) -> None:
+        """Loads images from the next page into the image viewer.
+        """
+        self.current_page += 1
+        indices_from = self.current_page * self._images_per_page
+        indices_to = (self.current_page + 1) * self._images_per_page
+        print(f'indices from: {indices_from}, indices to: {indices_to}, len paths: {len(self._data_paths)}')
+        self._load_from_data_paths(self._data_paths[indices_from:indices_to])
+
+    @qtc.pyqtSlot()
+    def _previous_page_changed(self) -> None:
+        """Loads image from the previous page into the image viewer.
+        """
+        if self.current_page == 0:
+            return
+        self.current_page -= 1
+        indices_from = self.current_page * self._images_per_page
+        indices_to = (self.current_page + 1) * self._images_per_page
+        self._load_from_data_paths(self._data_paths[indices_from:indices_to])
+
+    @qtc.pyqtSlot(int)
+    def _images_per_page_changed(self, num: int) -> None:
+        """User changed how much data should be shown in the image viewer.
+
+        Args:
+            num (int): number of images shown in image viewer
+        """
+        self._images_per_page = num
+        self._load_from_data_paths(self._data_paths[:num])
+
+    def _load_from_data_paths(self, data_paths: List[str]) -> None:
+        """Starts thread in the background which loads data and sends it to
+        the image viewer.
+
+        Args:
+            data_paths (List[str]): loads data from this paths
+        """
+        # remove all data from image viewer
+        self.clear()
+        self.images_loading = True
+        thread = qtc.QThread()
+        worker = LoaderWorker(data_paths, self.images_added_sig)
+        self._threads.append((thread, worker))
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(self._on_loader_worker_finished)
+        worker.finished.connect(self.images_changed_sig)
+        thread.start()
+
+    @qtc.pyqtSlot(list)
+    def _data_paths_changed(self, data_paths: List[str]) -> None:
+        """When some directory with data is selected, loader thread starts to
+        load data until number of data comes to the default value for images
+        per page.
+
+        Args:
+            data_paths (List[str]): new paths of data
+        """
+        self._data_paths = data_paths
+        self._load_from_data_paths(data_paths[:self._images_per_page])
+
+    @qtc.pyqtSlot()
+    def _on_loader_worker_finished(self) -> None:
+        """Waits for loader thread to finish and exit gracefully.
+        """
+        for thread, worker in self._threads:
+            thread.quit()
+            thread.wait()
+        self._threads = []
+        self.images_loading = False
 
     @qtc.pyqtSlot(list)
     def _images_added(self, images: List[Union[np.ndarray, Face]]):
