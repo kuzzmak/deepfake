@@ -64,6 +64,7 @@ class Worker(qtc.QObject):
             metadata_path_B=conf.metadata_path_B,
             input_shape=conf.input_shape,
             output_shape=conf.output_shape,
+            size=conf.size,
             image_augmentations=conf.image_augmentations,
             device=self.conf.device,
             transformations=conf.data_transforms,

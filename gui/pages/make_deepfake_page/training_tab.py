@@ -114,6 +114,14 @@ class TrainingConfiguration(qwt.QWidget):
         self.output_shape_input.setText('3, 128, 128')
         output_size_row.layout().addWidget(self.output_shape_input)
 
+        dataset_size = HWidget()
+        dataset_conf_gb_layout.addWidget(dataset_size)
+        dataset_size.layout().addWidget(qwt.QLabel(text='dataset size'))
+        self.dataset_size_input = qwt.QLineEdit()
+        dataset_size.layout().addWidget(self.dataset_size_input)
+        self.dataset_size_input.setText(str(500))
+        dataset_size.layout().setContentsMargins(0, 0, 0, 0,)
+
         models_gb = qwt.QGroupBox()
         layout.addWidget(models_gb)
         models_gb.setTitle('Training configuration')
@@ -371,6 +379,10 @@ class TrainingConfiguration(qwt.QWidget):
     @property
     def output_shape(self) -> str:
         return self.output_shape_input.text()
+
+    @property
+    def dataset_size(self) -> str:
+        return self.dataset_size_input.text()
 
     @property
     def batch_size(self) -> str:
@@ -692,11 +704,12 @@ class TrainingTab(BaseWidget):
 
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
-            metadata_path_A=r'C:\Users\kuzmi\Documents\deepfake\data\face_A\metadata_sorted',
-            metadata_path_B=r'C:\Users\kuzmi\Documents\deepfake\data\face_B\metadata',
+            metadata_path_A=r'E:\deepfake_data\face_A\metadata',
+            metadata_path_B=r'E:\deepfake_data\face_B_2\metadata',
             input_shape=input_shape[1],
             output_shape=output_shape[1],
             image_augmentations=augs,
+            size=int(self.training_conf.dataset_size),
             batch_size=int(self.training_conf.batch_size),
             data_transforms=data_transforms,
         )

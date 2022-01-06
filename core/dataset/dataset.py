@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import Callable, List, Optional, Tuple
 
 import cv2 as cv
@@ -27,6 +28,7 @@ class DeepfakeDataset(Dataset):
         metadata_path_B: str,
         input_shape: int,
         output_shape: int,
+        size: int = -1,
         transformations: Optional[nn.Module] = None,
         image_augmentations: List[Callable] = [],
         device: DEVICE = DEVICE.CPU,
@@ -45,6 +47,9 @@ class DeepfakeDataset(Dataset):
         output_shape : int
             size of the square to which output will be resized that represents
                 models target
+        size : int
+            size of the dataset, how much will be loaded from the disk, by
+                default -1 which means all from the directory
         transformations : Optional[torch.Module]
             transformations for the output of the dataset like converting
                 numpy arrays to torch tensors
@@ -59,8 +64,25 @@ class DeepfakeDataset(Dataset):
         self.image_augmentations = image_augmentations
         self.transformations = transformations if transformations is not None \
             else transforms.Compose([transforms.ToTensor()])
+
         self.metadata_paths_A = get_file_paths_from_dir(metadata_path_A, ['p'])
         self.metadata_paths_B = get_file_paths_from_dir(metadata_path_B, ['p'])
+        random.shuffle(self.metadata_paths_A)
+        random.shuffle(self.metadata_paths_B)
+        min_paths = min(
+            [
+                len(self.metadata_paths_A),
+                len(self.metadata_paths_B),
+            ]
+        )
+        if size != -1:
+            self.size = min([size, min_paths])
+        else:
+            self.size = min_paths
+        print('duljina', self.size, size)
+        self.metadata_paths_A = self.metadata_paths_A[:self.size]
+        self.metadata_paths_B = self.metadata_paths_B[:self.size]
+
         self._similarity_indices = dict()
         self._load()
         self._align()
@@ -69,6 +91,7 @@ class DeepfakeDataset(Dataset):
     def _load(self):
         """Loads dataset into memory.
         """
+        print('loadin', len(self.metadata_paths_A))
         logger.info('Loading faces A, please wait...')
         self.A_faces = [FaceSerializer.load(path)
                         for path in self.metadata_paths_A]
@@ -109,7 +132,7 @@ class DeepfakeDataset(Dataset):
         logger.info('Finding nearest faces done.')
 
     def __len__(self):
-        return len(self.A_faces)
+        return self.size
 
     def _resize(
         self,
