@@ -45,6 +45,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  gui.pages.make_deepfake_page.inference_tab:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   gui.workers.face_detection_worker:
     level: DEBUG
     handlers: [file, gui, console]
