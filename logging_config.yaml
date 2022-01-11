@@ -65,7 +65,7 @@ loggers:
     level: DEBUG
     handlers: [console, file]
     propagate: no
-  core.workers.inference_worker:
+  gui.workers.inference_worker:
     level: DEBUG
     handlers: [console, gui, file]
     propagate: no
