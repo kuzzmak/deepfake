@@ -2,6 +2,7 @@ from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
+from gui.pages.make_deepfake_page.inference_tab import InferenceTab
 
 from gui.pages.page import Page
 from gui.pages.make_deepfake_page.data_tab import DataTab
@@ -92,7 +93,15 @@ class MakeDeepfakePage(Page):
         self.tab_wgt.addTab(detection_algorithm_tab, 'Detection algorithm')
 
         training_tab = TrainingTab()
-        ind = self.tab_wgt.addTab(training_tab, 'Training')
+        self.tab_wgt.addTab(training_tab, 'Training')
+
+        inference_tab_signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER
+            ],
+        }
+        inference_tab = InferenceTab(inference_tab_signals)
+        ind = self.tab_wgt.addTab(inference_tab, 'Inference')
 
         self.tab_wgt.setCurrentIndex(ind)
 
