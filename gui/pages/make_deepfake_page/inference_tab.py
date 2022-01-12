@@ -25,11 +25,19 @@ class InferenceTab(BaseWidget):
     ):
         super().__init__(signals)
         self._start_inference_thread()
-        self._init_ui()
+        self._widgets_to_disable_on_inference = []
         self._threads = []
         self._last_model_folder = None
         self._last_image_folder = None
+        self._image_path = None
         self._inference_worker.inference_result.connect(self._inference_result)
+        self._inference_worker.inference_started.connect(
+            self._on_inference_start
+        )
+        self._inference_worker.inference_finished.connect(
+            self._on_inference_finished
+        )
+        self._init_ui()
 
     def _init_ui(self):
         layout = qwt.QHBoxLayout()
@@ -39,6 +47,7 @@ class InferenceTab(BaseWidget):
         left_part.setMaximumWidth(300)
 
         model_gb = qwt.QGroupBox()
+        self._widgets_to_disable_on_inference.append(model_gb)
         left_part.layout().addWidget(model_gb)
         model_gb.setTitle('Model selection')
         model_gb_layout = qwt.QHBoxLayout(model_gb)
@@ -47,6 +56,7 @@ class InferenceTab(BaseWidget):
         model_select_btn.clicked.connect(self._load_model)
 
         image_gb = qwt.QGroupBox()
+        self._widgets_to_disable_on_inference.append(image_gb)
         left_part.layout().addWidget(image_gb)
         image_gb.setTitle('Image selection')
         image_gb_layout = qwt.QHBoxLayout(image_gb)
@@ -57,6 +67,7 @@ class InferenceTab(BaseWidget):
         algorithm_gb = qwt.QGroupBox(
             title='Available face detection algorithms'
         )
+        self._widgets_to_disable_on_inference.append(algorithm_gb)
         left_part.layout().addWidget(algorithm_gb)
         algorithm_gb_layout = qwt.QHBoxLayout(algorithm_gb)
         algorithm_row = HWidget()
@@ -72,6 +83,7 @@ class InferenceTab(BaseWidget):
             self.algorithm_bg.addButton(btn)
 
         device_gb = qwt.QGroupBox()
+        self._widgets_to_disable_on_inference.append(device_gb)
         left_part.layout().addWidget(device_gb)
         device_gb.setTitle('Device selection')
         device_gb_layout = qwt.QVBoxLayout(device_gb)
@@ -89,11 +101,33 @@ class InferenceTab(BaseWidget):
 
         left_part.layout().addItem(VerticalSpacer)
 
+        start_btn = qwt.QPushButton(text='start')
+        self._widgets_to_disable_on_inference.append(start_btn)
+        start_btn.clicked.connect(self._start_inference)
+        left_part.layout().addWidget(start_btn)
+
         right_part = VWidget()
         layout.addWidget(right_part)
 
         self.preview = Preview(['input image', 'resulting image'], 1)
         right_part.layout().addWidget(self.preview)
+
+    @qtc.pyqtSlot()
+    def _on_inference_finished(self) -> None:
+        for wgt in self._widgets_to_disable_on_inference:
+            self.enable_widget(wgt, True)
+
+    @qtc.pyqtSlot()
+    def _on_inference_start(self) -> None:
+        for wgt in self._widgets_to_disable_on_inference:
+            self.enable_widget(wgt, False)
+
+    @qtc.pyqtSlot()
+    def _start_inference(self) -> None:
+        if self._image_path is None:
+            return
+        image = Image.load(self._image_path)
+        self._inference_worker.image_sig.emit(image)
 
     @qtc.pyqtSlot(torch.Tensor, torch.Tensor)
     def _inference_result(
@@ -152,6 +186,4 @@ class InferenceTab(BaseWidget):
 
         logger.debug(f'Selected image: {image_path}')
         self._last_image_folder = str(Path(image_path).parent.absolute())
-
-        image = Image.load(image_path)
-        self._inference_worker.image_sig.emit(image)
+        self._image_path = image_path
