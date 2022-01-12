@@ -26,7 +26,7 @@ class InferenceWorker(qtc.QObject):
     model_sig = qtc.pyqtSignal(str)
     device_sig = qtc.pyqtSignal(DEVICE)
     algorithm_sig = qtc.pyqtSignal(FACE_DETECTION_ALGORITHM)
-    inference_result = qtc.pyqtSignal(np.ndarray, np.ndarray)
+    inference_result = qtc.pyqtSignal(torch.Tensor, torch.Tensor)
 
     def __init__(self) -> None:
         super().__init__()
@@ -114,6 +114,8 @@ class InferenceWorker(qtc.QObject):
             img_ten = img_ten.to(self._device.value)
             y_pred_A_A, _, y_pred_A_B, _ = self._model(img_ten)
             pred = y_pred_A_B.squeeze(0)
-            pred = tensor_to_np_image(pred).astype(np.uint8)
 
-            self.inference_result.emit(face.aligned_image, pred)
+            self.inference_result.emit(
+                transforms.ToTensor()(face.aligned_image), 
+                pred,
+            )
