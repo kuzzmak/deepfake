@@ -4,7 +4,7 @@ from typing import List
 
 import torch
 
-from enums import DEVICE
+from enums import DEVICE, FACE_DETECTION_ALGORITHM
 
 
 @dataclass
@@ -24,6 +24,7 @@ class _MTCNN:
 
 @dataclass
 class _FaceDetectionAlgorithms:
+    default: FACE_DETECTION_ALGORITHM
     s3fd: _S3FD
     faceboxes: _FaceBoxes
     # mtcnn: _MTCNN
@@ -133,6 +134,10 @@ def _load_config():
         _faceboxes = _face_detection_algorithms['faceboxes']
         faceboxes_gd_id = _faceboxes['gd_id']
 
+        _default_face_detection_algorithm = FACE_DETECTION_ALGORITHM[
+            _face_detection_algorithms['default'].upper()
+        ]
+
         _landmark_detection = _core['landmark_detection']
 
         _landmark_detection_algorithms = _landmark_detection['algorithms']
@@ -170,6 +175,7 @@ def _load_config():
                 _Core(
                     _FaceDetection(
                         _FaceDetectionAlgorithms(
+                            _default_face_detection_algorithm,
                             _S3FD(s3fd_gd_id),
                             _FaceBoxes(faceboxes_gd_id),
                         )

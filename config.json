@@ -5,6 +5,7 @@
         "core": {
             "face_detection": {
                 "algorithms": {
+                    "default": "s3fd",
                     "s3fd": {
                         "gd_id": "1UPY_Rf8A51Jxxi17_zeN8c0tb4TQgDrU"
                     },
