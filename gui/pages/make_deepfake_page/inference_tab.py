@@ -2,10 +2,9 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional
 
-import cv2 as cv
-import numpy as np
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
+import torch
 
 from config import APP_CONFIG
 from core.image.image import Image
@@ -13,6 +12,7 @@ from gui.workers.inference_worker import InferenceWorker
 from enums import DEVICE, FACE_DETECTION_ALGORITHM, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, VWidget, VerticalSpacer
+from gui.widgets.preview.new_preview import Preview
 
 logger = logging.getLogger(__name__)
 
@@ -92,14 +92,16 @@ class InferenceTab(BaseWidget):
         right_part = VWidget()
         layout.addWidget(right_part)
 
-    @qtc.pyqtSlot(np.ndarray, np.ndarray)
+        self.preview = Preview(['input image', 'resulting image'], 1)
+        right_part.layout().addWidget(self.preview)
+
+    @qtc.pyqtSlot(torch.Tensor, torch.Tensor)
     def _inference_result(
-        self, input_image: np.ndarray, 
-        predicted_image: np.ndarray,
+        self,
+        input_image: torch.Tensor,
+        predicted_image: torch.Tensor,
     ) -> None:
-        cv.imshow('input image', input_image)
-        cv.imshow('predicted image', predicted_image)
-        cv.waitKey()
+        self.preview.refresh_data_sig.emit([[input_image], [predicted_image]])
 
     @qtc.pyqtSlot()
     def _face_detection_algorithm_changed(self) -> None:
