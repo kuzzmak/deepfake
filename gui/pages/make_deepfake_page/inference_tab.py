@@ -8,7 +8,7 @@ from config import APP_CONFIG
 
 from core.image.image import Image
 from gui.workers.inference_worker import InferenceWorker
-from enums import DEVICE, SIGNAL_OWNER
+from enums import DEVICE, FACE_DETECTION_ALGORITHM, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, VWidget, VerticalSpacer
 
@@ -51,6 +51,23 @@ class InferenceTab(BaseWidget):
         image_gb_layout.addWidget(image_select_btn)
         image_select_btn.clicked.connect(self._load_image)
 
+        algorithm_gb = qwt.QGroupBox(
+            title='Available face detection algorithms'
+        )
+        left_part.layout().addWidget(algorithm_gb)
+        algorithm_gb_layout = qwt.QHBoxLayout(algorithm_gb)
+        algorithm_row = HWidget()
+        algorithm_row.layout().setContentsMargins(0, 0, 0, 0)
+        algorithm_gb_layout.addWidget(algorithm_row)
+        self.algorithm_bg = qwt.QButtonGroup(algorithm_row)
+        for alg in FACE_DETECTION_ALGORITHM:
+            btn = qwt.QRadioButton(alg.value, algorithm_gb)
+            if alg == APP_CONFIG.app.core.face_detection.algorithms.default:
+                btn.setChecked(True)
+            btn.toggled.connect(self._face_detection_algorithm_changed)
+            algorithm_row.layout().addWidget(btn)
+            self.algorithm_bg.addButton(btn)
+
         device_gb = qwt.QGroupBox()
         left_part.layout().addWidget(device_gb)
         device_gb.setTitle('Device selection')
@@ -61,7 +78,8 @@ class InferenceTab(BaseWidget):
         self.device_bg = qwt.QButtonGroup(device_row)
         for device in APP_CONFIG.app.core.devices:
             btn = qwt.QRadioButton(device.value, device_gb)
-            btn.setChecked(True)
+            if device == DEVICE.CPU:
+                btn.setChecked(True)
             btn.toggled.connect(self._device_changed)
             device_row.layout().addWidget(btn)
             self.device_bg.addButton(btn)
@@ -70,6 +88,14 @@ class InferenceTab(BaseWidget):
 
         right_part = VWidget()
         layout.addWidget(right_part)
+
+    @qtc.pyqtSlot()
+    def _face_detection_algorithm_changed(self) -> None:
+        sender = self.sender()
+        if sender.isChecked():
+            self._inference_worker.algorithm_sig.emit(
+                FACE_DETECTION_ALGORITHM[sender.text().upper()]
+            )
 
     @qtc.pyqtSlot()
     def _device_changed(self) -> None:
