@@ -27,6 +27,8 @@ class InferenceWorker(qtc.QObject):
     device_sig = qtc.pyqtSignal(DEVICE)
     algorithm_sig = qtc.pyqtSignal(FACE_DETECTION_ALGORITHM)
     inference_result = qtc.pyqtSignal(torch.Tensor, torch.Tensor)
+    inference_started = qtc.pyqtSignal()
+    inference_finished = qtc.pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -96,7 +98,7 @@ class InferenceWorker(qtc.QObject):
         if self._model is None:
             logger.error('Can not run inference, model was not loaded.')
             return
-
+        self.inference_started.emit()
         logger.debug('Detecting faces...')
         faces = self._fdm.detect_faces(image)
         logger.debug(f'Detected {len(faces)} face(s).')
@@ -119,3 +121,4 @@ class InferenceWorker(qtc.QObject):
                 transforms.ToTensor()(face.aligned_image), 
                 pred,
             )
+        self.inference_finished.emit()
