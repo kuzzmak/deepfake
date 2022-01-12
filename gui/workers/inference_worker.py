@@ -1,16 +1,20 @@
 import logging
 
-import cv2 as cv
+import numpy as np
 import PyQt5.QtCore as qtc
 import torch
+from torchvision import transforms
 
 from config import APP_CONFIG
+from core.face_alignment.face_aligner import FaceAligner
+from core.face_alignment.utils import get_face_mask
 from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
 from core.image.image import Image
 from core.landmark_detection.algorithms.fan.fan_ldm import FANLDM
 from core.model.original_ae import OriginalAE
 from enums import DEVICE, FACE_DETECTION_ALGORITHM
+from utils import tensor_to_np_image
 
 
 logger = logging.getLogger(__name__)
@@ -22,6 +26,7 @@ class InferenceWorker(qtc.QObject):
     model_sig = qtc.pyqtSignal(str)
     device_sig = qtc.pyqtSignal(DEVICE)
     algorithm_sig = qtc.pyqtSignal(FACE_DETECTION_ALGORITHM)
+    inference_result = qtc.pyqtSignal(np.ndarray, np.ndarray)
 
     def __init__(self) -> None:
         super().__init__()
@@ -88,6 +93,27 @@ class InferenceWorker(qtc.QObject):
             self._load_face_detection_model()
         if self._ldm is None:
             self._load_landmark_detection_model()
+        if self._model is None:
+            logger.error('Can not run inference, model was not loaded.')
+            return
 
-        cv.imshow('image', image.data)
-        cv.waitKey()
+        logger.debug('Detecting faces...')
+        faces = self._fdm.detect_faces(image)
+        logger.debug(f'Detected {len(faces)} face(s).')
+        for i, face in enumerate(faces):
+            face.raw_image = image
+            logger.debug(f'Detecting landmarks for face {i}...')
+            landmarks = self._ldm.detect_landmarks(face)
+            logger.debug(f'Landmark detection done for face {i}.')
+            face.landmarks = landmarks
+            face.mask = get_face_mask(face.raw_image.data, landmarks.dots)
+            FaceAligner.align_face(face, 64)
+
+            img_ten = transforms.ToTensor()(face.aligned_image)
+            img_ten = img_ten.unsqueeze(0)
+            img_ten = img_ten.to(self._device.value)
+            y_pred_A_A, _, y_pred_A_B, _ = self._model(img_ten)
+            pred = y_pred_A_B.squeeze(0)
+            pred = tensor_to_np_image(pred).astype(np.uint8)
+
+            self.inference_result.emit(face.aligned_image, pred)

@@ -2,10 +2,12 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional
 
+import cv2 as cv
+import numpy as np
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
-from config import APP_CONFIG
 
+from config import APP_CONFIG
 from core.image.image import Image
 from gui.workers.inference_worker import InferenceWorker
 from enums import DEVICE, FACE_DETECTION_ALGORITHM, SIGNAL_OWNER
@@ -27,6 +29,7 @@ class InferenceTab(BaseWidget):
         self._threads = []
         self._last_model_folder = None
         self._last_image_folder = None
+        self._inference_worker.inference_result.connect(self._inference_result)
 
     def _init_ui(self):
         layout = qwt.QHBoxLayout()
@@ -88,6 +91,15 @@ class InferenceTab(BaseWidget):
 
         right_part = VWidget()
         layout.addWidget(right_part)
+
+    @qtc.pyqtSlot(np.ndarray, np.ndarray)
+    def _inference_result(
+        self, input_image: np.ndarray, 
+        predicted_image: np.ndarray,
+    ) -> None:
+        cv.imshow('input image', input_image)
+        cv.imshow('predicted image', predicted_image)
+        cv.waitKey()
 
     @qtc.pyqtSlot()
     def _face_detection_algorithm_changed(self) -> None:
