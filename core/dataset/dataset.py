@@ -79,7 +79,6 @@ class DeepfakeDataset(Dataset):
             self.size = min([size, min_paths])
         else:
             self.size = min_paths
-        print('duljina', self.size, size)
         self.metadata_paths_A = self.metadata_paths_A[:self.size]
         self.metadata_paths_B = self.metadata_paths_B[:self.size]
 
@@ -91,7 +90,6 @@ class DeepfakeDataset(Dataset):
     def _load(self):
         """Loads dataset into memory.
         """
-        print('loadin', len(self.metadata_paths_A))
         logger.info('Loading faces A, please wait...')
         self.A_faces = [FaceSerializer.load(path)
                         for path in self.metadata_paths_A]
