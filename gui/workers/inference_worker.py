@@ -97,6 +97,7 @@ class InferenceWorker(qtc.QObject):
         if self._model is None:
             logger.error('Can not run inference, model was not loaded.')
             return
+
         self.inference_started.emit()
         logger.debug('Detecting faces...')
         faces = self._fdm.detect_faces(image)
@@ -114,10 +115,9 @@ class InferenceWorker(qtc.QObject):
             img_ten = img_ten.unsqueeze(0)
             img_ten = img_ten.to(self._device.value)
             y_pred_A_A, _, y_pred_A_B, _ = self._model(img_ten)
-            pred = y_pred_A_B.squeeze(0)
 
             self.inference_result.emit(
                 transforms.ToTensor()(face.aligned_image),
-                pred,
+                y_pred_A_B.squeeze(0),
             )
         self.inference_finished.emit()
