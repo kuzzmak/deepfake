@@ -14,7 +14,6 @@ from core.image.image import Image
 from core.landmark_detection.algorithms.fan.fan_ldm import FANLDM
 from core.model.original_ae import OriginalAE
 from enums import DEVICE, FACE_DETECTION_ALGORITHM
-from utils import tensor_to_np_image
 
 
 logger = logging.getLogger(__name__)
@@ -118,7 +117,7 @@ class InferenceWorker(qtc.QObject):
             pred = y_pred_A_B.squeeze(0)
 
             self.inference_result.emit(
-                transforms.ToTensor()(face.aligned_image), 
+                transforms.ToTensor()(face.aligned_image),
                 pred,
             )
         self.inference_finished.emit()
