@@ -1,11 +1,13 @@
 import logging
 
 import numpy as np
+import cv2 as cv
 import PyQt5.QtCore as qtc
 import torch
 from torchvision import transforms
 
 from config import APP_CONFIG
+from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
 from core.face_alignment.utils import get_face_mask
 from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
@@ -13,7 +15,8 @@ from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
 from core.image.image import Image
 from core.landmark_detection.algorithms.fan.fan_ldm import FANLDM
 from core.model.original_ae import OriginalAE
-from enums import DEVICE, FACE_DETECTION_ALGORITHM
+from enums import DEVICE, FACE_DETECTION_ALGORITHM, MASK_DIM
+from utils import tensor_to_np_image
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +28,7 @@ class InferenceWorker(qtc.QObject):
     model_sig = qtc.pyqtSignal(str)
     device_sig = qtc.pyqtSignal(DEVICE)
     algorithm_sig = qtc.pyqtSignal(FACE_DETECTION_ALGORITHM)
-    inference_result = qtc.pyqtSignal(torch.Tensor, torch.Tensor)
+    inference_result = qtc.pyqtSignal(torch.Tensor, torch.Tensor, torch.Tensor)
     inference_started = qtc.pyqtSignal()
     inference_finished = qtc.pyqtSignal()
 
@@ -88,6 +91,36 @@ class InferenceWorker(qtc.QObject):
             self._fdm = FaceboxesFDM(self._device)
         logger.info('Face detection model loaded.')
 
+    @staticmethod
+    def _merge(face: Face, prediction: torch.Tensor) -> np.ndarray:
+        pred = tensor_to_np_image(prediction).astype(np.uint8)
+        pred = cv.cvtColor(pred, cv.COLOR_RGB2BGR)
+        pred = cv.resize(pred, (64, 64), interpolation=cv.INTER_CUBIC)
+
+        mask = face.get_mask(mask_dim=MASK_DIM.THREE)
+        pred = pred * mask
+
+        negative_mask = 1 - mask
+        clone = face.aligned_image.copy()
+        clone = clone * negative_mask + pred
+
+        mask = face.get_mask(fill_values=255)
+        max_region = np.argwhere(mask == 255)
+        min_y, min_x = max_region.min(axis=0)
+        max_y, max_x = max_region.max(axis=0)
+        len_x = max_x - min_x
+        len_y = max_y - min_y
+        mask_y = min_x + len_x // 2
+        mask_x = min_y + len_y // 2
+
+        return cv.seamlessClone(
+            clone.astype(np.uint8),
+            face.aligned_image,
+            mask.astype(np.uint8),
+            (mask_y, mask_x),
+            cv.NORMAL_CLONE,
+        )
+
     @qtc.pyqtSlot(Image)
     def run(self, image: Image) -> None:
         if self._fdm is None:
@@ -116,8 +149,13 @@ class InferenceWorker(qtc.QObject):
             img_ten = img_ten.to(self._device.value)
             y_pred_A_A, _, y_pred_A_B, _ = self._model(img_ten)
 
+            prediction = y_pred_A_B.squeeze(0)
+
+            clone = InferenceWorker._merge(face, prediction)
+
             self.inference_result.emit(
                 transforms.ToTensor()(face.aligned_image),
-                y_pred_A_B.squeeze(0),
+                prediction,
+                transforms.ToTensor()(clone),
             )
         self.inference_finished.emit()
