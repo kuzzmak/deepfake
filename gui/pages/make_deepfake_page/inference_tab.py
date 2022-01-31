@@ -109,7 +109,7 @@ class InferenceTab(BaseWidget):
         right_part = VWidget()
         layout.addWidget(right_part)
 
-        self.preview = Preview(['input image', 'resulting image'], 1)
+        self.preview = Preview(['input image', 'model output', 'merged'], 1)
         right_part.layout().addWidget(self.preview)
 
     @qtc.pyqtSlot()
@@ -129,13 +129,14 @@ class InferenceTab(BaseWidget):
         image = Image.load(self._image_path)
         self._inference_worker.image_sig.emit(image)
 
-    @qtc.pyqtSlot(torch.Tensor, torch.Tensor)
+    @qtc.pyqtSlot(torch.Tensor, torch.Tensor, torch.Tensor)
     def _inference_result(
         self,
         input_image: torch.Tensor,
         predicted_image: torch.Tensor,
+        clone: torch.Tensor,
     ) -> None:
-        self.preview.refresh_data_sig.emit([[input_image], [predicted_image]])
+        self.preview.refresh_data_sig.emit([[input_image], [predicted_image], [clone]])
 
     @qtc.pyqtSlot()
     def _face_detection_algorithm_changed(self) -> None:
@@ -165,7 +166,7 @@ class InferenceTab(BaseWidget):
         #     if self._last_model_folder is not None else './models',
         #     'Models (*.p)',
         # )
-        model_path = r'C:\Users\kuzmi\Documents\deepfake\models\best_model_0.pt'
+        model_path = r'C:\Users\kuzmi\Documents\deepfake\models\best_model_300.pt'
         if not model_path:
             logger.warning('No model was selected.')
             return
