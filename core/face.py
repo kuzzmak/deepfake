@@ -6,6 +6,7 @@ import numpy as np
 from core.bounding_box import BoundingBox
 from core.image.image import Image
 from core.landmarks import Landmarks
+from enums import MASK_DIM
 
 
 class Face:
@@ -177,6 +178,22 @@ class Face:
     @path.setter
     def path(self, path: str) -> None:
         self._path = path
+
+    def get_mask(
+        self,
+        aligned: bool = True,
+        fill_values: int = 1,
+        mask_dim: MASK_DIM = MASK_DIM.ONE,
+    ) -> np.ndarray:
+        if aligned:
+            m = self.aligned_mask
+        else:
+            m = self.mask
+        m[m == 1] = fill_values
+        if mask_dim == MASK_DIM.ONE:
+            return m
+        else:
+            return np.repeat(m[:, :, np.newaxis], 3, axis=2)
 
     def masked_face_image(self, aligned: bool = True) -> np.ndarray:
         """Multiplies aligned image with the aligned mask and the result is

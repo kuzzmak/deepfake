@@ -219,3 +219,8 @@ class IMAGE_SORT(Enum):
 class NUMBER_TYPE(Enum):
     INT = 'int'
     FLOAT = 'float'
+
+
+class MASK_DIM(Enum):
+    ONE = 1
+    THREE = 3
