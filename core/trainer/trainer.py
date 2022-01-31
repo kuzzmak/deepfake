@@ -108,6 +108,8 @@ def _training_step(
         loss_A_A = loss_fn(y_pred_A_A, target_A, mask_A)
         loss_B_B = loss_fn(y_pred_B_B, target_B, mask_B)
 
+        # TODO other loss (MSE) for mask
+
         (loss_A_A + loss_B_B).backward()
         optimizer.step()
 
@@ -325,6 +327,11 @@ class Trainer:
         )
         trainer.add_event_handler(
             SaveEvents.MANUAL_SAVE,
+            model_checkpoint,
+            {"model": self.model},
+        )
+        trainer.add_event_handler(
+            Events.EPOCH_COMPLETED(every=10),
             model_checkpoint,
             {"model": self.model},
         )
