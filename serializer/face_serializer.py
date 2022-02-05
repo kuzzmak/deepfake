@@ -67,4 +67,5 @@ class FaceSerializer(Serializer):
         )
         face_path = construct_file_path(face_path)
         obj.path = face_path
+        obj.name = face_path.split(os.sep)[-1]
         pickle.dump(obj, gzip.open(face_path, 'wb'))
