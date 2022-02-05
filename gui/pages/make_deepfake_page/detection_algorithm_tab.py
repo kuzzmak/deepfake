@@ -23,15 +23,13 @@ from enums import (
 from gui.pages.make_deepfake_page.image_viewer_sorter import ImageViewerSorter
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
-    HWidget,
     MinimalSizePolicy,
     VerticalSpacer,
     HorizontalSpacer,
 )
-from gui.widgets.picture_viewer import ImageViewer, StandardItem
+from gui.widgets.picture_viewer import StandardItem
 from message.message import Body, Message
 from resources.icons import icons  # noqa: F401
-from serializer.face_serializer import FaceSerializer
 from utils import get_file_paths_from_dir, parse_number
 from worker.io_worker import Worker as IOWorker
 
@@ -106,10 +104,6 @@ class DetectionAlgorithmTab(BaseWidget):
 
         bg = qwt.QButtonGroup(algorithm_gb)
         bg.idPressed.connect(self.algorithm_selected)
-
-        mtcnn_btn = qwt.QRadioButton(text='MTCNN', parent=algorithm_gb)
-        box_group_layout.addWidget(mtcnn_btn)
-        bg.addButton(mtcnn_btn)
 
         faceboxes_btn = qwt.QRadioButton(text='FaceBoxes', parent=algorithm_gb)
         box_group_layout.addWidget(faceboxes_btn)
@@ -415,8 +409,6 @@ class DetectionAlgorithmTab(BaseWidget):
             if of the button selected
         """
         if id == -2:
-            self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.MTCNN
-        elif id == -3:
             self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.FACEBOXES
         else:
             self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.S3FD
