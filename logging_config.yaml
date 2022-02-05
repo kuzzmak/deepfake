@@ -65,6 +65,10 @@ loggers:
     level: DEBUG
     handlers: [console, file]
     propagate: no
+  core.aligner:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: no
   gui.workers.inference_worker:
     level: DEBUG
     handlers: [console, gui, file]
