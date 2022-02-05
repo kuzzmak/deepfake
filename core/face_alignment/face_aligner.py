@@ -23,7 +23,7 @@ class FaceAligner:
             size of the square image to which face will be aligned
         """
         if face.alignment is None:
-            FaceAligner._calculate_alignment(face)
+            FaceAligner.calculate_alignment(face)
         padding = image_size // 4
         alignment = np.copy(face.alignment) * image_size
         alignment[:, 2] += padding
@@ -38,7 +38,7 @@ class FaceAligner:
         FaceAligner._align_mask(face)
 
     @staticmethod
-    def _calculate_alignment(face: Face):
+    def calculate_alignment(face: Face):
         """Calculates alignment matrix which transforms face from the raw
         image (detected face) into the mean face. Alignment matrix is set
         to the `alignment` atribute of the `face` input object.
