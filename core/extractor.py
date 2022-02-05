@@ -1,11 +1,16 @@
 import argparse
+import json
 import logging
 import os
-from typing import List, Union
+from pathlib import Path
+import random
+from typing import Dict, List, Union
 
 from tqdm import tqdm
+from core.dictionary import Dictionary
 
 from core.face import Face
+from core.face_alignment.face_aligner import FaceAligner
 from core.face_alignment.utils import get_face_mask
 from core.face_detection.algorithms.faceboxes.faceboxes_fdm import FaceboxesFDM
 from core.face_detection.algorithms.s3fd.s3fd_fdm import S3FDFDM
@@ -146,27 +151,45 @@ class Extractor:
     def run(self):
         """Initiates process of face and landmark extraction."""
         image_paths = get_image_paths_from_dir(self.input_dir)
+        random.shuffle(image_paths)
+        image_paths = image_paths[:50]
 
-        if image_paths:
-            logger.info('Extraction started, please wait...')
-
-            pbar = tqdm(
-                image_paths,
-                desc="Images done",
-                disable=not self.verbose,
-            )
-            for path in pbar:
-                image = Image.load(path)
-
-                faces = self.detect_faces(image)
-
-                for f in faces:
-                    self.detect_landmarks(f)
-                    FaceSerializer.save(f, self.output_dir)
-
-            logger.info('Extraction process done.')
-        else:
+        if not image_paths:
             logger.warning(f'No supported images in folder: {self.input_dir}.')
+            return
+
+        logger.info('Extraction started, please wait...')
+
+        landmarks = Dictionary()
+        alignments = Dictionary()
+
+        # extract faces and landmarks once and then image size and alignment
+        # can be ran multiple times for different sizes
+        pbar = tqdm(
+            image_paths,
+            desc="Images done",
+            disable=not self.verbose,
+        )
+        for path in pbar:
+            image = Image.load(path)
+
+            faces = self.detect_faces(image)
+
+            for f in faces:
+                self.detect_landmarks(f)
+                FaceSerializer.save(f, self.output_dir)
+                landmarks.add(f.name, f.landmarks.dots)
+                FaceAligner.calculate_alignment(f)
+                alignments.add(f.name, f.alignment)
+
+        logger.debug('Saving landmarks.')
+        landmarks.save(Path(self.output_dir) / 'landmarks.json')
+        logger.debug('Landmarks saved.')
+        logger.debug('Saving alignments.')
+        alignments.save(Path(self.output_dir) / 'alignments.json')
+        logger.debug('Alignments saved.')
+
+        logger.info('Extraction process done.')
 
 
 def main():
@@ -198,7 +221,7 @@ def main():
     parser.add_argument(
         '--quiet',
         action='store_true',
-        help="No ouput is shown when extraction process is running."
+        help="No output is shown when extraction process is running."
     )
 
     args = vars(parser.parse_args())
