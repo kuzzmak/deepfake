@@ -6,7 +6,7 @@ import PyQt5.QtWidgets as qwt
 
 from core.face import Face
 from core.sort import sort_faces_by_image_hash
-from enums import INDEX_TYPE, SIGNAL_OWNER
+from enums import SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, HorizontalSpacer, MinimalSizePolicy
 from gui.widgets.picture_viewer import (
