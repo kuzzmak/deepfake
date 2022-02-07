@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import PyQt5.QtGui as qtg
@@ -261,6 +262,10 @@ class DetectionAlgorithmTab(BaseWidget):
             .image_viewer_images_ok \
             .images_loading_sig \
             .connect(self._images_loading_changed)
+        self.input_image_viewer_sorter_wgt \
+            .image_viewer_images_ok \
+            .removed_image_paths_sig \
+            .connect(self._update_landmarks_and_alignments)
         self.output_image_viewer_sorter_wgt = ImageViewerSorter(signals)
 
         tab_wgt.addTab(self.input_image_viewer_sorter_wgt, 'Input faces')
@@ -326,6 +331,10 @@ class DetectionAlgorithmTab(BaseWidget):
             )
         )
         self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+
+    @qtc.pyqtSlot(list)
+    def _update_landmarks_and_alignments(self, paths: List[Path]) -> None:
+        print(paths)
 
     @qtc.pyqtSlot(bool)
     def _images_loading_changed(self, status: bool) -> None:
