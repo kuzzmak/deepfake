@@ -168,6 +168,7 @@ class ImageViewer(BaseWidget):
     images_loading_sig = qtc.pyqtSignal(bool)
     images_changed_sig = qtc.pyqtSignal()
     current_page_sig = qtc.pyqtSignal(int)
+    removed_image_paths_sig = qtc.pyqtSignal(list)
 
     def __init__(
         self,
@@ -379,30 +380,33 @@ class ImageViewer(BaseWidget):
         )
         self.remove_selected()
         mapped_paths = [Path(p) for p in self._data_paths]
-        for face in data[1]:
-            msg = Message(
-                MESSAGE_TYPE.REQUEST,
-                MESSAGE_STATUS.OK,
-                SIGNAL_OWNER.IMAGE_VIEWER,
-                SIGNAL_OWNER.IO_WORKER,
-                Body(
-                    JOB_TYPE.IO_OPERATION,
-                    data={
-                        BODY_KEY.IO_OPERATION_TYPE: IO_OPERATION_TYPE.DELETE,
-                        BODY_KEY.FILE_PATH: face.path,
-                    }
-                )
-            )
-            self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
-            # TODO use Path objects instead of this
-            # TODO fix issue with removing entry from paths when image is
-            # deleted in other image viewer
-            try:
-                idx = mapped_paths.index(Path(face.path))
-                self._data_paths.pop(idx)
-                mapped_paths.pop(idx)
-            except ValueError:
-                ...
+        faces = data[1]
+        face_paths = list(map(lambda f: Path(f.path), faces))
+        self.removed_image_paths_sig.emit(face_paths)
+        # for face in faces:
+        #     msg = Message(
+        #         MESSAGE_TYPE.REQUEST,
+        #         MESSAGE_STATUS.OK,
+        #         SIGNAL_OWNER.IMAGE_VIEWER,
+        #         SIGNAL_OWNER.IO_WORKER,
+        #         Body(
+        #             JOB_TYPE.IO_OPERATION,
+        #             data={
+        #                 BODY_KEY.IO_OPERATION_TYPE: IO_OPERATION_TYPE.DELETE,
+        #                 BODY_KEY.FILE_PATH: face.path,
+        #             }
+        #         )
+        #     )
+        #     self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
+        #     # TODO use Path objects instead of this
+        #     # TODO fix issue with removing entry from paths when image is
+        #     # deleted in other image viewer
+        #     try:
+        #         idx = mapped_paths.index(Path(face.path))
+        #         self._data_paths.pop(idx)
+        #         mapped_paths.pop(idx)
+        #     except ValueError:
+        #         ...
         # def remove_fn(remove: bool) -> None:
         #     if remove:
         #         self.remove_selected()
