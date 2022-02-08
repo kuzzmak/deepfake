@@ -61,11 +61,8 @@ class FaceSerializer(Serializer):
         # image name, no extension
         face_name = obj.raw_image.name.split('.')[0]
 
-        face_path = os.path.join(
-            path,
-            'metadata_' + face_name + '.p',
-        )
+        face_path = os.path.join(path, face_name + '.p')
         face_path = construct_file_path(face_path)
         obj.path = face_path
-        obj.name = face_path.split(os.sep)[-1]
+        obj.name = face_path.name
         pickle.dump(obj, gzip.open(face_path, 'wb'))
