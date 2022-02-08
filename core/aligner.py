@@ -1,9 +1,7 @@
 from dataclasses import dataclass
-import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict
 from tqdm import tqdm
 
 import cv2 as cv
@@ -21,16 +19,6 @@ logger = logging.getLogger(__name__)
 class AlignerConfiguration:
     faces_directory: str
     face_size: int
-
-
-def _map_to_numpy_array(data: Dict[str, list]) -> Dict[str, np.ndarray]:
-    return dict(zip(data, map(lambda v: np.array(v), data.values())))
-
-
-def _load(path: Path) -> Dict[str, np.ndarray]:
-    with open(path, 'r') as f:
-        data = json.load(f)
-    return _map_to_numpy_array(data)
 
 
 class Aligner:
@@ -62,10 +50,10 @@ class Aligner:
             return
 
         logger.debug('Loading landmarks.')
-        landmarks = _load(landmarks_path)
+        landmarks = Dictionary.load(landmarks_path)
         logger.debug('Landmarks loaded.')
         logger.debug('Landmarks alignments.')
-        alignments = _load(alignments_path)
+        alignments = Dictionary.load(alignments_path)
         logger.debug('Alignments loaded.')
 
         metadata_paths = get_file_paths_from_dir(metadata_path, ['p'])
