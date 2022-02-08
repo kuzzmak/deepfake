@@ -94,8 +94,6 @@ class _Resources:
 
 @dataclass
 class _App:
-    input_faces_directory: str
-    output_faces_directory: str
     core: _Core
     gui: _Gui
     resources: _Resources
@@ -113,9 +111,6 @@ def _load_config():
         conf = json.loads(conf)
 
         _app = conf['app']
-
-        input_faces_directory = _app['input_faces_directory']
-        output_faces_directory = _app['output_faces_directory']
 
         _core = _app['core']
         selected_device = _core['selected_device']
@@ -170,8 +165,6 @@ def _load_config():
 
         conf = Config(
             _App(
-                input_faces_directory,
-                output_faces_directory,
                 _Core(
                     _FaceDetection(
                         _FaceDetectionAlgorithms(

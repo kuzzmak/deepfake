@@ -88,8 +88,6 @@ class SIGNAL_OWNER(Enum):
     DETECTION_ALGORITHM_TAB = 'detection_algorithm_tab'
     DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER = \
         'detection_algorithm_tab_input_picture_viewer'
-    DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER = \
-        'detection_algorithm_tab_output_picture_viewer'
 
     # worker signals
     IO_WORKER = WORKER.IO_WORKER.value
