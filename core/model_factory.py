@@ -1,7 +1,8 @@
 import abc
-from enums import DEVICE
 
 import torch.nn as nn
+
+from enums import DEVICE
 
 
 class ModelFactory(abc.ABCMeta):
