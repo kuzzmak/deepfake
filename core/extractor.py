@@ -1,14 +1,13 @@
 import argparse
-import json
 import logging
 import os
 from pathlib import Path
 import random
-from typing import Dict, List, Union
+from typing import List, Union
 
 from tqdm import tqdm
-from core.dictionary import Dictionary
 
+from core.dictionary import Dictionary
 from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
 from core.face_alignment.utils import get_face_mask
@@ -32,8 +31,8 @@ class ExtractorConfiguration:
 
     def __init__(
         self,
-        input_dir: str,
-        output_dir: str = None,
+        input_dir: Union[str, Path],
+        output_dir: Union[str, Path] = None,
         fda: Union[str, FACE_DETECTION_ALGORITHM] =
         FACE_DETECTION_ALGORITHM.S3FD,
         lda: Union[str, LANDMARK_DETECTION_ALGORITHM] =
@@ -45,12 +44,12 @@ class ExtractorConfiguration:
 
         Parameters
         ----------
-        input_dir : str
+        input_dir : Union[str, Path]
             input directory with images
-        output_dir : str, optional
+        output_dir : Union[str, Path], optional
             directory where face metadata will be saved, if no directory is
-            passed, in the `input_dir` will be made new directory `metadata`
-            and used for saving, by default None
+            passed, in `input_dir` directory, new `metadata` directory will be
+            created and used for saving, by default None
         fda : Union[str, FACE_DETECTION_ALGORITHM], optional
             face detection algorithm, by default FACE_DETECTION_ALGORITHM.S3FD
         lda : Union[str, LANDMARK_DETECTION_ALGORITHM], optional
@@ -62,6 +61,9 @@ class ExtractorConfiguration:
             which device should be used for extraction
         """
         self.input_dir = input_dir
+        if output_dir is None:
+            output_dir = self.input_dir / 'metadata'
+        self.output_dir = output_dir
         if isinstance(fda, FACE_DETECTION_ALGORITHM):
             self.fda = fda
         else:
@@ -70,19 +72,36 @@ class ExtractorConfiguration:
             self.lda = lda
         else:
             self.lda = LANDMARK_DETECTION_ALGORITHM[lda.upper()]
-        if output_dir is None:
-            output_dir = os.path.join(self.input_dir, 'metadata')
-        self.output_dir = output_dir
         self.quiet = quiet
         self.device = device
+
+    @property
+    def input_dir(self) -> Path:
+        return self._input_dir
+
+    @input_dir.setter
+    def input_dir(self, path: Union[str, Path]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+        self._input_dir = path
+
+    @property
+    def output_dir(self) -> Path:
+        return self._output_dir
+
+    @output_dir.setter
+    def output_dir(self, path: Union[str, Path]) -> None:
+        if isinstance(path, str):
+            path = Path(path)
+        self._output_dir = path
 
     def __str__(self):
         return 'Extractor configuration:\n' \
             + '------------------------\n' \
-            + f'input directory: {self.input_dir}\n' \
+            + f'input directory: {str(self.input_dir)}\n' \
             + f'face detection algorithm: {self.fda}\n' \
             + f'landmark detection algorithm: {self.lda}\n' \
-            + f'output directory: {self.output_dir}'
+            + f'output directory: {str(self.output_dir)}'
 
 
 class Extractor:
@@ -183,10 +202,10 @@ class Extractor:
                 alignments.add(f.name, f.alignment)
 
         logger.debug('Saving landmarks.')
-        landmarks.save(Path(self.output_dir) / 'landmarks.json')
+        landmarks.save(self.output_dir / 'landmarks.json')
         logger.debug('Landmarks saved.')
         logger.debug('Saving alignments.')
-        alignments.save(Path(self.output_dir) / 'alignments.json')
+        alignments.save(self.output_dir / 'alignments.json')
         logger.debug('Alignments saved.')
 
         logger.info('Extraction process done.')
