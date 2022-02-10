@@ -29,7 +29,7 @@ class Aligner:
     def align(self) -> None:
         metadata_path = Path(self._conf.faces_directory)
         parent = metadata_path.parent
-        training_data_directory = parent / 'training_data'
+        training_data_directory = parent / 'aligned_data'
         if not os.path.exists(training_data_directory):
             os.makedirs(training_data_directory)
 
