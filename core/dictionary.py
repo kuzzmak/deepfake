@@ -1,4 +1,5 @@
 from __future__ import annotations
+from _collections_abc import dict_keys, dict_values
 import json
 from pathlib import Path
 from typing import Dict, Optional, Union
@@ -25,9 +26,12 @@ class Dictionary:
 
     def __init__(
         self,
-        data: Dict[str, np.ndarray] = dict(),
+        data: Optional[Dict[str, np.ndarray]] = None,
     ) -> None:
-        self._data = data
+        if data is not None:
+            self._data = data
+        else:
+            self._data = dict()
 
     def add(self, key: str, value: np.ndarray) -> None:
         """Adds key value pair.
@@ -37,6 +41,15 @@ class Dictionary:
             value (np.ndarray): value
         """
         self._data[key] = value
+
+    def keys(self) -> dict_keys[str, np.ndarray]:
+        return self._data.keys()
+
+    def values(self) -> dict_values[str, np.ndarray]:
+        return self._data.values()
+
+    def __getitem__(self, key: str):
+        return self._data.get(key, None)
 
     def remove(self, key: str) -> None:
         """Removes value on key.
