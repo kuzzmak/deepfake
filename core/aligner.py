@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import logging
 import os
 from pathlib import Path
+from typing import Union
 from tqdm import tqdm
 
 import cv2 as cv
@@ -17,35 +18,85 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AlignerConfiguration:
-    faces_directory: str
+    """Configuration class for `Aligner`.
+
+    Args:
+        metadata_directory (Union[str, Path]): path to the directory with
+            `Face` metadata objects
+        face_size (int): size of the new image square
+    """
+    metadata_directory: Union[str, Path]
     face_size: int
 
 
 class Aligner:
+    """Utility class used for aligning image to the mean face or aligning face
+    landmarks.
+
+    Args:
+        configuration (AlignerConfiguration): configuration class for the
+            `Aligner` specifying path to the metadata directory and new size
+            of the image when aligned
+    """
 
     def __init__(self, configuration: AlignerConfiguration):
-        self._conf = configuration
+        path = configuration.metadata_directory
+        if isinstance(path, str):
+            path = Path(path)
+        self._metadata_path = path
+        self._face_size = configuration.face_size
 
-    def align(self) -> None:
-        metadata_path = Path(self._conf.faces_directory)
-        parent = metadata_path.parent
-        training_data_directory = parent / 'aligned_data'
-        if not os.path.exists(training_data_directory):
-            os.makedirs(training_data_directory)
+    @staticmethod
+    def align_image(
+        image: np.ndarray,
+        alignment: np.ndarray,
+        image_size: int,
+    ) -> np.ndarray:
+        """Aligns image based on the `alignment` matrix to the size
+        `image_size`.
 
-        landmarks_path = metadata_path / 'landmarks.json'
+        Args:
+            image (np.ndarray): image to align
+            alignment (np.ndarray): alignment matrix
+            image_size (int): new image size
+
+        Returns:
+            np.ndarray: aligned image
+        """
+        padding = image_size // 4
+        alignment = np.copy(alignment) * image_size
+        alignment[:, 2] += padding
+        new_size = int(image_size + padding * 2)
+        warped = cv.warpAffine(
+            image,
+            alignment,
+            (new_size, new_size),
+        )
+        return cv.resize(
+            warped,
+            (image_size, image_size),
+            cv.INTER_CUBIC,
+        )
+
+    def align_landmarks(self) -> None:
+        """Initiates alignment process for the landmarks of `Face` objects in
+        directory from the configuration. `landmarks.json` and
+        `alignments.json` files must be present in input directory. New file
+        with aligned landmarks is generated specific to the image size.
+        """
+        landmarks_path = self._metadata_path / 'landmarks.json'
         if not os.path.exists(landmarks_path):
             logger.error(
                 'landmarks.json file does not exist on location: ' +
-                f'{str(metadata_path)}.'
+                f'{str(self._metadata_path)}.'
             )
             return
 
-        alignments_path = metadata_path / 'alignments.json'
+        alignments_path = self._metadata_path / 'alignments.json'
         if not os.path.exists(alignments_path):
             logger.error(
                 'alignments.json file does not exist on location: ' +
-                f'{str(metadata_path)}.'
+                f'{str(self._metadata_path)}.'
             )
             return
 
@@ -56,42 +107,24 @@ class Aligner:
         alignments = Dictionary.load(alignments_path)
         logger.debug('Alignments loaded.')
 
-        metadata_paths = get_file_paths_from_dir(metadata_path, ['p'])
-
         aligned_landmarks = Dictionary()
 
+        metadata_paths = get_file_paths_from_dir(self._metadata_path, ['p'])
         for m_p in tqdm(metadata_paths, desc="Images done"):
             face = FaceSerializer.load(m_p)
-            face_size = self._conf.face_size
+            face_size = self._face_size
             padding = face_size // 4
             alignment = np.copy(alignments[face.name]) * face_size
             alignment[:, 2] += padding
             new_size = int(face_size + padding * 2)
-
-            warped = cv.warpAffine(
-                face.raw_image.data,
-                alignment,
-                (new_size, new_size),
-            )
-            aligned_image = cv.resize(
-                warped,
-                (face_size, face_size),
-                cv.INTER_CUBIC,
-            )
-
-            im_name = face.name.split('.')[0] + '.jpg'
-            im_path = training_data_directory / f'{im_name}'
-            cv.imwrite(str(im_path), aligned_image)
-
-            # cv.imshow('im', face.detected_face)
-            # cv.waitKey()
-
             scale = new_size / face_size
             dots = cv.transform(
                 landmarks[face.name].reshape(1, -1, 2),
                 alignment,
             )
             dots = np.divide(dots.reshape(-1, 2), scale).astype(int)
-            aligned_landmarks.add(im_name, dots)
+            aligned_landmarks.add(face.name, dots)
 
-        aligned_landmarks.save(training_data_directory / 'landmarks.json')
+        aligned_landmarks.save(
+            self._metadata_path / f'aligned_landmarks_{self._face_size}.json'
+        )
