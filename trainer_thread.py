@@ -45,7 +45,7 @@ class Worker(qtc.QObject):
         input_shape = self.conf.input_shape
         device = self.conf.device
         if model == MODEL.ORIGINAL:
-            model = OriginalAE(input_shape).to(device.value)
+            model = OriginalAE(input_shape)
         model = model.to(device.value)
         logger.info('Model loaded.')
         return model
@@ -60,14 +60,12 @@ class Worker(qtc.QObject):
     def _init_data_loader(self) -> DataLoader:
         conf = self.conf.dataset_conf
         dataset = DeepfakeDataset(
-            metadata_path_A=conf.metadata_path_A,
-            metadata_path_B=conf.metadata_path_B,
-            input_shape=conf.input_shape,
-            output_shape=conf.output_shape,
-            size=conf.size,
-            image_augmentations=conf.image_augmentations,
-            device=self.conf.device,
+            path_A=conf.path_A,
+            path_B=conf.path_B,
+            input_size=conf.input_size,
+            output_size=conf.output_size,
             transformations=conf.data_transforms,
+            image_augmentations=conf.image_augmentations,
         )
         data_loader = DataLoader(
             dataset=dataset,
