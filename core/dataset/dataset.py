@@ -1,6 +1,8 @@
 import logging
+from operator import itemgetter
+from pathlib import Path
 import random
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import cv2 as cv
 import numpy as np
@@ -8,237 +10,261 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
 from torchvision import transforms
+from core.aligner import Aligner
 
+from core.dictionary import Dictionary
+from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
+from core.face_alignment.utils import get_face_mask
 from core.image.augmentation import ImageAugmentation
-from enums import DEVICE
 from serializer.face_serializer import FaceSerializer
-from utils import get_file_paths_from_dir
+from utils import get_file_paths_from_dir, get_image_paths_from_dir
 
 logger = logging.getLogger(__name__)
+
+"""Constructor.
+
+Parameters
+----------
+path_A : Union[str, Path]
+    path of the aligned images for person A
+path_B : Union[str, Path]
+    path of the aligned images for person B
+nearest_n : int
+    how many nearest images to consider when selecting target face,
+        difference is measured as a MSE between face landmarks,
+        by default 10
+transformations : Optional[torch.Module]
+    transformations for the output of the dataset like converting
+        numpy arrays to torch tensors
+image_augmentations : List[Callable]
+    list of functions for doing augmentations on image
+"""
 
 
 class DeepfakeDataset(Dataset):
     """Deepfake dataset class containing detected faces and masks.
+
+    Args:
+        path_A (Union[str, Path]): path to the directory with metadata files
+            for person A
+        path_B (Union[str, Path]): path to the directory with metadata files
+            for person B
+        input_size (int): size of the square which model receives on input
+        output_size (int): size of the square which model receives on output
+        nearest_n (int, optional): how many nearest faces in B should be found
+            for every face in A. Defaults to 10.
+        transformations (Optional[nn.Module], optional): transformations which
+            will be applied to every image model receives on input or output.
+            Defaults to None.
+        image_augmentations (List[Callable], optional): augmentation functions
+            which will be applied on every image model receives on input.
+            Defaults to [].
     """
 
     def __init__(
         self,
-        metadata_path_A: str,
-        metadata_path_B: str,
-        input_shape: int,
-        output_shape: int,
-        size: int = -1,
+        path_A: Union[str, Path],
+        path_B: Union[str, Path],
+        input_size: int,
+        output_size: int,
+        nearest_n: int = 10,
         transformations: Optional[nn.Module] = None,
         image_augmentations: List[Callable] = [],
-        device: DEVICE = DEVICE.CPU,
     ):
-        """Constructor.
-
-        Parameters
-        ----------
-        metadata_path_A : str
-            path of the `Faces` metadata of person A
-        metadata_path_B : str
-            path of the `Faces` metadata of person B
-        input_shape : int
-            size of the square to which input face will be resized for the
-                model input
-        output_shape : int
-            size of the square to which output will be resized that represents
-                models target
-        size : int
-            size of the dataset, how much will be loaded from the disk, by
-                default -1 which means all from the directory
-        transformations : Optional[torch.Module]
-            transformations for the output of the dataset like converting
-                numpy arrays to torch tensors
-        image_augmentations : List[Callable]
-            list of functions for doing augmentations on image
-        device : DEVICE, optional
-            where to send loaded faces and masks, by default DEVICE.CPU
-        """
-        self.input_shape = input_shape
-        self.output_shape = output_shape
-        self.device = device
-        self.image_augmentations = image_augmentations
-        self.transformations = transformations if transformations is not None \
+        if isinstance(path_A, str):
+            path_A = Path(path_A)
+        if isinstance(path_B, str):
+            path_B = Path(path_B)
+        self._path_A = path_A
+        self._path_B = path_B
+        self._input_size = input_size
+        self._output_size = output_size
+        self._nearest_n = nearest_n
+        self._image_augmentations = image_augmentations
+        self._transformations = transformations \
+            if transformations is not None \
             else transforms.Compose([transforms.ToTensor()])
 
-        self.metadata_paths_A = get_file_paths_from_dir(metadata_path_A, ['p'])
-        self.metadata_paths_B = get_file_paths_from_dir(metadata_path_B, ['p'])
-        random.shuffle(self.metadata_paths_A)
-        random.shuffle(self.metadata_paths_B)
-        min_paths = min(
-            [
-                len(self.metadata_paths_A),
-                len(self.metadata_paths_B),
-            ]
+        self._paths_A = []
+        self._paths_B = []
+        self._landmarks_A = None
+        self._landmarks_B = None
+        self._alignments_A = None
+        self._alignments_B = None
+        self._nearest_n_dict = dict()
+
+        self._load_paths()
+        self._load_landmarks()
+        self._load_alignments()
+        self._find_nearest_n()
+
+    def _load_paths(self) -> None:
+        """Generates file paths for both A and B metadata files.
+        """
+        self._paths_A = get_file_paths_from_dir(self._path_A, ['p'])
+        logger.info(
+            f'Found {len(self._paths_A)} images for person A in ' +
+            f'directory {str(self._path_A)}.'
         )
-        if size != -1:
-            self.size = min([size, min_paths])
+        self._paths_B = get_file_paths_from_dir(self._path_B, ['p'])
+        logger.info(
+            f'Found {len(self._paths_B)} images for person B in ' +
+            f'directory {str(self._path_B)}.'
+        )
+
+    def _load_landmarks(self) -> None:
+        """Loads aligned_landmarks.json file for both A and B persons.
+        """
+        landmarks_file = f'aligned_landmarks_{self._input_size}.json'
+        logger.debug(f'Loading {landmarks_file} file for person A.')
+        landmarks_path_A = self._path_A / landmarks_file
+        if not landmarks_path_A.exists():
+            logger.error(
+                f'{landmarks_file} file for person A ' +
+                f'does not exist on path {str(landmarks_path_A)}'
+            )
         else:
-            self.size = min_paths
-        self.metadata_paths_A = self.metadata_paths_A[:self.size]
-        self.metadata_paths_B = self.metadata_paths_B[:self.size]
+            self._landmarks_A = Dictionary.load(landmarks_path_A)
+            self._size = len(self._landmarks_A)
+            logger.debug(
+                f'Successfully loaded {landmarks_file} file for person A.'
+            )
 
-        self._similarity_indices = dict()
-        self._load()
-        self._align()
-        self._find_nearest_faces()
+        logger.debug(f'Loading {landmarks_file} file for person B.')
+        landmarks_path_B = self._path_B / landmarks_file
+        if not landmarks_path_B.exists():
+            logger.error(
+                f'{landmarks_file} file for person A ' +
+                f'does not exist on path {str(landmarks_path_B)}'
+            )
+        else:
+            self._landmarks_B = Dictionary.load(landmarks_path_B)
+            logger.debug(
+                f'Successfully loaded {landmarks_file} file for person B.'
+            )
 
-    def _load(self):
-        """Loads dataset into memory.
+    def _load_alignments(self) -> None:
+        """Loads alignment.json files for both A and B persons.
         """
-        logger.info('Loading faces A, please wait...')
-        self.A_faces = [FaceSerializer.load(path)
-                        for path in self.metadata_paths_A]
-        logger.info(f'Loaded {len(self.A_faces)} faces A.')
-        logger.info('Loading faces B, please wait...')
-        self.B_faces = [FaceSerializer.load(path)
-                        for path in self.metadata_paths_B]
-        logger.info(f'Loaded {len(self.B_faces)} faces B.')
+        alignments_file = f'alignments.json'
+        logger.debug(f'Loading {alignments_file} file for person A.')
+        alignments_path_A = self._path_A / alignments_file
+        if not alignments_path_A.exists():
+            logger.error(
+                f'{alignments_file} file for person A ' +
+                f'does not exist on path {str(alignments_path_A)}'
+            )
+        else:
+            self._alignments_A = Dictionary.load(alignments_path_A)
+            logger.debug(
+                f'Successfully loaded {alignments_file} file for person A.'
+            )
 
-    def _align(self) -> None:
-        """Aligns face to the mean face i.e. aligned face, landmarks and
-        mask are resized to the `input_shape`.
-        """
-        logger.info('Aligning faces A, please wait...')
-        [FaceAligner.align_face(face, self.input_shape)
-         for face in self.A_faces]
-        logger.info('Aligned faces A.')
-        logger.info('Aligning faces B, please wait...')
-        [FaceAligner.align_face(face, self.input_shape)
-         for face in self.B_faces]
-        logger.info('Aligned faces B.')
+        logger.debug(f'Loading {alignments_file} file for person B.')
+        alignments_path_B = self._path_B / alignments_file
+        if not alignments_path_B.exists():
+            logger.error(
+                f'{alignments_file} file for person B ' +
+                f'does not exist on path {str(alignments_path_B)}'
+            )
+        else:
+            self._alignments_B = Dictionary.load(alignments_path_B)
+            logger.debug(
+                f'Successfully loaded {alignments_file} file for person B.'
+            )
 
-    def _find_nearest_faces(self) -> None:
-        """Function which constructs a dictionary where each key is the ordinal
-        number of the face A in the list of A faces and the value is the
-        ordinal number of the face in list of B faces that is most similar to
-        the face A.
+    def _find_nearest_n(self) -> None:
+        """Finds nearest B faces for every A face based on face landmarks.
+        Number of faces depends on the `nearest_n` argument.
         """
-        logger.info('Finding nearest faces, please wait...')
-        b_landmarks = [f.aligned_landmarks for f in self.B_faces]
-        for i, f in enumerate(self.A_faces):
+        logger.debug('Finding nearest faces.')
+        # keys are metadata file names
+        keys_A = self._landmarks_A.keys()
+        keys_B = list(self._landmarks_B.keys())
+        # values are aligned landmarks
+        values_A = list(self._landmarks_A.values())
+        values_B = np.array(list(self._landmarks_B.values()))
+        # dictionary where key is the file name and value is a list of
+        # nearest_n nearest aligned faces from face B
+        nearest_n_A = dict()
+        for i, im_path in enumerate(keys_A):
+            curr = values_A[i]
+            # MSE of the current landmarks and all other from face B
             diff = np.average(
-                np.square(f.aligned_landmarks - b_landmarks),
+                np.square(curr - values_B),
                 axis=(1, 2),
             )
-            best_indices = diff.argsort()
-            self._similarity_indices[i] = best_indices[0]
-        logger.info('Finding nearest faces done.')
+            # get nearest_n closest face landmarks
+            best_n = diff.argsort()[:self._nearest_n]
+            best_n_paths = itemgetter(*best_n)(keys_B)
+            if not isinstance(best_n_paths, tuple):
+                best_n_paths = (best_n_paths,)
+            nearest_n_A[im_path] = best_n_paths
+        self._nearest_n_dict = nearest_n_A
+        logger.debug('Finding nearest faces finished.')
 
     def __len__(self):
-        return self.size
+        return len(self._paths_A)
 
-    def _resize(
+    def _prepare_image(
         self,
-        warped_A: np.ndarray,
-        mask_A: np.ndarray,
-        target_A: np.ndarray,
-        warped_B: np.ndarray,
-        mask_B: np.ndarray,
-        target_B: np.ndarray,
-    ) -> Tuple[
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-    ]:
-        """Resizes input arrays so they can be used for model input and error
-        calculation when model makes forward pass. `warped_A` and `warped_B`
-        are resized to the model input and other ones to the model output size.
+        path: Path,
+        alignment: np.ndarray,
+        landmarks: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Loads `Face` metadata object from `path` and transformes detected
+        face based on the `alignment` matrix to model input image, target image
+        and mask for calculating error.
 
         Args:
-            warped_A (np.ndarray): warped image input for person A
-            mask_A (np.ndarray): mask for person A
-            target_A (np.ndarray): target image for person A
-            warped_B (np.ndarray): warped image input for person B
-            mask_B (np.ndarray): mask for person B
-            target_B (np.ndarray): target image for person B
+            path (Path): path to `Face` metadata object
+            alignment (np.ndarray): alignment matrix for this face
+            landmarks (np.ndarray): aligned landmarks for mask generation
 
         Returns:
-            Tuple[ np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray,
-            np.ndarray, ]: resized input arrays
+            Tuple[np.ndarray, np.ndarray, np.ndarray]: warped face image,
+                target face image, input face mask
         """
-        input_shape = (self.input_shape, self.input_shape)
-        output_shape = (self.output_shape, self.output_shape)
-        return (
-            cv.resize(warped_A, input_shape),
-            cv.resize(mask_A, output_shape),
-            cv.resize(target_A, output_shape),
-            cv.resize(warped_B, input_shape),
-            cv.resize(mask_B, output_shape),
-            cv.resize(target_B, output_shape),
-        )
+        face = FaceSerializer.load(path)
+        img = face.raw_image.data
+        aligned = Aligner.align_image(img, alignment, self._input_size)
+        warped = ImageAugmentation.warp_image(cv.INTER_CUBIC, aligned)
+        target = Aligner.align_image(img, alignment, self._output_size)
+        mask = get_face_mask(aligned, landmarks)
+        mask = cv.resize(mask, (self._output_size, self._output_size))
+        return warped, target, mask
 
     def _transform(
         self,
-        warped_A: np.ndarray,
-        mask_A: np.ndarray,
-        target_A: np.ndarray,
-        warped_B: np.ndarray,
-        mask_B: np.ndarray,
-        target_B: np.ndarray,
-    ) -> Tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]:
-        """Makes transformations on the input arrays. Transformation to torch
-        tensor and similar.
+        images: List[np.ndarray],
+    ) -> List[torch.Tensor]:
+        """Transforms every image in input list based on the transformations
+        passed on `DeepfakeDataset` init. Makes input image for model, output
+        image for model and mask for the output image.
 
         Args:
-            warped_A (np.ndarray): warped image input for person A
-            mask_A (np.ndarray): mask for person A
-            target_A (np.ndarray): target image for person A
-            warped_B (np.ndarray): warped image input for person B
-            mask_B (np.ndarray): mask for person B
-            target_B (np.ndarray): target image for person B
+            images (List[np.ndarray]): images to transform
 
         Returns:
-            Tuple[ torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
-            torch.Tensor, torch.Tensor, ]: transformed input arrays
+            List[torch.Tensor]: tensor list of transformed images
         """
-        return (
-            self.transformations(warped_A),
-            self.transformations(mask_A),
-            self.transformations(target_A),
-            self.transformations(warped_B),
-            self.transformations(mask_B),
-            self.transformations(target_B)
-        )
+        return list(map(lambda im: self._transformations(im), images))
 
-    def __getitem__(self, index: int) -> Tuple[
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-        np.ndarray,
-    ]:
-        face_A = self.A_faces[index]
-        face_B = self.B_faces[self._similarity_indices[index]]
-        target_A = face_A.aligned_image
-        target_B = face_B.aligned_image
-        warped_A, warped_B = ImageAugmentation.warp_faces(
-            cv.INTER_LINEAR,
-            face_A,
-            face_B,
-        )
-        return self._transform(
-            *self._resize(
-                warped_A,
-                face_A.aligned_mask,
-                target_A,
-                warped_B,
-                face_B.aligned_mask,
-                target_B,
+    def __getitem__(self, index) -> List[np.ndarray]:
+        path_A = self._paths_A[index]
+        nearest = self._nearest_n_dict[path_A.name]
+        random_nearest_B: str = random.choice(nearest)
+        path_B = self._path_B / random_nearest_B
+        return self._transform([
+            *self._prepare_image(
+                path_A,
+                self._alignments_A[path_A.name],
+                self._landmarks_A[path_A.name],
+            ),
+            *self._prepare_image(
+                path_B,
+                self._alignments_B[path_B.name],
+                self._landmarks_B[path_B.name],
             )
-        )
+        ])
