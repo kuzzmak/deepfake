@@ -114,14 +114,6 @@ class TrainingConfiguration(qwt.QWidget):
         self.output_shape_input.setText('3, 128, 128')
         output_size_row.layout().addWidget(self.output_shape_input)
 
-        dataset_size = HWidget()
-        dataset_conf_gb_layout.addWidget(dataset_size)
-        dataset_size.layout().addWidget(qwt.QLabel(text='dataset size'))
-        self.dataset_size_input = qwt.QLineEdit()
-        dataset_size.layout().addWidget(self.dataset_size_input)
-        self.dataset_size_input.setText(str(500))
-        dataset_size.layout().setContentsMargins(0, 0, 0, 0,)
-
         models_gb = qwt.QGroupBox()
         layout.addWidget(models_gb)
         models_gb.setTitle('Training configuration')
@@ -165,15 +157,6 @@ class TrainingConfiguration(qwt.QWidget):
             self.device_bg.addButton(btn)
 
         layout.addWidget(models_gb)
-
-        # load_data_into_memory_row = HWidget()
-        # models_gb_layout.addWidget(load_data_into_memory_row)
-        # load_data_into_memory_row.layout().setContentsMargins(0, 0, 0, 0)
-        # self.ldim_chk = qwt.QCheckBox(
-        #     text='load datasets into memory (RAM or GPU)'
-        # )
-        # self.ldim_chk.setChecked(True)
-        # load_data_into_memory_row.layout().addWidget(self.ldim_chk)
 
         optimizer_gb = qwt.QGroupBox()
         layout.addWidget(optimizer_gb)
@@ -381,10 +364,6 @@ class TrainingConfiguration(qwt.QWidget):
         return self.output_shape_input.text()
 
     @property
-    def dataset_size(self) -> str:
-        return self.dataset_size_input.text()
-
-    @property
     def batch_size(self) -> str:
         """How many examples will be processed in one step.
 
@@ -412,17 +391,6 @@ class TrainingConfiguration(qwt.QWidget):
         for but in self.device_bg.buttons():
             if but.isChecked():
                 return DEVICE[but.text().upper()]
-
-    # @property
-    # def load_datasets_into_memory(self) -> bool:
-    #     """Should datasets A and B be loaded into memory (RAM if no grphics
-    #     card is available or GPU is it's available)
-
-    #     Returns:
-    #         bool: True if datasets should be loaded into memory, False
-    #             otherwise
-    #     """
-    #     return self.ldim_chk.isChecked()
 
     @property
     def selected_optimizer(self) -> OPTIMIZER:
@@ -704,13 +672,12 @@ class TrainingTab(BaseWidget):
 
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
-            metadata_path_A=r'E:\deepfake_data\face_A\metadata',
-            metadata_path_B=r'E:\deepfake_data\face_B_2\metadata',
-            input_shape=input_shape[1],
-            output_shape=output_shape[1],
-            image_augmentations=augs,
-            size=int(self.training_conf.dataset_size),
+            path_A=r'E:\deepfake_data\face_A\metadata',
+            path_B=r'E:\deepfake_data\face_B\metadata',
+            input_size=input_shape[1],
+            output_size=output_shape[1],
             batch_size=int(self.training_conf.batch_size),
+            image_augmentations=augs,
             data_transforms=data_transforms,
         )
 
