@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -7,11 +8,10 @@ import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from config import APP_CONFIG
+from core.dictionary import Dictionary
 from core.extractor import Extractor, ExtractorConfiguration
-from core.face import Face
 from enums import (
     BODY_KEY,
-    DATA_TYPE,
     DEVICE,
     FACE_DETECTION_ALGORITHM,
     JOB_TYPE,
@@ -28,11 +28,9 @@ from gui.widgets.common import (
     VerticalSpacer,
     HorizontalSpacer,
 )
-from gui.widgets.picture_viewer import StandardItem
 from message.message import Body, Message
 from resources.icons import icons  # noqa: F401
 from utils import get_file_paths_from_dir, parse_number
-from worker.io_worker import Worker as IOWorker
 
 logger = logging.getLogger(__name__)
 
@@ -74,14 +72,19 @@ class DetectionAlgorithmTab(BaseWidget):
     ):
         super().__init__(signals)
 
-        self.input_faces_directory = APP_CONFIG.app.input_faces_directory
-        self.output_faces_directory = APP_CONFIG.app.output_faces_directory
+        self.faces_directory = None
         self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.S3FD
         self.image_sort_method = IMAGE_SORT.IMAGE_HASH
 
         self._image_hash_eps = 18
         self._current_tab = 0
         self._threads = []
+        self._landmarks_dir = None
+        self._alignments_dir = None
+        self._landmarks_file_present = False
+        self._alignments_file_present = False
+        self._landmarks = None
+        self._alignments = None
 
         self.init_ui()
         self.add_signals()
@@ -128,33 +131,17 @@ class DetectionAlgorithmTab(BaseWidget):
         input_directory_wgt = qwt.QWidget()
         input_directory_wgt_layout = qwt.QHBoxLayout()
         input_directory_wgt.setLayout(input_directory_wgt_layout)
-        input_directory_wgt_layout.addWidget(
-            qwt.QLabel(text='Directory for input faces')
+        input_directory_wgt_layout.addWidget(qwt.QLabel(
+            text='Directory with face images or \nmetadata directory')
         )
         input_directory_wgt_layout.addItem(HorizontalSpacer)
         select_input_faces_directory_btn = qwt.QPushButton(text='Select')
         select_input_faces_directory_btn.clicked.connect(
-            lambda: self.select_faces_directory(DATA_TYPE.INPUT)
+            self.select_faces_directory
         )
         select_input_faces_directory_btn.setFixedWidth(120)
         input_directory_wgt_layout.addWidget(select_input_faces_directory_btn)
         left_part_layout.addWidget(input_directory_wgt)
-
-        output_directory_wgt = qwt.QWidget()
-        output_directory_wgt_layout = qwt.QHBoxLayout()
-        output_directory_wgt.setLayout(output_directory_wgt_layout)
-        output_directory_wgt_layout.addWidget(
-            qwt.QLabel(text='Directory for output faces')
-        )
-        output_directory_wgt_layout.addItem(HorizontalSpacer)
-        select_output_faces_directory_btn = qwt.QPushButton(text='Select')
-        select_output_faces_directory_btn.clicked.connect(
-            lambda: self.select_faces_directory(DATA_TYPE.OUTPUT)
-        )
-        select_output_faces_directory_btn.setFixedWidth(120)
-        output_directory_wgt_layout.addWidget(
-            select_output_faces_directory_btn)
-        left_part_layout.addWidget(output_directory_wgt)
 
         sort_wgt = qwt.QWidget()
         sort_wgt_layout = qwt.QVBoxLayout()
@@ -228,11 +215,6 @@ class DetectionAlgorithmTab(BaseWidget):
         self.sort_btn.clicked.connect(self._sort)
         button_row_wgt_layout.addWidget(self.sort_btn)
 
-        self.save_sorted_btn = qwt.QPushButton(text='Save sorted')
-        self.enable_widget(self.save_sorted_btn, False)
-        self.save_sorted_btn.clicked.connect(self._save_sorted)
-        button_row_wgt_layout.addWidget(self.save_sorted_btn)
-
         left_part_layout.addWidget(button_row_wgt)
 
         size_policy = qwt.QSizePolicy(
@@ -246,12 +228,6 @@ class DetectionAlgorithmTab(BaseWidget):
         right_part_layout = qwt.QVBoxLayout()
         right_part.setLayout(right_part_layout)
 
-        right_part_layout.addWidget(qwt.QLabel(
-            text='Preview of the detected faces in input and output data'))
-
-        tab_wgt = qwt.QTabWidget()
-        tab_wgt.currentChanged.connect(self._tab_changed)
-
         signals = {
             SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
                 SIGNAL_OWNER.MESSAGE_WORKER
@@ -262,16 +238,18 @@ class DetectionAlgorithmTab(BaseWidget):
             .image_viewer_images_ok \
             .images_loading_sig \
             .connect(self._images_loading_changed)
+        # connect both image viewers to the function which updated alignments
+        # and landmarks files when some image is removed
         self.input_image_viewer_sorter_wgt \
             .image_viewer_images_ok \
             .removed_image_paths_sig \
             .connect(self._update_landmarks_and_alignments)
-        self.output_image_viewer_sorter_wgt = ImageViewerSorter(signals)
+        self.input_image_viewer_sorter_wgt \
+            .image_viewer_images_not_ok \
+            .removed_image_paths_sig \
+            .connect(self._update_landmarks_and_alignments)
 
-        tab_wgt.addTab(self.input_image_viewer_sorter_wgt, 'Input faces')
-        tab_wgt.addTab(self.output_image_viewer_sorter_wgt, 'Output faces')
-
-        right_part_layout.addWidget(tab_wgt)
+        right_part_layout.addWidget(self.input_image_viewer_sorter_wgt)
 
         layout.addWidget(left_part)
         # line dividing left anf right part of the window
@@ -295,10 +273,9 @@ class DetectionAlgorithmTab(BaseWidget):
                 return DEVICE[but.text().upper()]
 
     def add_signals(self):
-        """Adds input picture viewer and output picture viewer signals
-        to message worker so detected faces can be shown in gui.
+        """Adds input picture viewer signal to message worker so detected
+        faces can be shown in gui.
         """
-        # message for input picture viewer
         msg = Message(
             MESSAGE_TYPE.REQUEST,
             MESSAGE_STATUS.OK,
@@ -315,52 +292,33 @@ class DetectionAlgorithmTab(BaseWidget):
         )
         self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 
-        # message for output picture viewer
-        msg = Message(
-            MESSAGE_TYPE.REQUEST,
-            MESSAGE_STATUS.OK,
-            SIGNAL_OWNER.DETECTION_ALGORITHM_TAB,
-            SIGNAL_OWNER.MESSAGE_WORKER,
-            Body(
-                JOB_TYPE.ADD_SIGNAL,
-                {
-                    BODY_KEY.SIGNAL_OWNER:
-                    SIGNAL_OWNER.DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER,
-                    BODY_KEY.SIGNAL: self.output_picture_added_sig,
-                }
-            )
-        )
-        self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
-
     @qtc.pyqtSlot(list)
     def _update_landmarks_and_alignments(self, paths: List[Path]) -> None:
-        print(paths)
+        # in order to remove some detected faces, both alignments.json and
+        # landmarks.json file need to be present in selected directory so
+        # data doesn't corrupt
+        if not self._alignments_file_present or \
+                not self._landmarks_file_present:
+            return
+
+        file_names = list(map(lambda p: p.name, paths))
+        [self._landmarks.remove(k) for k in file_names]
+        self._landmarks.save(self._landmarks_dir)
+        [self._alignments.remove(k) for k in file_names]
+        self._alignments.save(self._alignments_dir)
 
     @qtc.pyqtSlot(bool)
     def _images_loading_changed(self, status: bool) -> None:
-        """Disable buttons for sorting and saving sorted images when images
-        are loading.
+        """Disable button for sorting when images are loading.
 
         Args:
             status (bool): loading status
         """
         self.enable_widget(self.sort_btn, not status)
-        self.enable_widget(self.save_sorted_btn, not status)
-
-    @qtc.pyqtSlot(int)
-    def _tab_changed(self, index: int):
-        """Tracks index of the current tab.
-
-        Args:
-            index (int): tab index
-        """
-        self._current_tab = index
 
     @property
-    def current_tab_ivs(self) -> ImageViewerSorter:
-        if self._current_tab == 0:
-            return self.input_image_viewer_sorter_wgt
-        return self.output_image_viewer_sorter_wgt
+    def image_viewer_sorter(self) -> ImageViewerSorter:
+        return self.input_image_viewer_sorter_wgt
 
     @qtc.pyqtSlot()
     def _sort(self) -> None:
@@ -374,32 +332,7 @@ class DetectionAlgorithmTab(BaseWidget):
                 f'{NUMBER_TYPE.INT.value}. Sorting will not be done.'
             )
             return
-        self.current_tab_ivs.sort_sig.emit(eps)
-
-    @qtc.pyqtSlot()
-    def _save_sorted(self):
-        directory = qwt.QFileDialog.getExistingDirectory(
-            self,
-            'getExistingDirectory',
-            './',
-        )
-        if not directory:
-            logger.warning('No directory selected.')
-            return
-        logger.info(f'Selected: {directory} for sorted metadata objects.')
-
-        data: List[Face] = self.current_tab_ivs \
-            .image_viewer_images_ok \
-            .get_all_data(
-            StandardItem.FaceRole
-        )
-        worker_thread = qtc.QThread(self)
-        sort_worker = IOWorker(data, directory)
-        self._threads.append((worker_thread, sort_worker))
-        sort_worker.moveToThread(worker_thread)
-        worker_thread.started.connect(sort_worker.run)
-        sort_worker.finished.connect(self._on_worker_finished)
-        worker_thread.start()
+        self.image_viewer_sorter.sort_sig.emit(eps)
 
     @qtc.pyqtSlot()
     def _on_worker_finished(self):
@@ -436,56 +369,78 @@ class DetectionAlgorithmTab(BaseWidget):
             # some other
             self.sort_method_wgt.setCurrentWidget(self.some_other_method)
 
-    def select_faces_directory(self, data_type: DATA_TYPE) -> None:
-        """Selects input or output faces directory.
-
-        Parameters
-        ----------
-        data_type : DATA_TYPE
-            input or output data directory
+    @qtc.pyqtSlot()
+    def select_faces_directory(self) -> None:
+        """Selects directory with images for detection or metadata directory
+        with already detected faces.
         """
-        directory = qwt.QFileDialog.getExistingDirectory(
-            self,
-            'Select faces directory',
-            r'E:\deepfake_data',
-        )
+        # directory = qwt.QFileDialog.getExistingDirectory(
+        #     self,
+        #     'Select faces or metadata directory',
+        #     r'E:\deepfake_data',
+        # )
+        directory = r'E:\deepfake_data\face_B\metadata'
         if not directory:
             logger.warning('No directory selected.')
             return
         image_paths = get_file_paths_from_dir(directory, ['p'])
-        data_type = data_type.value.lower()
         # if path exists and some face metadata exists in this folder,
         # update preview
         if image_paths and len(image_paths) > 0:
-            logger.info(
-                'Found faces metadata in selected folder. You ' +
-                'can now sort this metadata and save which ' +
-                'suits you.'
-            )
-            # get input or output ImageViewerSorter
-            ivs: ImageViewerSorter = getattr(
-                self,
-                f'{data_type}_image_viewer_sorter_wgt'
-            )
-            ivs.data_paths_sig.emit(image_paths)
+            # send found paths to image viewer so they load
+            self.image_viewer_sorter.data_paths_sig.emit(image_paths)
 
-        setattr(
-            self,
-            f'{data_type}_faces_directory',
-            directory,
-        )
+        self.faces_directory = directory
+        logger.info(f'Selected faces directory: {directory}.')
 
-        logger.info(
-            'Selected faces directory for ' +
-            f'{data_type} data: {directory}.'
-        )
+        # check if in selected directory already exist landmarks.json and
+        # alignments.json files which are generated after face extraction
+        # and alignment process
+        directory = Path(directory)
+        self._landmarks_dir = directory / 'landmarks.json'
+        self._landmarks_file_present = os.path.exists(self._landmarks_dir)
+        if not self._landmarks_file_present:
+            logger.warning(
+                'landmarks.json file not found in selected ' +
+                'directory, maybe face detection was not run yet?'
+            )
+        else:
+            logger.info('Found landmarks.json file in selected directory')
+            logger.debug(
+                'Loading landmarks file from: ' +
+                f'{str(self._landmarks_dir)}.'
+            )
+            self._landmarks = Dictionary.load(self._landmarks_dir)
+            logger.debug('Landmarks file loaded.')
+
+        self._alignments_dir = directory / 'alignments.json'
+        self._alignments_file_present = os.path.exists(self._alignments_dir)
+        if not self._alignments_file_present:
+            logger.warning(
+                'alignments.json file not found in selected ' +
+                'directory, maybe alignment was not run yet?'
+            )
+        else:
+            logger.info('Found alignments.json file in selected directory')
+            logger.debug(
+                'Loading alignments file from: ' +
+                f'{str(self._alignments_dir)}.'
+            )
+            self._alignments = Dictionary.load(self._alignments_dir)
+            logger.debug('Alignments file loaded.')
 
     def start_detection(self) -> None:
         """Sends message with faces directories to make deepfake page.
         """
+        if self.faces_directory is None:
+            logger.error(
+                'Unable to start face detection, ' +
+                'no directory is selected.'
+            )
+            return
         thread = qtc.QThread()
         worker = FaceExtractionWorker(
-            self.input_faces_directory,
+            self.faces_directory,
             self.algorithm_selected_value,
             self.device,
         )
