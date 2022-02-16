@@ -170,8 +170,6 @@ class Extractor:
     def run(self):
         """Initiates process of face and landmark extraction."""
         image_paths = get_image_paths_from_dir(self.input_dir)
-        random.shuffle(image_paths)
-        image_paths = image_paths[:50]
 
         if not image_paths:
             logger.warning(f'No supported images in folder: {self.input_dir}.')
