@@ -9,7 +9,7 @@ from core.sort import sort_faces_by_image_hash
 from enums import SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, HorizontalSpacer, MinimalSizePolicy
-from gui.widgets.picture_viewer import (
+from gui.widgets.image_viewer import (
     ImageViewer,
     ImageViewerAction,
     StandardItem,

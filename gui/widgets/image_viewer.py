@@ -183,7 +183,6 @@ class ImageViewer(BaseWidget):
             - scrolling
             - single and multiple select
             - deletion of selected images
-            - renaming of selected image #TODO
 
         Args:
             icon_size (Tuple[int, int], optional): size of the icons displayed
@@ -241,9 +240,6 @@ class ImageViewer(BaseWidget):
         self.context_menu = qwt.QMenu()
         self.cmef = ContextMenuEventFilter(self.context_menu)
         self.context_menu.installEventFilter(self.cmef)
-
-        rename = self.context_menu.addAction("Rename")
-        rename.triggered.connect(self._rename_selected_picture)
 
         delete = self.context_menu.addAction("Delete")
         delete.triggered.connect(self._remove_selected_images)
@@ -421,9 +417,6 @@ class ImageViewer(BaseWidget):
         # dialog = Dialog(dialog_msg, self)
         # dialog.remove_sig.connect(remove_fn)
         # dialog.exec()
-
-    def _rename_selected_picture(self):
-        ...
 
     @property
     def images_loading(self) -> bool:
