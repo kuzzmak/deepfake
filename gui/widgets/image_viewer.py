@@ -32,7 +32,7 @@ class LoaderWorker(qtc.QObject):
 
     finished = qtc.pyqtSignal()
 
-    def __init__(self, data_paths: List[str], sig: qtc.pyqtSignal):
+    def __init__(self, data_paths: List[Path], sig: qtc.pyqtSignal):
         super().__init__()
         self._data_paths = data_paths
         self._sig = sig
@@ -375,7 +375,6 @@ class ImageViewer(BaseWidget):
             StandardItem.FaceRole
         )
         self.remove_selected()
-        mapped_paths = [Path(p) for p in self._data_paths]
         faces: List[Face] = data[1]
         face_paths = list(map(lambda f: Path(f.path), faces))
         self.removed_image_paths_sig.emit(face_paths)
@@ -394,15 +393,10 @@ class ImageViewer(BaseWidget):
                 )
             )
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
-            # TODO use Path objects instead of this
             # TODO fix issue with removing entry from paths when image is
             # deleted in other image viewer
-            try:
-                idx = mapped_paths.index(Path(face.path))
-                self._data_paths.pop(idx)
-                mapped_paths.pop(idx)
-            except ValueError:
-                ...
+            idx = self._data_paths.index(Path(face.path))
+            self._data_paths.pop(idx)
         # def remove_fn(remove: bool) -> None:
         #     if remove:
         #         self.remove_selected()
@@ -443,7 +437,7 @@ class ImageViewer(BaseWidget):
         self.current_page += 1
         indices_from = self.current_page * self._images_per_page
         indices_to = (self.current_page + 1) * self._images_per_page
-        print(f'indices from: {indices_from}, indices to: {indices_to}, len paths: {len(self._data_paths)}')
+        print(f'idx from: {indices_from}, idx to: {indices_to}, len paths: {len(self._data_paths)}')
         self._load_from_data_paths(self._data_paths[indices_from:indices_to])
 
     @qtc.pyqtSlot()
@@ -467,7 +461,7 @@ class ImageViewer(BaseWidget):
         self._images_per_page = num
         self._load_from_data_paths(self._data_paths[:num])
 
-    def _load_from_data_paths(self, data_paths: List[str]) -> None:
+    def _load_from_data_paths(self, data_paths: List[Path]) -> None:
         """Starts thread in the background which loads data and sends it to
         the image viewer.
 
@@ -487,7 +481,7 @@ class ImageViewer(BaseWidget):
         thread.start()
 
     @qtc.pyqtSlot(list)
-    def _data_paths_changed(self, data_paths: List[str]) -> None:
+    def _data_paths_changed(self, data_paths: List[Path]) -> None:
         """When some directory with data is selected, loader thread starts to
         load data until number of data comes to the default value for images
         per page.

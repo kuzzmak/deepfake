@@ -1,4 +1,5 @@
 from operator import itemgetter
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import PyQt5.QtCore as qtc
@@ -124,7 +125,7 @@ class ImageViewerWithImageCount(BaseWidget):
         self.label_value.setText(str(value))
 
     @qtc.pyqtSlot(list)
-    def _data_paths_changed(self, data_paths: List[str]) -> None:
+    def _data_paths_changed(self, data_paths: List[Path]) -> None:
         self.image_viewer.data_paths_sig.emit(data_paths)
 
     @qtc.pyqtSlot()
@@ -299,5 +300,5 @@ class ImageViewerSorter(BaseWidget):
             self.image_viewer_images_not_ok.images_added_sig.emit(faces_not_ok)
 
     @qtc.pyqtSlot(list)
-    def _data_paths_changed(self, data_paths: List[str]) -> None:
+    def _data_paths_changed(self, data_paths: List[Path]) -> None:
         self.left_viewer_wgt.data_paths_sig.emit(data_paths)
