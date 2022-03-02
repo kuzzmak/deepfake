@@ -18,10 +18,11 @@ from enums import (
     MESSAGE_STATUS,
     MESSAGE_TYPE,
     SIGNAL_OWNER,
+    WIDGET,
 )
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.dialog import Dialog
-from message.message import Body, Message
+from message.message import Body, Message, Messages
 from serializer.face_serializer import FaceSerializer
 from utils import np_array_to_qicon
 
@@ -32,15 +33,44 @@ class LoaderWorker(qtc.QObject):
 
     finished = qtc.pyqtSignal()
 
-    def __init__(self, data_paths: List[Path], sig: qtc.pyqtSignal):
+    def __init__(
+        self,
+        data_paths: List[Path],
+        data_sig: qtc.pyqtSignal,
+        message_worker_sig: qtc.pyqtSignal,
+    ):
         super().__init__()
         self._data_paths = data_paths
-        self._sig = sig
+        self._data_sig = data_sig
+        self._message_worker_sig = message_worker_sig
 
     def run(self) -> None:
-        for i_p in self._data_paths:
+        conf_wgt_msg = Messages.CONFIGURE_WIDGET(
+            SIGNAL_OWNER.IMAGE_VIEWER,
+            WIDGET.JOB_PROGRESS,
+            'setMaximum',
+            [len(self._data_paths)],
+        )
+        self._message_worker_sig.emit(conf_wgt_msg)
+        for idx, i_p in enumerate(self._data_paths):
             face = FaceSerializer.load(i_p)
-            self._sig.emit([face])
+            self._data_sig.emit([face])
+            job_prog_msg = Message(
+                MESSAGE_TYPE.ANSWER,
+                MESSAGE_STATUS.OK,
+                SIGNAL_OWNER.IMAGE_VIEWER,
+                SIGNAL_OWNER.JOB_PROGRESS,
+                Body(
+                    JOB_TYPE.IO_OPERATION,
+                    {
+                        BODY_KEY.PART: idx,
+                        BODY_KEY.TOTAL: len(self._data_paths),
+                        BODY_KEY.JOB_NAME: 'image loading'
+                    },
+                    idx == len(self._data_paths) - 1,
+                )
+            )
+            self._message_worker_sig.emit(job_prog_msg)
         self.finished.emit()
 
 
@@ -158,6 +188,21 @@ class ContextMenuEventFilter(qtc.QObject):
 
 
 class ImageViewer(BaseWidget):
+    """Widget for displaying some sort of the images. Images can be sent
+    to this widget in a form of the `np.ndarray` or like path to the image
+    on disk.
+
+    Functionality:
+        - scrolling
+        - single and multiple select
+        - deletion of selected images
+
+    Args:
+        icon_size (Tuple[int, int], optional): size of the icons displayed
+            in widget. Defaults to (64, 64).
+        signals (Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]], optional):
+            optional signals for widget to use. Defaults to None.
+    """
 
     number_of_images_sig = qtc.pyqtSignal(int)
     images_added_sig = qtc.pyqtSignal(list)
@@ -173,27 +218,14 @@ class ImageViewer(BaseWidget):
     def __init__(
         self,
         icon_size: Tuple[int, int] = (64, 64),
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ) -> None:
-        """Widget for displaying some sort of the images. Images can be sent
-        to this widget in a form of the `np.ndarray` or like path to the image
-        on disk.
-
-        Functionality:
-            - scrolling
-            - single and multiple select
-            - deletion of selected images
-
-        Args:
-            icon_size (Tuple[int, int], optional): size of the icons displayed
-                in widget. Defaults to (64, 64).
-        """
         super().__init__(signals)
-        self.icon_size = icon_size
+        self._icon_size = icon_size
         self._number_of_images = 0
-        # TODO get this value from config
         self._data_paths = []
         self._images_per_page = 50
+        self._image_start_idx = 0
         self._current_page = 0
         self._threads = []
         self._images_loading = False
@@ -218,9 +250,9 @@ class ImageViewer(BaseWidget):
         self.ui_image_viewer.setEditTriggers(
             qwt.QAbstractItemView.NoEditTriggers
         )
-        self.ui_image_viewer.setIconSize(qtc.QSize(*self.icon_size))
+        self.ui_image_viewer.setIconSize(qtc.QSize(*self._icon_size))
         self.ui_image_viewer.setMovement(qwt.QListView.Static)
-        self.ui_image_viewer.setModel(StandardItemModel(self.icon_size))
+        self.ui_image_viewer.setModel(StandardItemModel(self._icon_size))
 
         grid = qwt.QVBoxLayout()
         grid.addWidget(self.ui_image_viewer)
@@ -397,6 +429,7 @@ class ImageViewer(BaseWidget):
             # deleted in other image viewer
             idx = self._data_paths.index(Path(face.path))
             self._data_paths.pop(idx)
+            self._image_start_idx -= 1
         # def remove_fn(remove: bool) -> None:
         #     if remove:
         #         self.remove_selected()
@@ -434,22 +467,21 @@ class ImageViewer(BaseWidget):
     def _next_page_changed(self) -> None:
         """Loads images from the next page into the image viewer.
         """
-        self.current_page += 1
-        indices_from = self.current_page * self._images_per_page
-        indices_to = (self.current_page + 1) * self._images_per_page
-        print(f'idx from: {indices_from}, idx to: {indices_to}, len paths: {len(self._data_paths)}')
-        self._load_from_data_paths(self._data_paths[indices_from:indices_to])
+        idx_from = self._image_start_idx + self._images_per_page
+        idx_to = idx_from + self._images_per_page
+        self._image_start_idx = idx_from
+        self._load_from_data_paths(self._data_paths[idx_from:idx_to])
 
     @qtc.pyqtSlot()
     def _previous_page_changed(self) -> None:
         """Loads image from the previous page into the image viewer.
         """
-        if self.current_page == 0:
-            return
-        self.current_page -= 1
-        indices_from = self.current_page * self._images_per_page
-        indices_to = (self.current_page + 1) * self._images_per_page
-        self._load_from_data_paths(self._data_paths[indices_from:indices_to])
+        idx_from = self._image_start_idx - self._images_per_page
+        if idx_from <= 0:
+            idx_from = 0
+        idx_to = self._image_start_idx
+        self._image_start_idx = idx_from
+        self._load_from_data_paths(self._data_paths[idx_from:idx_to])
 
     @qtc.pyqtSlot(int)
     def _images_per_page_changed(self, num: int) -> None:
@@ -459,7 +491,9 @@ class ImageViewer(BaseWidget):
             num (int): number of images shown in image viewer
         """
         self._images_per_page = num
-        self._load_from_data_paths(self._data_paths[:num])
+        idx_from = self._image_start_idx
+        idx_to = idx_from + num
+        self._load_from_data_paths(self._data_paths[idx_from:idx_to])
 
     def _load_from_data_paths(self, data_paths: List[Path]) -> None:
         """Starts thread in the background which loads data and sends it to
@@ -472,7 +506,11 @@ class ImageViewer(BaseWidget):
         self.clear()
         self.images_loading = True
         thread = qtc.QThread()
-        worker = LoaderWorker(data_paths, self.images_added_sig)
+        worker = LoaderWorker(
+            data_paths,
+            self.images_added_sig,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+        )
         self._threads.append((thread, worker))
         worker.moveToThread(thread)
         thread.started.connect(worker.run)
