@@ -76,9 +76,15 @@ class _Console:
 
 
 @dataclass
+class _ImageViewerSorter:
+    images_per_page_options: List[int]
+
+
+@dataclass
 class _Widgets:
     video_widget: _VideoWidget
     console: _Console
+    image_viewer_sorter: _ImageViewerSorter
 
 
 @dataclass
@@ -153,6 +159,11 @@ def _load_config():
 
         _console = _widgets['console']
 
+        _image_viewer_sorter = _widgets['image_viewer_sorter']
+        images_per_page_options = _image_viewer_sorter[
+            'images_per_page_options'
+        ]
+
         font_name = _console['font_name']
         text_size = _console['text_size']
 
@@ -193,7 +204,8 @@ def _load_config():
                         _Console(
                             font_name,
                             text_size,
-                        )
+                        ),
+                        _ImageViewerSorter(images_per_page_options)
                     ),
                 ),
                 _Resources(face_example_path),
