@@ -3,26 +3,19 @@ import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from config import APP_CONFIG
-
 from console import Console
-
 from enums import (
     APP_STATUS,
     BODY_KEY,
-    CONSOLE_MESSAGE_TYPE,
     SIGNAL_OWNER,
     WIDGET,
 )
-
 from gui.widgets.common import VerticalSpacer, HorizontalSpacer
 from gui.widgets.job_info_window import JobInfoWindow
-
 from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
-
 from gui.templates.main_page import Ui_main_page
-
 from gui.workers.threads.face_detection_worker_thread \
     import FaceDetectionWorkerThread
 from gui.workers.threads.frames_extraction_worker_thread \
@@ -31,9 +24,7 @@ from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
 from gui.workers.threads.next_element_worker_thread \
     import NextElementWorkerThread
-
-from message.message import Message, Messages
-
+from message.message import Message
 from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
 
 
@@ -73,9 +64,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         # -- setup workers --
         self.setup_io_worker()
-        self.setup_frame_extraction_worker()
-        self.setup_face_detection_worker()
-        self.setup_next_element_worker()
+        # self.setup_frame_extraction_worker()
+        # self.setup_face_detection_worker()
+        # self.setup_next_element_worker()
         self.setup_message_worker()
 
         self.m_pages = {}
