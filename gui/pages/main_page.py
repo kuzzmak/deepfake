@@ -116,6 +116,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def test(self):
         print('ok')
 
+    def terminate_threads(self):
+        print('terminating')
+
     def open_job_info(self):
         self.job_info_window.show()
 
@@ -219,7 +222,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         widget = data[BODY_KEY.WIDGET]
         widget_method = data[BODY_KEY.METHOD]
         method_args = data[BODY_KEY.ARGS]
-
         if widget == WIDGET.JOB_PROGRESS:
             method = getattr(self.job_progressbar, widget_method)
             method(*method_args)
@@ -337,7 +339,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def job_progress(self, msg: Message):
         if self.job_progress_value == 0:
             self.show_widget(self.job_progressbar, True)
-            self.app_status_label_sig.emit(APP_STATUS.BUSY.value)
+            self.app_status_label_sig.emit(
+                APP_STATUS.BUSY.value +
+                f' - {msg.body.data.get(BODY_KEY.JOB_NAME, "")}'
+            )
 
         self.job_progress_value += 1
         self.job_progressbar_value_sig.emit(self.job_progress_value)
@@ -347,11 +352,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             self.show_widget(self.job_progressbar, False)
             self.app_status_label_sig.emit(APP_STATUS.NO_JOB.value)
             self.job_progress_value = 0
-
-            msg = Messages.CONSOLE_PRINT(
-                CONSOLE_MESSAGE_TYPE.LOG,
-                'Frames extraction finished.'
-            )
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
