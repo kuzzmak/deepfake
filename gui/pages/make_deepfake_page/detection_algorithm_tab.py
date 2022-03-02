@@ -68,7 +68,7 @@ class DetectionAlgorithmTab(BaseWidget):
 
     def __init__(
         self,
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         super().__init__(signals)
 
@@ -135,12 +135,14 @@ class DetectionAlgorithmTab(BaseWidget):
             text='Directory with face images or \nmetadata directory')
         )
         input_directory_wgt_layout.addItem(HorizontalSpacer)
-        select_input_faces_directory_btn = qwt.QPushButton(text='Select')
-        select_input_faces_directory_btn.clicked.connect(
+        self.select_input_faces_directory_btn = qwt.QPushButton(text='Select')
+        self.select_input_faces_directory_btn.clicked.connect(
             self.select_faces_directory
         )
-        select_input_faces_directory_btn.setFixedWidth(120)
-        input_directory_wgt_layout.addWidget(select_input_faces_directory_btn)
+        self.select_input_faces_directory_btn.setFixedWidth(120)
+        input_directory_wgt_layout.addWidget(
+            self.select_input_faces_directory_btn
+        )
         left_part_layout.addWidget(input_directory_wgt)
 
         sort_wgt = qwt.QWidget()
@@ -300,7 +302,7 @@ class DetectionAlgorithmTab(BaseWidget):
         if not self._alignments_file_present or \
                 not self._landmarks_file_present:
             return
-
+        # TODO speed up this update in other thread
         file_names = list(map(lambda p: p.name, paths))
         [self._landmarks.remove(k) for k in file_names]
         self._landmarks.save(self._landmarks_dir)
@@ -309,12 +311,13 @@ class DetectionAlgorithmTab(BaseWidget):
 
     @qtc.pyqtSlot(bool)
     def _images_loading_changed(self, status: bool) -> None:
-        """Disable button for sorting when images are loading.
+        """Disables some widgets when images are loading.
 
         Args:
             status (bool): loading status
         """
         self.enable_widget(self.sort_btn, not status)
+        self.enable_widget(self.select_input_faces_directory_btn, not status)
 
     @property
     def image_viewer_sorter(self) -> ImageViewerSorter:
@@ -379,7 +382,8 @@ class DetectionAlgorithmTab(BaseWidget):
         #     'Select faces or metadata directory',
         #     r'E:\deepfake_data',
         # )
-        directory = r'E:\deepfake_data\face_B\metadata'
+        directory = r'E:\deepfake_data\scraped\cage\metadata'
+        # directory = r'C:\Users\kuzmi\Desktop\test_folder - Copy'
         if not directory:
             logger.warning('No directory selected.')
             return
