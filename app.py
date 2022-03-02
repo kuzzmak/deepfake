@@ -14,5 +14,6 @@ class App(qtc.QObject):
     def gui(self):
         _app = qwt.QApplication(sys.argv)
         gui = MainPage()
+        _app.aboutToQuit.connect(gui.terminate_threads)
         gui.show()
         sys.exit(_app.exec_())
