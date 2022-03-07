@@ -100,6 +100,4 @@ class Image:
             flags = cv.IMREAD_GRAYSCALE
 
         data = cv.imread(str(path), flags)
-        image = Image(path, data)
-
-        return image
+        return Image(path, data)
