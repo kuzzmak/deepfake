@@ -18,7 +18,11 @@ from core.face_alignment.face_aligner import FaceAligner
 from core.face_alignment.utils import get_face_mask
 from core.image.augmentation import ImageAugmentation
 from serializer.face_serializer import FaceSerializer
-from utils import get_file_paths_from_dir, get_image_paths_from_dir
+from utils import (
+    get_aligned_landmarks_filename,
+    get_file_paths_from_dir,
+    get_image_paths_from_dir,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +120,7 @@ class DeepfakeDataset(Dataset):
     def _load_landmarks(self) -> None:
         """Loads aligned_landmarks.json file for both A and B persons.
         """
-        landmarks_file = f'aligned_landmarks_{self._input_size}.json'
+        landmarks_file = get_aligned_landmarks_filename(self._input_size)
         logger.debug(f'Loading {landmarks_file} file for person A.')
         landmarks_path_A = self._path_A / landmarks_file
         if not landmarks_path_A.exists():
@@ -233,7 +237,7 @@ class DeepfakeDataset(Dataset):
         target = Aligner.align_image(img, alignment, self._output_size)
         mask = get_face_mask(aligned, landmarks)
         mask = cv.resize(mask, (self._output_size, self._output_size))
-        return warped, target, mask
+        return warped, mask, target,
 
     def _transform(
         self,
