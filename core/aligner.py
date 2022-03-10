@@ -103,7 +103,7 @@ class Aligner:
         logger.debug('Loading landmarks.')
         landmarks = Dictionary.load(landmarks_path)
         logger.debug('Landmarks loaded.')
-        logger.debug('Landmarks alignments.')
+        logger.debug('Loading alignments.')
         alignments = Dictionary.load(alignments_path)
         logger.debug('Alignments loaded.')
 
