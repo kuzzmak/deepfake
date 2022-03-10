@@ -333,3 +333,15 @@ def parse_tuple(
     split = [s.strip() for s in split]
     split = [parse_number(s, element_type) for s in split]
     return tuple(split)
+
+
+def get_aligned_landmarks_filename(image_size: int) -> str:
+    """Constructs filename for aligned landmarks file based on the image size.
+
+    Args:
+        image_size (int): image size
+
+    Returns:
+        str: _description_
+    """
+    return f'aligned_landmarks_{image_size}.json'
