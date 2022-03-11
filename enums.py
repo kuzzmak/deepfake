@@ -97,7 +97,8 @@ class SIGNAL_OWNER(Enum):
     FRAMES_EXTRACTION_WORKER = WORKER.FRAMES_EXTRACTION_WORKER.value
 
     # worker signals next element
-    FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = 'frames_extraction_worker_next_element'
+    FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = \
+        'frames_extraction_worker_next_element'
 
     ALIGNER = 'aligner'
 
