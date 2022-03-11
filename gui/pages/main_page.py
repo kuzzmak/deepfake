@@ -16,8 +16,6 @@ from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
 from gui.templates.main_page import Ui_main_page
-from gui.workers.threads.face_detection_worker_thread \
-    import FaceDetectionWorkerThread
 from gui.workers.threads.frames_extraction_worker_thread \
     import FramesExtractionWorkerThread
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
@@ -43,7 +41,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     io_worker_sig = qtc.pyqtSignal(Message)
     message_worker_sig = qtc.pyqtSignal(Message)
     next_element_worker_sig = qtc.pyqtSignal(Message)
-    face_detection_worker_sig = qtc.pyqtSignal(Message)
     frames_extraction_worker_sig = qtc.pyqtSignal(Message)
 
     # -- next element signals ---
@@ -65,7 +62,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         # -- setup workers --
         self.setup_io_worker()
         # self.setup_frame_extraction_worker()
-        # self.setup_face_detection_worker()
         # self.setup_next_element_worker()
         self.setup_message_worker()
 
@@ -162,7 +158,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def setup_message_worker(self):
         message_worker_signals = {
             SIGNAL_OWNER.IO_WORKER: self.io_worker_sig,
-            SIGNAL_OWNER.FACE_DETECTION_WORKER: self.face_detection_worker_sig,
             SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER:
             self.frames_extraction_worker_sig,
             SIGNAL_OWNER.NEXT_ELEMENT_WORKER: self.next_element_worker_sig,
@@ -185,16 +180,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             self.frames_extraction_worker_next_element_sig,
         )
         self.frames_extraction_worker_thread.start()
-
-    def setup_face_detection_worker(self):
-        face_detection_worker_signals = {
-            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
-        }
-        self.face_detection_worker_thread = FaceDetectionWorkerThread(
-            self.face_detection_worker_sig,
-            face_detection_worker_signals,
-        )
-        self.face_detection_worker_thread.start()
 
     def setup_next_element_worker(self):
         next_element_worker_signals = {

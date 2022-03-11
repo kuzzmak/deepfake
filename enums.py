@@ -62,7 +62,6 @@ class WORKER(Enum):
     IO_WORKER = 'io_worker'
     MESSAGE_WORKER = 'message_worker'
     NEXT_ELEMENT_WORKER = 'next_element_worker'
-    FACE_DETECTION_WORKER = 'face_detection_worker'
     FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
 
 
@@ -93,7 +92,6 @@ class SIGNAL_OWNER(Enum):
     IO_WORKER = WORKER.IO_WORKER.value
     MESSAGE_WORKER = WORKER.MESSAGE_WORKER.value
     NEXT_ELEMENT_WORKER = WORKER.NEXT_ELEMENT_WORKER.value
-    FACE_DETECTION_WORKER = WORKER.FACE_DETECTION_WORKER.value
     FRAMES_EXTRACTION_WORKER = WORKER.FRAMES_EXTRACTION_WORKER.value
 
     # worker signals next element

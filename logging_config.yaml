@@ -49,10 +49,6 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
-  gui.workers.face_detection_worker:
-    level: DEBUG
-    handlers: [file, gui, console]
-    propagate: no
   gui.workers.io_worker:
     level: DEBUG
     handlers: [file, gui, console]
