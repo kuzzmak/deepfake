@@ -2,13 +2,23 @@ from dataclasses import dataclass
 import logging
 import os
 from pathlib import Path
-from typing import Union
+import PyQt5.QtCore as qtc
+from typing import Optional, Union
 from tqdm import tqdm
 
 import cv2 as cv
 import numpy as np
 
 from core.dictionary import Dictionary
+from enums import (
+    BODY_KEY,
+    JOB_TYPE,
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
+    SIGNAL_OWNER,
+    WIDGET,
+)
+from message.message import Body, Message, Messages
 from serializer.face_serializer import FaceSerializer
 from utils import get_file_paths_from_dir
 
@@ -24,9 +34,12 @@ class AlignerConfiguration:
         metadata_directory (Union[str, Path]): path to the directory with
             `Face` metadata objects
         face_size (int): size of the new image square
+        message_worker_sig (Optional[qtc.pyqtSignal]): signal to the message
+            worker in order to report job progress, by default None
     """
     metadata_directory: Union[str, Path]
     face_size: int
+    message_worker_sig: Optional[qtc.pyqtSignal] = None
 
 
 class Aligner:
@@ -45,6 +58,7 @@ class Aligner:
             path = Path(path)
         self._metadata_path = path
         self._face_size = configuration.face_size
+        self._message_worker_sig = configuration.message_worker_sig
 
     @staticmethod
     def align_image(
@@ -110,7 +124,17 @@ class Aligner:
         aligned_landmarks = Dictionary()
 
         metadata_paths = get_file_paths_from_dir(self._metadata_path, ['p'])
-        for m_p in tqdm(metadata_paths, desc="Images done"):
+
+        if self._message_worker_sig is not None:
+            conf_wgt_msg = Messages.CONFIGURE_WIDGET(
+                SIGNAL_OWNER.ALIGNER,
+                WIDGET.JOB_PROGRESS,
+                'setMaximum',
+                [len(metadata_paths)],
+            )
+            self._message_worker_sig.emit(conf_wgt_msg)
+
+        for idx, m_p in enumerate(tqdm(metadata_paths, desc="Images done")):
             face = FaceSerializer.load(m_p)
             face_size = self._face_size
             padding = face_size // 4
@@ -124,6 +148,24 @@ class Aligner:
             )
             dots = np.divide(dots.reshape(-1, 2), scale).astype(int)
             aligned_landmarks.add(face.name, dots)
+
+            if self._message_worker_sig is not None:
+                job_prog_msg = Message(
+                    MESSAGE_TYPE.ANSWER,
+                    MESSAGE_STATUS.OK,
+                    SIGNAL_OWNER.IMAGE_VIEWER,
+                    SIGNAL_OWNER.JOB_PROGRESS,
+                    Body(
+                        JOB_TYPE.LANDMARK_ALIGNMENT,
+                        {
+                            BODY_KEY.PART: idx,
+                            BODY_KEY.TOTAL: len(metadata_paths),
+                            BODY_KEY.JOB_NAME: 'landmark alignment'
+                        },
+                        idx == len(metadata_paths) - 1,
+                    )
+                )
+                self._message_worker_sig.emit(job_prog_msg)
 
         aligned_landmarks.save(
             self._metadata_path / f'aligned_landmarks_{self._face_size}.json'
