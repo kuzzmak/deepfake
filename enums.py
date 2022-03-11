@@ -99,6 +99,8 @@ class SIGNAL_OWNER(Enum):
     # worker signals next element
     FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = 'frames_extraction_worker_next_element'
 
+    ALIGNER = 'aligner'
+
 
 class MESSAGE_TYPE(Enum):
     REQUEST = 'request'
@@ -130,6 +132,7 @@ class JOB_TYPE(Enum):
     ADD_SIGNAL = 'add_dignal'
     NEXT_ELEMENT = 'next_element'
     NO_JOB = 'no_job'
+    LANDMARK_ALIGNMENT = 'landmark_alignment'
 
 
 class APP_STATUS(Enum):
