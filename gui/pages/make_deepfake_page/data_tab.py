@@ -12,7 +12,7 @@ class DataTab(BaseWidget):
 
     def __init__(
         self,
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         super().__init__(signals)
         self.init_ui()
