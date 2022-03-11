@@ -24,19 +24,19 @@ class InferenceTab(BaseWidget):
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
     ):
         super().__init__(signals)
-        self._start_inference_thread()
+        # self._start_inference_thread()
         self._widgets_to_disable_on_inference = []
         self._threads = []
         self._last_model_folder = None
         self._last_image_folder = None
         self._image_path = None
-        self._inference_worker.inference_result.connect(self._inference_result)
-        self._inference_worker.inference_started.connect(
-            self._on_inference_start
-        )
-        self._inference_worker.inference_finished.connect(
-            self._on_inference_finished
-        )
+        # self._inference_worker.inference_result.connect(self._inference_result)
+        # self._inference_worker.inference_started.connect(
+        #     self._on_inference_start
+        # )
+        # self._inference_worker.inference_finished.connect(
+        #     self._on_inference_finished
+        # )
         self._init_ui()
 
     def _init_ui(self):
