@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cv2 as cv
 import PyQt5.QtCore as qtc
@@ -16,12 +16,12 @@ from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
-from enums import DEVICE, INTERPOLATION, MODEL, OPTIMIZER
+from enums import DEVICE, INTERPOLATION, MODEL, OPTIMIZER, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
-from trainer_thread import Worker
+from trainer_thread import TrainingWorker
 from utils import parse_tuple
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ class TrainingConfiguration(qwt.QWidget):
         batch_size_row.layout().setContentsMargins(0, 0, 0, 0)
         batch_size_row.layout().addWidget(qwt.QLabel(text="batch size: "))
         self.batch_size_input = qwt.QLineEdit()
-        self.batch_size_input.setText(str(32))
+        self.batch_size_input.setText(str(64))
         batch_size_row.layout().addWidget(self.batch_size_input)
 
         epochs_row = HWidget()
@@ -564,8 +564,11 @@ class TrainingTab(BaseWidget):
 
     stop_training_sig = qtc.pyqtSignal()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(
+        self,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
+    ):
+        super().__init__(signals)
         self._init_ui()
 
     def _init_ui(self):
@@ -672,8 +675,8 @@ class TrainingTab(BaseWidget):
 
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
-            path_A=r'E:\deepfake_data\face_A\metadata',
-            path_B=r'E:\deepfake_data\face_B\metadata',
+            path_A=r'C:\Users\tonkec\Documents\deepfake\data\cage\metadata',
+            path_B=r'C:\Users\tonkec\Documents\deepfake\data\trump\metadata',
             input_size=input_shape[1],
             output_size=output_shape[1],
             batch_size=int(self.training_conf.batch_size),
@@ -707,7 +710,10 @@ class TrainingTab(BaseWidget):
             return
 
         self.training_thread = qtc.QThread()
-        self.worker = Worker(conf)
+        self.worker = TrainingWorker(
+            conf,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+        )
         self.stop_training_sig.connect(self.worker.stop_training)
         self.worker.moveToThread(self.training_thread)
         self.training_thread.started.connect(self.worker.run)
