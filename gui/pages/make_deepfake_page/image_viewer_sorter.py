@@ -1,15 +1,17 @@
 from operator import itemgetter
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
+from config import APP_CONFIG
 
 from core.face import Face
 from core.sort import sort_faces_by_image_hash
-from enums import INDEX_TYPE, SIGNAL_OWNER
+from enums import SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, HorizontalSpacer, MinimalSizePolicy
-from gui.widgets.picture_viewer import (
+from gui.widgets.image_viewer import (
     ImageViewer,
     ImageViewerAction,
     StandardItem,
@@ -23,18 +25,12 @@ class ImageViewerWithImageCount(BaseWidget):
 
     def __init__(
         self,
-        label: str,
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         """Widget containing `ImageViewer` and label which show how many
         images are in this `ImageViewer`.
-
-        Args:
-            label (str): label describing which `ImageViewer` is this, shows
-                before image count
         """
         super().__init__(signals)
-        self.label = label
         self._init_ui()
         self.label_value_sig.connect(self._label_value_changed)
         self.data_paths_sig.connect(self._data_paths_changed)
@@ -48,19 +44,22 @@ class ImageViewerWithImageCount(BaseWidget):
         label_row_wgt = qwt.QWidget()
         label_row_wgt_layout = qwt.QHBoxLayout()
         label_row_wgt.setLayout(label_row_wgt_layout)
-        label = qwt.QLabel(text=self.label)
+        label = qwt.QLabel(text='images: ')
         label.setSizePolicy(MinimalSizePolicy)
         label_row_wgt_layout.addWidget(label)
         self.label_value = qwt.QLabel(text='0')
         label_row_wgt_layout.addWidget(self.label_value)
 
-        label_row_wgt_layout.addWidget(qwt.QLabel(text='shown images'))
+        label_row_wgt_layout.addWidget(qwt.QLabel(text='images per page'))
         self.num_of_images_in_viewer = qwt.QComboBox()
         label_row_wgt_layout.addWidget(self.num_of_images_in_viewer)
-        self.num_of_images_in_viewer.addItem(str(50), 50)
-        self.num_of_images_in_viewer.addItem(str(100), 100)
-        self.num_of_images_in_viewer.addItem(str(200), 200)
-        self.num_of_images_in_viewer.addItem(str(500), 500)
+        for val in APP_CONFIG \
+                .app \
+                .gui \
+                .widgets \
+                .image_viewer_sorter \
+                .images_per_page_options:
+            self.num_of_images_in_viewer.addItem(str(val), val)
         self.num_of_images_in_viewer.currentTextChanged.connect(
             self._images_per_page_changed
         )
@@ -111,6 +110,12 @@ class ImageViewerWithImageCount(BaseWidget):
 
     @qtc.pyqtSlot(str)
     def _images_per_page_changed(self, text: str) -> None:
+        """Slot that triggers when user selected some other number of
+        images per page.
+
+        Args:
+            text (str): number of images per page
+        """
         self.image_viewer.images_per_page.emit(int(text))
 
     @qtc.pyqtSlot(int)
@@ -124,21 +129,37 @@ class ImageViewerWithImageCount(BaseWidget):
         self.label_value.setText(str(value))
 
     @qtc.pyqtSlot(list)
-    def _data_paths_changed(self, data_paths: List[str]) -> None:
+    def _data_paths_changed(self, data_paths: List[Path]) -> None:
+        """Slot that triggers when new images are being loaded into
+        the `ImageViewer`.
+
+        Args:
+            data_paths (List[Path]): list of paths
+        """
         self.image_viewer.data_paths_sig.emit(data_paths)
 
     @qtc.pyqtSlot()
     def _next_page_changed(self) -> None:
+        """Triggers when next page of images should load.
+        """
         self.image_viewer.next_page_sig.emit()
 
     @qtc.pyqtSlot()
     def _previous_page_changed(self) -> None:
+        """Triggers when previous page of images should load.
+        """
         self.image_viewer.previous_page_sig.emit()
 
     @qtc.pyqtSlot(bool)
     def _images_loading_changed(self, status: bool) -> None:
-        self.previous_page_btn.setEnabled(not status)
-        self.next_page_btn.setEnabled(not status)
+        """Slot that triggers when image loading is in process.
+
+        Args:
+            status (bool): `True` if images are loading, `False` otherwise
+        """
+        self.enable_widget(self.previous_page_btn, not status)
+        self.enable_widget(self.next_page_btn, not status)
+        self.enable_widget(self.num_of_images_in_viewer, not status)
 
 
 class ImageViewerSorter(BaseWidget):
@@ -148,7 +169,7 @@ class ImageViewerSorter(BaseWidget):
 
     def __init__(
         self,
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         """Widget containing og two `ImageViewer` widgets where one on the
         left side serves as an `ImageViewer` where `Face` metadata objects
@@ -174,16 +195,10 @@ class ImageViewerSorter(BaseWidget):
                 SIGNAL_OWNER.MESSAGE_WORKER
             ]
         }
-        self.left_viewer_wgt = ImageViewerWithImageCount(
-            'Number of images_ok: ',
-            signals,
-        )
+        self.left_viewer_wgt = ImageViewerWithImageCount(signals)
         viewers_wgt_layout.addWidget(self.left_viewer_wgt)
 
-        self.right_viewer_wgt = ImageViewerWithImageCount(
-            'Number of images_not_ok: ',
-            signals,
-        )
+        self.right_viewer_wgt = ImageViewerWithImageCount(signals)
         viewers_wgt_layout.addWidget(self.right_viewer_wgt)
         layout.addWidget(viewers_wgt)
         self.image_viewer_images_ok.images_changed_sig.connect(
@@ -299,5 +314,5 @@ class ImageViewerSorter(BaseWidget):
             self.image_viewer_images_not_ok.images_added_sig.emit(faces_not_ok)
 
     @qtc.pyqtSlot(list)
-    def _data_paths_changed(self, data_paths: List[str]) -> None:
+    def _data_paths_changed(self, data_paths: List[Path]) -> None:
         self.left_viewer_wgt.data_paths_sig.emit(data_paths)

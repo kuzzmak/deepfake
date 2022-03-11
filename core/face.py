@@ -25,6 +25,7 @@ class Face:
         self._aligned_image = None
         self._aligned_mask = None
         self._path = None
+        self._name = None
 
     @property
     def raw_image(self) -> Union[Image, None]:
@@ -139,6 +140,15 @@ class Face:
         """
         return self._path
 
+    @property
+    def name(self) -> Union[str, None]:
+        """Name of the face object on disk.
+
+        Returns:
+            Union[str, None]: name is it was saved, None else
+        """
+        return self._name
+
     @raw_image.setter
     def raw_image(self, raw_image: Image) -> None:
         self._raw_image = raw_image
@@ -178,6 +188,10 @@ class Face:
     @path.setter
     def path(self, path: str) -> None:
         self._path = path
+
+    @name.setter
+    def name(self, name: str) -> None:
+        self._name = name
 
     def get_mask(
         self,

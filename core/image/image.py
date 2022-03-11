@@ -1,6 +1,5 @@
 from __future__ import annotations
-
-import os
+from pathlib import Path
 from typing import Tuple, Union
 
 import cv2 as cv
@@ -12,7 +11,6 @@ from core.exception import (
     UnsupportedImageTypeError,
 )
 from enums import IMAGE_FORMAT
-from utils import get_file_extension
 
 
 class Image:
@@ -20,12 +18,12 @@ class Image:
     when dealing with images.
     """
 
-    def __init__(self, path: str, data: np.ndarray) -> None:
+    def __init__(self, path: Path, data: np.ndarray) -> None:
         """Constructor.
 
         Parameters
         ----------
-        path : str
+        path :  Path
             path to the image
         data : np.ndarray
             image in an array format
@@ -35,18 +33,18 @@ class Image:
         UnsupportedImageTypeError
             trying to load image of the unsupported format
         """
-        ext = get_file_extension(path)
-        formats = [f.value for f in IMAGE_FORMAT]
+        ext = path.suffix
+        formats = ['.' + f.value for f in IMAGE_FORMAT]
         if ext not in formats:
             raise UnsupportedImageTypeError(ext)
 
         self._path = path
         self._data = data
-        self._format = IMAGE_FORMAT[ext.upper()]
-        self._name = os.path.basename(path)
+        self._format = IMAGE_FORMAT[ext.split('.')[1].upper()]
+        self._name = path.stem
 
     @property
-    def path(self) -> str:
+    def path(self) -> Path:
         return self._path
 
     @property
@@ -66,12 +64,12 @@ class Image:
         return self._name
 
     @staticmethod
-    def load(path: str, color: bool = True) -> Image:
+    def load(path: Union[str, Path], color: bool = True) -> Image:
         """Loads image from the provided `path`.
 
         Parameters
         ----------
-        path : str
+        path : Union[str, Path]
             path to the image
         color : bool, optional
             load image in color or grayscale, by default True
@@ -88,17 +86,18 @@ class Image:
         NotFileError
             provided `path` is not a file
         """
-        if not os.path.exists(path):
+        if type(path) == str:
+            path = Path(path)
+
+        if not path.exists():
             raise FileDoesNotExistsError(path)
 
-        if not os.path.isfile(path):
-            NotFileError(path)
+        if not path.is_file():
+            raise NotFileError(path)
 
         flags = cv.IMREAD_COLOR
         if not color:
             flags = cv.IMREAD_GRAYSCALE
 
-        data = cv.imread(path, flags)
-        image = Image(path, data)
-
-        return image
+        data = cv.imread(str(path), flags)
+        return Image(path, data)

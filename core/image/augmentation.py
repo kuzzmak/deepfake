@@ -143,25 +143,17 @@ class ImageAugmentation:
         return image
 
     @staticmethod
-    def warp_faces(interpolation: int, face_A: Face, face_B: Face) \
-            -> Tuple[np.ndarray, np.ndarray]:
-        """Applies sligt warp effect on the aligned image for every face.
+    def warp_image(interpolation: int, image: np.ndarray) -> np.ndarray:
+        """Applies sligt warp effect on the image.
 
-        Parameters
-        ----------
-        interpolation : int
-            which interpolation to use
-        face_A : Face
-            face A
-        face_B : Face
-            face B
+        Args:
+            interpolation (int): interpolation type
+            image (np.ndarray): image to warp
 
-        Returns
-        -------
-        Tuple[np.ndarray, np.ndarray]
-            warped face A, warped face B
+        Returns:
+            np.ndarray: warped image
         """
-        h, w, _ = face_A.aligned_image.shape
+        h, w, _ = image.shape
         cell_size = [w // (2**i) for i in range(1, 4)][np.random.randint(3)]
         cell_count = w // cell_size + 1
         grid_points = np.linspace(0, w, cell_count)
@@ -184,10 +176,7 @@ class ImageAugmentation:
             (w+cell_size,)*2,
         )[half_cell_size:-half_cell_size, half_cell_size:-half_cell_size] \
             .astype(np.float32)
-        return (
-            cv.remap(face_A.aligned_image, mapx, mapy, interpolation),
-            cv.remap(face_B.aligned_image, mapx, mapy, interpolation),
-        )
+        return cv.remap(image, mapx, mapy, interpolation)
 
     # @staticmethod
     # def _get_2d_grid_for_shape(shape: int) -> Tuple[np.ndarray, np.ndarray]:

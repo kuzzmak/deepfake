@@ -12,13 +12,16 @@ class BaseWidget(qwt.QWidget):
 
     def __init__(
         self,
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         """Base widget class. Contains dictionary of signals
         where one could add signal for any kind of work.
         """
         super().__init__()
-        self._signals = signals
+        if signals is None:
+            self._signals = dict()
+        else:
+            self._signals = signals
 
     def enable_widget(self, widget: qwt.QWidget, enabled: bool = True):
         """Enables or disables some widget.

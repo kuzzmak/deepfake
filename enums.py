@@ -88,8 +88,6 @@ class SIGNAL_OWNER(Enum):
     DETECTION_ALGORITHM_TAB = 'detection_algorithm_tab'
     DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER = \
         'detection_algorithm_tab_input_picture_viewer'
-    DETECTION_ALGORITHM_TAB_OUTPUT_PICTURE_VIEWER = \
-        'detection_algorithm_tab_output_picture_viewer'
 
     # worker signals
     IO_WORKER = WORKER.IO_WORKER.value
@@ -99,7 +97,10 @@ class SIGNAL_OWNER(Enum):
     FRAMES_EXTRACTION_WORKER = WORKER.FRAMES_EXTRACTION_WORKER.value
 
     # worker signals next element
-    FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = 'frames_extraction_worker_next_element'
+    FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = \
+        'frames_extraction_worker_next_element'
+
+    ALIGNER = 'aligner'
 
 
 class MESSAGE_TYPE(Enum):
@@ -132,6 +133,7 @@ class JOB_TYPE(Enum):
     ADD_SIGNAL = 'add_dignal'
     NEXT_ELEMENT = 'next_element'
     NO_JOB = 'no_job'
+    LANDMARK_ALIGNMENT = 'landmark_alignment'
 
 
 class APP_STATUS(Enum):
@@ -190,6 +192,7 @@ class BODY_KEY(Enum):
     WORKER = 'worker'
     DEVICE = 'device'
     EVERY_N_TH_FRAME = 'every_n_th_frame'
+    JOB_NAME = 'job_name'
 
 
 class MODEL(Enum):

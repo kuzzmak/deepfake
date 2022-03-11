@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cv2 as cv
 import PyQt5.QtCore as qtc
@@ -16,12 +16,12 @@ from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
-from enums import DEVICE, INTERPOLATION, MODEL, OPTIMIZER
+from enums import DEVICE, INTERPOLATION, MODEL, OPTIMIZER, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
-from trainer_thread import Worker
+from trainer_thread import TrainingWorker
 from utils import parse_tuple
 
 logger = logging.getLogger(__name__)
@@ -114,14 +114,6 @@ class TrainingConfiguration(qwt.QWidget):
         self.output_shape_input.setText('3, 128, 128')
         output_size_row.layout().addWidget(self.output_shape_input)
 
-        dataset_size = HWidget()
-        dataset_conf_gb_layout.addWidget(dataset_size)
-        dataset_size.layout().addWidget(qwt.QLabel(text='dataset size'))
-        self.dataset_size_input = qwt.QLineEdit()
-        dataset_size.layout().addWidget(self.dataset_size_input)
-        self.dataset_size_input.setText(str(500))
-        dataset_size.layout().setContentsMargins(0, 0, 0, 0,)
-
         models_gb = qwt.QGroupBox()
         layout.addWidget(models_gb)
         models_gb.setTitle('Training configuration')
@@ -132,7 +124,7 @@ class TrainingConfiguration(qwt.QWidget):
         batch_size_row.layout().setContentsMargins(0, 0, 0, 0)
         batch_size_row.layout().addWidget(qwt.QLabel(text="batch size: "))
         self.batch_size_input = qwt.QLineEdit()
-        self.batch_size_input.setText(str(32))
+        self.batch_size_input.setText(str(64))
         batch_size_row.layout().addWidget(self.batch_size_input)
 
         epochs_row = HWidget()
@@ -165,15 +157,6 @@ class TrainingConfiguration(qwt.QWidget):
             self.device_bg.addButton(btn)
 
         layout.addWidget(models_gb)
-
-        # load_data_into_memory_row = HWidget()
-        # models_gb_layout.addWidget(load_data_into_memory_row)
-        # load_data_into_memory_row.layout().setContentsMargins(0, 0, 0, 0)
-        # self.ldim_chk = qwt.QCheckBox(
-        #     text='load datasets into memory (RAM or GPU)'
-        # )
-        # self.ldim_chk.setChecked(True)
-        # load_data_into_memory_row.layout().addWidget(self.ldim_chk)
 
         optimizer_gb = qwt.QGroupBox()
         layout.addWidget(optimizer_gb)
@@ -381,10 +364,6 @@ class TrainingConfiguration(qwt.QWidget):
         return self.output_shape_input.text()
 
     @property
-    def dataset_size(self) -> str:
-        return self.dataset_size_input.text()
-
-    @property
     def batch_size(self) -> str:
         """How many examples will be processed in one step.
 
@@ -412,17 +391,6 @@ class TrainingConfiguration(qwt.QWidget):
         for but in self.device_bg.buttons():
             if but.isChecked():
                 return DEVICE[but.text().upper()]
-
-    # @property
-    # def load_datasets_into_memory(self) -> bool:
-    #     """Should datasets A and B be loaded into memory (RAM if no grphics
-    #     card is available or GPU is it's available)
-
-    #     Returns:
-    #         bool: True if datasets should be loaded into memory, False
-    #             otherwise
-    #     """
-    #     return self.ldim_chk.isChecked()
 
     @property
     def selected_optimizer(self) -> OPTIMIZER:
@@ -596,8 +564,11 @@ class TrainingTab(BaseWidget):
 
     stop_training_sig = qtc.pyqtSignal()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(
+        self,
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
+    ):
+        super().__init__(signals)
         self._init_ui()
 
     def _init_ui(self):
@@ -704,13 +675,12 @@ class TrainingTab(BaseWidget):
 
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
-            metadata_path_A=r'E:\deepfake_data\face_A\metadata',
-            metadata_path_B=r'E:\deepfake_data\face_B_2\metadata',
-            input_shape=input_shape[1],
-            output_shape=output_shape[1],
-            image_augmentations=augs,
-            size=int(self.training_conf.dataset_size),
+            path_A=r'C:\Users\tonkec\Documents\deepfake\data\cage\metadata',
+            path_B=r'C:\Users\tonkec\Documents\deepfake\data\trump\metadata',
+            input_size=input_shape[1],
+            output_size=output_shape[1],
             batch_size=int(self.training_conf.batch_size),
+            image_augmentations=augs,
             data_transforms=data_transforms,
         )
 
@@ -740,7 +710,10 @@ class TrainingTab(BaseWidget):
             return
 
         self.training_thread = qtc.QThread()
-        self.worker = Worker(conf)
+        self.worker = TrainingWorker(
+            conf,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+        )
         self.stop_training_sig.connect(self.worker.stop_training)
         self.worker.moveToThread(self.training_thread)
         self.training_thread.started.connect(self.worker.run)

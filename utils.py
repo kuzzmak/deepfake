@@ -2,6 +2,7 @@ import builtins
 import errno
 import logging
 import os
+from pathlib import Path
 from typing import Any, List, Optional, Tuple, Union
 
 import cv2 as cv
@@ -16,7 +17,7 @@ from enums import IMAGE_FORMAT, NUMBER_TYPE
 logger = logging.getLogger(__name__)
 
 
-def get_file_extension(file_path: str) -> str:
+def get_file_extension(file_path: Union[str, Path]) -> str:
     """Gets file extension.
 
     Parameters
@@ -33,66 +34,69 @@ def get_file_extension(file_path: str) -> str:
     return ext
 
 
-def get_image_paths_from_dir(dir: str) -> List[str] or None:
+def get_image_paths_from_dir(dir: Union[str, Path]) -> List[Path] or None:
     """Function for getting all image paths in directory `dir`. Only images
     with extension in `IMAGE_FORMAT` will be returned.
 
     Parameters
     ----------
-    dir : str
+    dir : Union[str, Path]
         directory with images
 
     Returns
     -------
-    List[str] or None
+    List[Path] or None
         image paths or None if directory does not exist
     """
     file_paths = get_file_paths_from_dir(dir)
     if file_paths is None:
         return None
 
-    images_exts = [f.value for f in IMAGE_FORMAT]
+    images_exts = set(['.' + f.value for f in IMAGE_FORMAT])
     image_paths = [fp for fp in file_paths
-                   if get_file_extension(fp) in images_exts]
+                   if fp.suffix in images_exts]
 
     return image_paths
 
 
 def get_file_paths_from_dir(
-    dir: str,
+    dir: Union[str, Path],
     extensions: Optional[List[str]] = None,
-) -> Optional[List[str]]:
-    """Constructs file apsolute file paths of the files in `dir`. If files
+) -> Optional[List[Path]]:
+    """Constructs apsolute file paths of the files in `dir`. If files
     with particular extensions are allowed, then `extensions` argument
-    should be also passed to function.
+    should be also passed as an argument.
 
     Parameters
     ----------
-    dir : str
+    dir : Union[str, Path]
         directory with files
     extensions : Optional[List[str]], optional
         files that end with these extension will be included, by default None
 
     Returns
     -------
-    Optional[List[str]]
+    Optional[List[Path]]
         list of file paths is they satisfy `extensions` argument
     """
+    if isinstance(dir, str):
+        dir = Path(dir)
+
     if not os.path.exists(dir):
         return None
 
-    files = [f for f in os.listdir(
-        dir) if os.path.isfile(os.path.join(dir, f))]
-    curr_dir = os.path.abspath(dir)
-    file_paths = [os.path.join(curr_dir, x) for x in files]
+    files = [
+        Path(f) for f in os.listdir(dir) if os.path.isfile(dir.joinpath(f))
+    ]
+    curr_dir = dir.absolute()
+    file_paths = [curr_dir.joinpath(f) for f in files]
 
     if extensions is None:
         return file_paths
 
-    exts = set(extensions)
-    file_paths = [f for f in file_paths if get_file_extension(f) in exts]
+    exts = set(['.' + ext for ext in extensions])
 
-    return file_paths
+    return [f for f in file_paths if f.suffix in exts]
 
 
 def qicon_from_path(path: str) -> qtg.QIcon:
@@ -135,8 +139,10 @@ def np_array_to_qicon(image: np.ndarray) -> qtg.QIcon:
     return image
 
 
-def resize_image_retain_aspect_ratio(image: np.ndarray,
-                                     max_img_size_per_dim: int) -> np.ndarray:
+def resize_image_retain_aspect_ratio(
+    image: np.ndarray,
+    max_img_size_per_dim: int,
+) -> np.ndarray:
     """Resizes image retaining aspect ratio.
 
     Parameters
@@ -218,13 +224,13 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
     return cached_file
 
 
-def construct_file_path(file_path: str) -> str:
+def construct_file_path(path: Union[str, Path]) -> Path:
     """Constructs new file name by adding a number to the end of the
     filename if file on this path already exists.
 
     Parameters
     ----------
-    file_path : str
+    path : Union[str, Path]
         file path
 
     Returns
@@ -232,28 +238,27 @@ def construct_file_path(file_path: str) -> str:
     str
         file path
     """
-    if os.path.exists(file_path):
+    if isinstance(path, str):
+        path = Path(path)
+    if path.exists():
         # ['folder1', 'folder2', 'file.txt']
-        parts = file_path.split(os.sep)
+        parts = list(path.parts)
         # 'file.txt'
         filename_with_ext = parts.pop()
-
         (filename, ext) = filename_with_ext.split('.')
-
         # making new file path where numbers are added to the end of the
         # filename if more copies of the same file exist
         counter = 1
+        folder = Path(*parts)
         while True:
             new_filename_with_ext = f'{filename}_{str(counter)}.{ext}'
-            folders = f'{os.sep}'.join(parts)
-            new_file_path = os.path.join(folders, new_filename_with_ext)
-
-            if os.path.exists(new_file_path):
+            new_file_path = folder / new_filename_with_ext
+            if new_file_path.exists():
                 counter += 1
             else:
                 return new_file_path
     else:
-        return file_path
+        return path
 
 
 def tensor_to_np_image(image: torch.Tensor) -> np.ndarray:
@@ -328,3 +333,15 @@ def parse_tuple(
     split = [s.strip() for s in split]
     split = [parse_number(s, element_type) for s in split]
     return tuple(split)
+
+
+def get_aligned_landmarks_filename(image_size: int) -> str:
+    """Constructs filename for aligned landmarks file based on the image size.
+
+    Args:
+        image_size (int): image size
+
+    Returns:
+        str: _description_
+    """
+    return f'aligned_landmarks_{image_size}.json'

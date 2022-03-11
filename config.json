@@ -1,7 +1,5 @@
 {
     "app": {
-        "input_faces_directory": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\input_faces_data",
-        "output_faces_directory": "C:\\Users\\tonkec\\Documents\\deepfake\\data\\output_faces_data",
         "core": {
             "face_detection": {
                 "algorithms": {
@@ -35,6 +33,9 @@
                 "console": {
                     "font_name": "Consolas",
                     "text_size": 10
+                },
+                "image_viewer_sorter": {
+                    "images_per_page_options": [50, 100, 200, 500]
                 }
             }
         },

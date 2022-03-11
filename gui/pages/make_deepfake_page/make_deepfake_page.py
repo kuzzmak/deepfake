@@ -3,15 +3,12 @@ from typing import Dict, Optional
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 from gui.pages.make_deepfake_page.inference_tab import InferenceTab
-
 from gui.pages.page import Page
 from gui.pages.make_deepfake_page.data_tab import DataTab
 from gui.pages.make_deepfake_page.detection_algorithm_tab \
     import DetectionAlgorithmTab
 from gui.pages.make_deepfake_page.training_tab import TrainingTab
-
 from message.message import Body, Message
-
 from enums import (
     BODY_KEY,
     DATA_TYPE,
@@ -21,7 +18,6 @@ from enums import (
     MESSAGE_TYPE,
     SIGNAL_OWNER,
 )
-
 from names import (
     MAKE_DEEPFAKE_PAGE_NAME,
     MAKE_DEEPFAKE_PAGE_TITLE,
@@ -38,7 +34,7 @@ class MakeDeepfakePage(Page):
     def __init__(
         self,
         parent,
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
         *args,
         **kwargs,
     ):
@@ -71,7 +67,7 @@ class MakeDeepfakePage(Page):
 
         self.tab_wgt = qwt.QTabWidget()
 
-        data_tab_signals = {
+        ind = data_tab_signals = {
             SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
                 SIGNAL_OWNER.MESSAGE_WORKER
             ],
@@ -82,31 +78,33 @@ class MakeDeepfakePage(Page):
         data_tab = DataTab(data_tab_signals)
         self.tab_wgt.addTab(data_tab, 'Data')
 
-        detection_algorithm_tab_signals = {
+        detection_tab_signals = {
             SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
                 SIGNAL_OWNER.MESSAGE_WORKER
-            ],
+            ]
         }
-        detection_algorithm_tab = DetectionAlgorithmTab(
-            detection_algorithm_tab_signals
+        detection_tab = DetectionAlgorithmTab(
+            detection_tab_signals
         )
-        self.tab_wgt.addTab(detection_algorithm_tab, 'Detection algorithm')
+        self.tab_wgt.addTab(detection_tab, 'Detection')
 
-        training_tab = TrainingTab()
+        training_tab_signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
+                SIGNAL_OWNER.MESSAGE_WORKER
+            ]
+        }
+        training_tab = TrainingTab(training_tab_signals)
         self.tab_wgt.addTab(training_tab, 'Training')
 
         inference_tab_signals = {
             SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
                 SIGNAL_OWNER.MESSAGE_WORKER
-            ],
+            ]
         }
         inference_tab = InferenceTab(inference_tab_signals)
-        ind = self.tab_wgt.addTab(inference_tab, 'Inference')
-
+        self.tab_wgt.addTab(inference_tab, 'Inference')
         self.tab_wgt.setCurrentIndex(ind)
-
         layout.addWidget(self.tab_wgt)
-
         self.setLayout(layout)
 
     def add_signals(self):
