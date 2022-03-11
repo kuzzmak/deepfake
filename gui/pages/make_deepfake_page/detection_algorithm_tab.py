@@ -377,13 +377,11 @@ class DetectionAlgorithmTab(BaseWidget):
         """Selects directory with images for detection or metadata directory
         with already detected faces.
         """
-        # directory = qwt.QFileDialog.getExistingDirectory(
-        #     self,
-        #     'Select faces or metadata directory',
-        #     r'E:\deepfake_data',
-        # )
-        directory = r'E:\deepfake_data\scraped\cage\metadata'
-        # directory = r'C:\Users\kuzmi\Desktop\test_folder - Copy'
+        directory = qwt.QFileDialog.getExistingDirectory(
+            self,
+            'Select faces or metadata directory',
+            'data',
+        )
         if not directory:
             logger.warning('No directory selected.')
             return
