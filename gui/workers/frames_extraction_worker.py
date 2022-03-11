@@ -44,7 +44,7 @@ class FramesExtractionWorker(Worker):
         total_frames = int(vidcap.get(cv.CAP_PROP_FRAME_COUNT)) // every_n_th
 
         msg = Messages.CONFIGURE_WIDGET(
-            SIGNAL_OWNER.FACE_DETECTION_WORKER,
+            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER,
             WIDGET.JOB_PROGRESS,
             'setMaximum',
             [total_frames],
