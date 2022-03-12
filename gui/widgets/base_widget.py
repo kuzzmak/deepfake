@@ -8,8 +8,6 @@ from enums import SIGNAL_OWNER
 
 class BaseWidget(qwt.QWidget):
 
-    _signals: Dict[SIGNAL_OWNER, qtc.pyqtSignal]
-
     def __init__(
         self,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
