@@ -17,7 +17,7 @@ from enums import (
     BODY_KEY,
 )
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.image_viewer import ImageViewer
+from gui.widgets.image_viewer.image_viewer import ImageViewer
 from gui.widgets.video_player import VideoPlayer
 from message.message import (
     Body,
