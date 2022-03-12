@@ -67,7 +67,7 @@ class MakeDeepfakePage(Page):
 
         self.tab_wgt = qwt.QTabWidget()
 
-        ind = data_tab_signals = {
+        data_tab_signals = {
             SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
                 SIGNAL_OWNER.MESSAGE_WORKER
             ],
@@ -76,7 +76,7 @@ class MakeDeepfakePage(Page):
             SIGNAL_OWNER.FRAMES_EXTRACTION: self.extract_frames_sig,
         }
         data_tab = DataTab(data_tab_signals)
-        self.tab_wgt.addTab(data_tab, 'Data')
+        ind = self.tab_wgt.addTab(data_tab, 'Data')
 
         detection_tab_signals = {
             SIGNAL_OWNER.MESSAGE_WORKER: self.signals[
