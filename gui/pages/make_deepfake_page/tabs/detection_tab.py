@@ -21,7 +21,7 @@ from enums import (
     SIGNAL_OWNER,
     IMAGE_SORT,
 )
-from gui.pages.make_deepfake_page.image_viewer_sorter import ImageViewerSorter
+from gui.widgets.image_viewer.image_viewer_sorter import ImageViewerSorter
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     MinimalSizePolicy,
