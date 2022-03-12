@@ -35,3 +35,10 @@ Simple implementation of the deepfake creation process in Python.
 7. python setup.py build_ext --inplace
 
 set PATH=%PATH%;C:\Program Files\Git\bin\
+
+
+## Resolving errors
+
+1. DirectShowPlayerService::doRender: Unresolved error code 0x80040266 (IDispatch error #102)
+ 
+    If you get this error, this means that codecs for video playback are missing, for Windows you can install them [here](https://www.codecguide.com/download_kl.htm).
