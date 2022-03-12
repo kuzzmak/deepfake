@@ -2,12 +2,10 @@ import logging
 import os
 from typing import Dict, Optional
 
-import cv2 as cv
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
 
 from enums import (
-    CONSOLE_MESSAGE_TYPE,
     DATA_TYPE,
     IMAGE_FORMAT,
     JOB_TYPE,
@@ -19,15 +17,8 @@ from enums import (
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.image_viewer.image_viewer import ImageViewer
 from gui.widgets.video_player import VideoPlayer
-from message.message import (
-    Body,
-    Message,
-    Messages,
-)
-from serializer.face_serializer import FaceSerializer
+from message.message import Body, Message
 from utils import get_file_paths_from_dir
-from core.face import Face
-from core.face_alignment.face_aligner import FaceAligner
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +149,6 @@ class DataSelector(BaseWidget):
         """Select video from which individual frames would be extracted
         and then these frames will be used for face extraction process.
         """
-        # video_path = r'C:\Users\kuzmi\Documents\deepfake\data\interview_woman.mp4'
         options = qwt.QFileDialog.Options()
         options |= qwt.QFileDialog.DontUseNativeDialog
         video_path, _ = qwt.QFileDialog.getOpenFileName(
@@ -188,7 +178,6 @@ class DataSelector(BaseWidget):
             "getExistingDirectory",
             "./"
         )
-        # directory = r'C:\Users\\kuzmi\\Documents\\deepfake\\data\face_A'
         if not directory:
             logger.warning('No directory selected.')
             return
@@ -203,20 +192,6 @@ class DataSelector(BaseWidget):
                 f'No supported pictures were found in: {directory}.'
             )
             return
-
-        # faces = []
-        # for i_p in image_paths:
-        #     face = cv.imread(i_p, cv.IMREAD_COLOR)
-        #     faces.append(face)
-
-        # self.picture_viewer.images_added_sig.emit(faces)
-
-        # logger.info(
-        #     f'Selected {directory} as a ' +
-        #     f'{self.data_type.value.lower()} data directory.' +
-        #     f' This directory contains {len(image_paths)} ' +
-        #     'supported pictures.'
-        # )
 
         self.preview_label.setText(
             f'Preview of pictures in {directory} directory.'
