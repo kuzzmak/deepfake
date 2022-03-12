@@ -2,12 +2,12 @@ from typing import Dict, Optional
 
 import PyQt5.QtCore as qtc
 import PyQt5.QtWidgets as qwt
-from gui.pages.make_deepfake_page.inference_tab import InferenceTab
+from gui.pages.make_deepfake_page.tabs.inference_tab import InferenceTab
 from gui.pages.page import Page
 from gui.pages.make_deepfake_page.tabs.data_tab import DataTab
 from gui.pages.make_deepfake_page.tabs.detection_tab \
     import DetectionAlgorithmTab
-from gui.pages.make_deepfake_page.training_tab import TrainingTab
+from gui.pages.make_deepfake_page.tabs.training_tab import TrainingTab
 from message.message import Body, Message
 from enums import (
     BODY_KEY,
