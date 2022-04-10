@@ -33,18 +33,9 @@ class MakeDeepfakePage(Page):
 
     def __init__(
         self,
-        parent,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
-        *args,
-        **kwargs,
     ):
-        super().__init__(
-            parent,
-            signals,
-            page_name=MAKE_DEEPFAKE_PAGE_NAME,
-            *args,
-            **kwargs,
-        )
+        super().__init__(signals, MAKE_DEEPFAKE_PAGE_NAME)
 
         self.input_data_directory = None
         self.output_data_directory = None
