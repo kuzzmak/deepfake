@@ -39,6 +39,11 @@
                 }
             }
         },
+        "google_images_scraper": {
+            "default_save_directory": "data/scraped",
+            "suggested_search_depth": 10,
+            "default_page_limit": 20
+        },
         "resources": {
             "face_example_path": "resources/images/face_example.jpg"
         }

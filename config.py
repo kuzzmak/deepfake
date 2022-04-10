@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List
 
 import torch
@@ -94,6 +95,13 @@ class _Gui:
 
 
 @dataclass
+class _GoogleImagesScraper:
+    default_save_directory: Path
+    suggested_search_depth: int
+    default_page_limit: int
+
+
+@dataclass
 class _Resources:
     face_example_path: str
 
@@ -102,6 +110,7 @@ class _Resources:
 class _App:
     core: _Core
     gui: _Gui
+    google_images_scraper: _GoogleImagesScraper
     resources: _Resources
 
 
@@ -167,6 +176,20 @@ def _load_config():
         font_name = _console['font_name']
         text_size = _console['text_size']
 
+        _google_images_scraper = _app['google_images_scraper']
+        default_save_directory = _google_images_scraper[
+            'default_save_directory'
+        ]
+        default_save_directory = Path(__file__) \
+            .resolve() \
+            .parent / default_save_directory
+        suggested_search_depth = _google_images_scraper[
+            'suggested_search_depth'
+        ]
+        default_page_limit = _google_images_scraper[
+            'default_page_limit'
+        ]
+
         _resources = _app['resources']
         face_example_path = _resources['face_example_path']
 
@@ -174,7 +197,7 @@ def _load_config():
         if torch.cuda.device_count() > 0:
             devices.append(DEVICE.CUDA)
 
-        conf = Config(
+        return Config(
             _App(
                 _Core(
                     _FaceDetection(
@@ -185,34 +208,27 @@ def _load_config():
                         )
                     ),
                     _LandmarkDetection(
-                        _LandmarkDetectionAlgorithms(
-                            _FAN(fan_gd_id)
-                        )
+                        _LandmarkDetectionAlgorithms(_FAN(fan_gd_id))
                     ),
                     devices,
                     selected_device,
                 ),
                 _Gui(
-                    _Window(
-                        preferred_width,
-                        preferred_height,
-                    ),
+                    _Window(preferred_width, preferred_height),
                     _Widgets(
-                        _VideoWidget(
-                            video_aspect_ratio,
-                        ),
-                        _Console(
-                            font_name,
-                            text_size,
-                        ),
+                        _VideoWidget(video_aspect_ratio),
+                        _Console(font_name, text_size),
                         _ImageViewerSorter(images_per_page_options)
                     ),
+                ),
+                _GoogleImagesScraper(
+                    default_save_directory,
+                    suggested_search_depth,
+                    default_page_limit,
                 ),
                 _Resources(face_example_path),
             )
         )
-
-        return conf
 
 
 APP_CONFIG = _load_config()
