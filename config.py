@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 import torch
 
@@ -52,9 +52,22 @@ class _LandmarkDetection:
 
 
 @dataclass
+class _DFDetectionModel:
+    id: str
+    name: str
+    parameters: Dict[str, any]
+
+
+@dataclass
+class _DFDetection:
+    models: List[_DFDetectionModel]
+
+
+@dataclass
 class _Core:
     face_detection: _FaceDetection
     landmark_detection: _LandmarkDetection
+    df_detection: _DFDetection
     devices: List[DEVICE]
     selected_device: DEVICE = DEVICE.CPU
 
@@ -155,6 +168,10 @@ def _load_config():
         _fan = _landmark_detection_algorithms['fan']
         fan_gd_id = _fan['gd_id']
 
+        _df_detection = _core['df_detection']
+
+        _models = _df_detection['models']
+
         _gui = _app['gui']
 
         _window = _gui['window']
@@ -209,6 +226,12 @@ def _load_config():
                     ),
                     _LandmarkDetection(
                         _LandmarkDetectionAlgorithms(_FAN(fan_gd_id))
+                    ),
+                    _DFDetection(
+                        [
+                            _DFDetectionModel(*model.values())
+                            for model in _models
+                        ]
                     ),
                     devices,
                     selected_device,
