@@ -10,6 +10,8 @@ from enums import (
     SIGNAL_OWNER,
     WIDGET,
 )
+from gui.pages.detect_deepfake_page.detect_deepfake_page import \
+    DetectDeepFakePage
 from gui.widgets.common import VerticalSpacer, HorizontalSpacer
 from gui.widgets.job_info_window import JobInfoWindow
 from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
@@ -69,9 +71,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.init_ui()
 
-        # self.goto(START_PAGE_NAME)
+        self.goto(START_PAGE_NAME)
 
-        self.goto(MAKE_DEEPFAKE_PAGE_NAME)
+        # self.goto(MAKE_DEEPFAKE_PAGE_NAME)
 
     def init_ui(self):
         self.setupUi(self)
@@ -304,11 +306,14 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             page.goto_sig.connect(self.goto)
 
     def register_pages(self):
-        for page in [StartPage, MakeDeepfakePage]:
+        for page in [StartPage, MakeDeepfakePage, DetectDeepFakePage]:
             page_signals = {
                 SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
+                SIGNAL_OWNER.SHOW_CONSOLE: self.show_console_sig,
+                SIGNAL_OWNER.SHOW_MENUBAR: self.show_menubar_sig,
+                SIGNAL_OWNER.SHOW_TOOLBAR: self.show_toolbar_sig,
             }
-            p = page(self, page_signals)
+            p = page(page_signals)
             self.register_page(p)
 
     @qtc.pyqtSlot(Message)
