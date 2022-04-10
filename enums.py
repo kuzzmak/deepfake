@@ -225,3 +225,8 @@ class NUMBER_TYPE(Enum):
 class MASK_DIM(Enum):
     ONE = 1
     THREE = 3
+
+
+class LAYOUT(Enum):
+    VERTICAL = 'vertical'
+    HORIZONTAL = 'horizontal'
