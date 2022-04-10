@@ -100,6 +100,11 @@ class SIGNAL_OWNER(Enum):
 
     ALIGNER = 'aligner'
 
+    # display signals
+    SHOW_CONSOLE = 'show_console'
+    SHOW_MENUBAR = 'show_menubar'
+    SHOW_TOOLBAR = 'show_toolbar'
+
 
 class MESSAGE_TYPE(Enum):
     REQUEST = 'request'
@@ -230,3 +235,8 @@ class MASK_DIM(Enum):
 class LAYOUT(Enum):
     VERTICAL = 'vertical'
     HORIZONTAL = 'horizontal'
+
+
+class DF_DETECTION_MODEL(Enum):
+    MESO_NET = 'meso_net'
+    MRI_GAN = 'mri_gan'
