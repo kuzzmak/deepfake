@@ -218,10 +218,13 @@ class ImageViewer(BaseWidget):
     def __init__(
         self,
         icon_size: Tuple[int, int] = (64, 64),
+        page_limit: Optional[int] = None,
+        disable_context_menu: bool = False,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ) -> None:
         super().__init__(signals)
         self._icon_size = icon_size
+        self._page_limit = page_limit
         self._number_of_images = 0
         self._data_paths = []
         self._images_per_page = 50
@@ -229,6 +232,8 @@ class ImageViewer(BaseWidget):
         self._current_page = 0
         self._threads = []
         self._images_loading = False
+        self._image_id_counter = 0
+        self._context_menu_disabled = disable_context_menu
         self.images_added_sig.connect(self._images_added)
         self.images_per_page.connect(self._images_per_page_changed)
         self.data_paths_sig.connect(self._data_paths_changed)
@@ -263,7 +268,8 @@ class ImageViewer(BaseWidget):
             qwt.QSizePolicy.MinimumExpanding,
         )
         self.setSizePolicy(sizePolicy)
-        self._init_context_menu()
+        if not self._context_menu_disabled:
+            self._init_context_menu()
 
     def _init_context_menu(self) -> None:
         """Consctructs context menu which opens on right button click when
@@ -562,17 +568,26 @@ class ImageViewer(BaseWidget):
                     StandardItem.DataRole,
                 )
             else:
-                name = str(self.ui_image_viewer.model().rowCount())
+                name = str(self._image_id_counter)
+                self._image_id_counter += 1
                 item.setData(name, StandardItem.NameRole)
                 item.setData(image, StandardItem.DataRole)
-            # add image to ImageViewer
-            self.ui_image_viewer.model().appendRow(item)
+
+            if self._page_limit:
+                row_count = self.ui_image_viewer.model().rowCount()
+                if row_count >= self._page_limit:
+                    # remove last entry
+                    self.ui_image_viewer.model().removeRow(row_count - 1)
+            # insert face or image on the first position
+            self.ui_image_viewer.model().insertRow(0, item)
             # update number of images of the ImageViewer
             self.number_of_images = self.ui_image_viewer.model().rowCount()
 
     def eventFilter(self, source: qtc.QObject, event: qtc.QEvent) -> bool:
         if source == self.ui_image_viewer.viewport():
             if event.type() == qtc.QEvent.MouseButtonPress:
+                if self._context_menu_disabled:
+                    return False
                 self.context_menu.close()
                 if event.button() == qtc.Qt.MouseButton.RightButton:
                     selected = self.get_selected_indices()
