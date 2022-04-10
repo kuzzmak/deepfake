@@ -29,6 +29,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  core.scraper.google_images_scraper:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   trainer_thread:
     level: DEBUG
     handlers: [file, gui, console]
