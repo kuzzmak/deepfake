@@ -3,10 +3,8 @@ import os
 from pathlib import Path
 from typing import List, Optional, Dict, Union
 
-import numpy as np
-import PyQt5.QtGui as qtg
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from config import APP_CONFIG
 from core.scraper.google_images_scraper import GoogleImagesScraper
@@ -23,7 +21,7 @@ from gui.widgets.common import (
 from gui.widgets.image_viewer.image_viewer import ImageViewer
 from gui.widgets.video_player import VideoPlayer
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('DataTab')
 
 
 class GoogleImagesScraperWorker(qtc.QObject):
@@ -236,14 +234,11 @@ class DataTab(BaseWidget):
         """Select video from which individual frames would be extracted
         and then these frames will be used for face detection process.
         """
-        options = qwt.QFileDialog.Options()
-        options |= qwt.QFileDialog.DontUseNativeDialog
         video_path, _ = qwt.QFileDialog.getOpenFileName(
             self,
             'Select video file',
             "data/videos",
             "Video files (*.mp4)",
-            options=options,
         )
         if video_path:
             logger.info(f'Selected video: {video_path}.')
@@ -269,7 +264,7 @@ class DataTab(BaseWidget):
 
     @qtc.pyqtSlot()
     def _scraping_op(self) -> None:
-        """Slot for starting or stopping google images scraper worker.
+        """pyqtSlot for starting or stopping google images scraper worker.
         """
         if not self._scraping_running:
             text = self.searach_term_input.text()

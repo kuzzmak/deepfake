@@ -1,7 +1,7 @@
 import queue
 from typing import Dict, Optional
 
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 
 from enums import SIGNAL_OWNER
 

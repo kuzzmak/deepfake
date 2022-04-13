@@ -3,9 +3,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-import PyQt5.QtGui as qtg
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtGui as qtg
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
@@ -26,7 +26,7 @@ from message.message import Body, Message, Messages
 from serializer.face_serializer import FaceSerializer
 from utils import np_array_to_qicon
 
-DEFAULT_ROLE = qtc.Qt.UserRole + 1
+DEFAULT_ROLE = qtc.Qt.ItemDataRole.UserRole + 1
 
 
 class LoaderWorker(qtc.QObject):
@@ -90,8 +90,8 @@ class ImageViewerAction:
 class StandardItem(qtg.QStandardItem):
 
     DataRole = DEFAULT_ROLE
-    NameRole = qtc.Qt.UserRole + 2
-    FaceRole = qtc.Qt.UserRole + 3
+    NameRole = qtc.Qt.ItemDataRole.UserRole + 2
+    FaceRole = qtc.Qt.ItemDataRole.UserRole + 3
 
     def __init__(self) -> None:
         """Single item displayed in `ImageViewer`. Serves also as a container
@@ -152,17 +152,23 @@ class StandardItemModel(qtg.QStandardItemModel):
         self.icon_size = icon_size
         self.setItemPrototype(StandardItem())
 
-    def data(self, index, role: qtc.Qt.ItemDataRole = qtc.Qt.DisplayRole):
-        if role == qtc.Qt.DecorationRole:
+    def data(
+        self,
+        index, role: qtc.Qt.ItemDataRole = qtc.Qt.ItemDataRole.DisplayRole,
+    ):
+        if role == qtc.Qt.ItemDataRole.DecorationRole:
             it = self.itemFromIndex(index)
-            item = it.data(qtc.Qt.DecorationRole)
+            item = it.data(qtc.Qt.ItemDataRole.DecorationRole)
             if item is None:
                 item_data = it.data(StandardItem.DataRole)
-                it.setData(np_array_to_qicon(item_data), qtc.Qt.DecorationRole)
+                it.setData(
+                    np_array_to_qicon(item_data),
+                    qtc.Qt.ItemDataRole.DecorationRole,
+                )
                 name = it.data(StandardItem.NameRole)
                 it.setText(name)
             return item
-        elif role == qtc.Qt.SizeHintRole:
+        elif role == qtc.Qt.ItemDataRole.SizeHintRole:
             icon_size = self.icon_size
             return qtc.QSize(icon_size[0] + 6, icon_size[1] + 16)
         else:
@@ -246,17 +252,17 @@ class ImageViewer(BaseWidget):
         """
         self.ui_image_viewer = qwt.QListView()
         self.ui_image_viewer.setSelectionMode(
-            qwt.QAbstractItemView.ExtendedSelection
+            qwt.QAbstractItemView.SelectionMode.ExtendedSelection
         )
         self.ui_image_viewer.viewport().installEventFilter(self)
         self.ui_image_viewer.setSpacing(5)
-        self.ui_image_viewer.setViewMode(qwt.QListView.IconMode)
-        self.ui_image_viewer.setResizeMode(qwt.QListView.Adjust)
+        self.ui_image_viewer.setViewMode(qwt.QListView.ViewMode.IconMode)
+        self.ui_image_viewer.setResizeMode(qwt.QListView.ResizeMode.Adjust)
         self.ui_image_viewer.setEditTriggers(
-            qwt.QAbstractItemView.NoEditTriggers
+            qwt.QAbstractItemView.EditTrigger.NoEditTriggers
         )
         self.ui_image_viewer.setIconSize(qtc.QSize(*self._icon_size))
-        self.ui_image_viewer.setMovement(qwt.QListView.Static)
+        self.ui_image_viewer.setMovement(qwt.QListView.Movement.Static)
         self.ui_image_viewer.setModel(StandardItemModel(self._icon_size))
 
         grid = qwt.QVBoxLayout()
@@ -264,8 +270,8 @@ class ImageViewer(BaseWidget):
         self.setLayout(grid)
 
         sizePolicy = qwt.QSizePolicy(
-            qwt.QSizePolicy.Preferred,
-            qwt.QSizePolicy.MinimumExpanding,
+            qwt.QSizePolicy.Policy.Preferred,
+            qwt.QSizePolicy.Policy.MinimumExpanding,
         )
         self.setSizePolicy(sizePolicy)
         if not self._context_menu_disabled:
@@ -585,7 +591,7 @@ class ImageViewer(BaseWidget):
 
     def eventFilter(self, source: qtc.QObject, event: qtc.QEvent) -> bool:
         if source == self.ui_image_viewer.viewport():
-            if event.type() == qtc.QEvent.MouseButtonPress:
+            if event.type() == qtc.QEvent.Type.MouseButtonPress:
                 if self._context_menu_disabled:
                     return False
                 self.context_menu.close()

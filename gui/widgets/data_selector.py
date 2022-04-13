@@ -2,11 +2,10 @@ import logging
 import os
 from typing import Dict, Optional
 
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from enums import (
-    DATA_TYPE,
     IMAGE_FORMAT,
     JOB_TYPE,
     MESSAGE_STATUS,
@@ -30,12 +29,10 @@ class DataSelector(BaseWidget):
 
     def __init__(
         self,
-        data_type: DATA_TYPE,
-        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = dict(),
+        signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         super().__init__(signals)
 
-        self.data_type = data_type
         self.data_directory = None
         self.video_path = None
         self.biggest_frame_dim_value = None
@@ -44,9 +41,6 @@ class DataSelector(BaseWidget):
 
     def init_ui(self):
         self.main_layout = qwt.QVBoxLayout()
-
-        self.main_layout.addWidget(qwt.QLabel(
-            text=f'Select {self.data_type.value} data'))
 
         button_wgt = qwt.QWidget()
         button_layout = qwt.QHBoxLayout()
@@ -76,7 +70,8 @@ class DataSelector(BaseWidget):
 
         self.frame_extraction_gb = qwt.QGroupBox()
         self.frame_extraction_gb.setTitle(
-            'Destination directory for extracted frames')
+            'Destination directory for extracted frames'
+        )
         size_policy = qwt.QSizePolicy(
             qwt.QSizePolicy.Minimum, qwt.QSizePolicy.Maximum)
         self.frame_extraction_gb.setSizePolicy(size_policy)
@@ -159,8 +154,7 @@ class DataSelector(BaseWidget):
             options=options,
         )
         if video_path:
-            logger.info(
-                f'{self.data_type.value} video selected from: {video_path}.')
+            logger.info(f'Video selected from: {video_path}.')
             self.video_player.video_selection.emit(video_path)
             video_name = video_path.split(os.sep)[-1]
             self.preview_label.setText(f'Preview of the: {video_name}')
@@ -199,15 +193,6 @@ class DataSelector(BaseWidget):
 
         self.data_directory = directory
 
-        if self.data_type == DATA_TYPE.INPUT:
-            self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
-                directory
-            )
-        else:
-            self.signals[SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY].emit(
-                directory
-            )
-
     def select_frames_directory(self):
         """Selects where extracted frames from video will go.
         """
@@ -217,10 +202,10 @@ class DataSelector(BaseWidget):
             "./",
         )
         if directory:
-            logger.info(
-                f'Selected {self.data_type.value.lower()} ' +
-                f'directory: {directory} for extracted frames.'
-            )
+            # logger.info(
+            #     f'Selected {self.data_type.value.lower()} ' +
+            #     f'directory: {directory} for extracted frames.'
+            # )
 
             if self.resize_frames_chk.isChecked():
                 if self.biggest_frame_dim_value is not None:
@@ -230,14 +215,14 @@ class DataSelector(BaseWidget):
 
             self.data_directory = directory
 
-            if self.data_type == DATA_TYPE.INPUT:
-                self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
-                    directory
-                )
-            else:
-                self.signals[SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY].emit(
-                    directory
-                )
+            # if self.data_type == DATA_TYPE.INPUT:
+            #     self.signals[SIGNAL_OWNER.INPUT_DATA_DIRECTORY].emit(
+            #         directory
+            #     )
+            # else:
+            #     self.signals[SIGNAL_OWNER.OUTPUT_DATA_DIRECTORY].emit(
+            #         directory
+            #     )
 
         else:
             logger.warning('No directory selected.')
@@ -267,7 +252,7 @@ class DataSelector(BaseWidget):
         """
         body_data = {
             BODY_KEY.RESIZE: False,
-            BODY_KEY.DATA_TYPE: self.data_type,
+            # BODY_KEY.DATA_TYPE: self.data_type,
             BODY_KEY.VIDEO_PATH: self.video_path,
             BODY_KEY.EVERY_N_TH_FRAME: int(self.every_frame.text()),
         }

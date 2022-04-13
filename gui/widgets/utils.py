@@ -1,5 +1,5 @@
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 
 def set_color_on_widget(

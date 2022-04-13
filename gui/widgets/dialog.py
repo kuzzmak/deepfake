@@ -1,6 +1,6 @@
-import PyQt5.QtSvg as qts
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
+import PyQt6.QtSvgWidgets as qts
 
 from common_structures import DialogMessages
 
@@ -14,7 +14,8 @@ class Dialog(qwt.QDialog):
 
         self.setWindowTitle(dialog_msg.message_type)
 
-        QBtn = qwt.QDialogButtonBox.Ok | qwt.QDialogButtonBox.Cancel
+        QBtn = qwt.QDialogButtonBox.StandardButton.Ok | \
+            qwt.QDialogButtonBox.StandardButton.Cancel
 
         self.buttonBox = qwt.QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accepted)

@@ -1,7 +1,7 @@
-import PyQt5.QtWidgets as qwt
-from PyQt5 import QtCore as qtc
-from PyQt5.QtMultimedia import QMediaContent, QMediaPlayer
-from PyQt5.QtMultimediaWidgets import QVideoWidget
+import PyQt6.QtWidgets as qwt
+from PyQt6 import QtCore as qtc
+from PyQt6.QtMultimedia import QMediaPlayer
+from PyQt6.QtMultimediaWidgets import QVideoWidget
 
 
 class VideoPlayer(qwt.QWidget):
@@ -11,17 +11,18 @@ class VideoPlayer(qwt.QWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+        self.media_player = QMediaPlayer()
 
         video_widget = QVideoWidget()
 
         self.play_button = qwt.QPushButton()
         self.play_button.setEnabled(False)
         self.play_button.setIcon(
-            self.style().standardIcon(qwt.QStyle.SP_MediaPlay))
+            self.style().standardIcon(qwt.QStyle.StandardPixmap.SP_MediaPlay)
+        )
         self.play_button.clicked.connect(self.play)
 
-        self.position_slider = qwt.QSlider(qtc.Qt.Horizontal)
+        self.position_slider = qwt.QSlider(qtc.Qt.Orientation.Horizontal)
         self.position_slider.setRange(0, 0)
         self.position_slider.sliderMoved.connect(self.set_position)
 
@@ -37,7 +38,9 @@ class VideoPlayer(qwt.QWidget):
         self.setLayout(layout)
 
         self.media_player.setVideoOutput(video_widget)
-        self.media_player.stateChanged.connect(self.media_state_changed)
+        self.media_player.playbackStateChanged.connect(
+            self.playback_state_changed
+        )
         self.media_player.positionChanged.connect(self.position_changed)
         self.media_player.durationChanged.connect(self.duration_changed)
 
@@ -45,23 +48,27 @@ class VideoPlayer(qwt.QWidget):
 
     @qtc.pyqtSlot(str)
     def video_selected(self, video_path: str):
-        self.media_player.setMedia(
-            QMediaContent(qtc.QUrl.fromLocalFile(video_path)))
+        self.media_player.setSource(qtc.QUrl.fromLocalFile(video_path))
         self.play_button.setEnabled(True)
 
     def play(self):
-        if self.media_player.state() == QMediaPlayer.PlayingState:
+        if self.media_player.playbackState() == \
+                QMediaPlayer.PlaybackState.PlayingState:
             self.media_player.pause()
         else:
             self.media_player.play()
 
-    def media_state_changed(self, state):
-        if self.media_player.state() == QMediaPlayer.PlayingState:
+    def playback_state_changed(self, state):
+        if self.media_player.playbackState() == \
+                QMediaPlayer.PlaybackState.PlayingState:
             self.play_button.setIcon(
-                self.style().standardIcon(qwt.QStyle.SP_MediaPause))
+                self.style().standardIcon(
+                    qwt.QStyle.StandardPixmap.SP_MediaPause)
+            )
         else:
             self.play_button.setIcon(
-                self.style().standardIcon(qwt.QStyle.SP_MediaPlay))
+                self.style().standardIcon(
+                    qwt.QStyle.StandardPixmap.SP_MediaPlay))
 
     def position_changed(self, position):
         self.position_slider.setValue(position)

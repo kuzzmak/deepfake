@@ -2,7 +2,7 @@ import os
 from typing import Dict, Optional
 
 import cv2 as cv
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 
 from gui.workers.worker import Worker
 from message.message import (

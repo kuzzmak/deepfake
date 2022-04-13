@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 import cv2 as cv
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 import torch
 from torchvision import transforms
 

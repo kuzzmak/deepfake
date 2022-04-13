@@ -3,8 +3,8 @@ import logging
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cv2 as cv
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 import torch.nn as nn
 from torchvision import transforms
 
@@ -50,8 +50,8 @@ class ModelSelector(qwt.QWidget):
 
         layout.addWidget(models_gb)
         policy = qwt.QSizePolicy(
-            qwt.QSizePolicy.Minimum,
-            qwt.QSizePolicy.Fixed,
+            qwt.QSizePolicy.Policy.Minimum,
+            qwt.QSizePolicy.Policy.Fixed,
         )
         self.setSizePolicy(policy)
         self.setLayout(layout)
@@ -580,8 +580,12 @@ class TrainingTab(BaseWidget):
         left_part.setLayout(left_part_layout)
 
         scroll = qwt.QScrollArea()
-        scroll.setVerticalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOn)
-        scroll.setHorizontalScrollBarPolicy(qtc.Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(
+            qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
+        )
+        scroll.setHorizontalScrollBarPolicy(
+            qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         scroll.setWidgetResizable(True)
         self.training_conf = TrainingConfiguration()
         scroll.setWidget(self.training_conf)

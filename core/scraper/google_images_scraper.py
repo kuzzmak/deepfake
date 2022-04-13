@@ -9,7 +9,7 @@ from typing import List, Optional, Union
 
 import numpy as np
 from PIL import Image, TiffImagePlugin
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 import requests
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException

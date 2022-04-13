@@ -2,15 +2,15 @@ import abc
 from typing import Dict, Optional
 import queue
 
-import PyQt5
-import PyQt5.QtCore as qtc
+import PyQt6
+import PyQt6.QtCore as qtc
 
 from enums import SIGNAL_OWNER
 
 from message.message import Message
 
 
-class WorkerMeta(PyQt5.sip.wrappertype, abc.ABCMeta):
+class WorkerMeta(PyQt6.sip.wrappertype, abc.ABCMeta):
     ...
 
 

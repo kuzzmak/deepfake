@@ -8,7 +8,7 @@ from typing import Any, List, Optional, Tuple, Union
 import cv2 as cv
 import gdown
 import numpy as np
-import PyQt5.QtGui as qtg
+import PyQt6.QtGui as qtg
 import torch
 from torch.hub import get_dir
 

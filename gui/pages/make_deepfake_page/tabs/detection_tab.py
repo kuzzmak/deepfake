@@ -3,9 +3,9 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import PyQt5.QtGui as qtg
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtGui as qtg
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from config import APP_CONFIG
 from core.dictionary import Dictionary
@@ -29,7 +29,7 @@ from gui.widgets.common import (
     HorizontalSpacer,
 )
 from message.message import Body, Message
-from resources.icons import icons  # noqa: F401
+# from resources.icons import icons  # noqa: F401
 from utils import get_file_paths_from_dir, parse_number
 
 logger = logging.getLogger(__name__)
@@ -220,7 +220,9 @@ class DetectionAlgorithmTab(BaseWidget):
         left_part_layout.addWidget(button_row_wgt)
 
         size_policy = qwt.QSizePolicy(
-            qwt.QSizePolicy.Fixed, qwt.QSizePolicy.Minimum)
+            qwt.QSizePolicy.Policy.Fixed,
+            qwt.QSizePolicy.Policy.Minimum,
+        )
         left_part.setSizePolicy(size_policy)
 
         ##########################
@@ -256,8 +258,8 @@ class DetectionAlgorithmTab(BaseWidget):
         layout.addWidget(left_part)
         # line dividing left anf right part of the window
         line = qwt.QFrame()
-        line.setFrameShape(qwt.QFrame.VLine)
-        line.setFrameShadow(qwt.QFrame.Sunken)
+        line.setFrameShape(qwt.QFrame.Shape.VLine)
+        line.setFrameShadow(qwt.QFrame.Shadow.Sunken)
         layout.addWidget(line)
         layout.addWidget(right_part)
         self.setLayout(layout)

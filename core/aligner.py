@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import logging
 import os
 from pathlib import Path
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 from typing import Optional, Union
 from tqdm import tqdm
 

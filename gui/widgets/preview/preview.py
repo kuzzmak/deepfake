@@ -5,8 +5,8 @@ from typing import List
 from matplotlib.animation import TimedAnimation
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 import torch
 
 from gui.widgets.base_widget import BaseWidget

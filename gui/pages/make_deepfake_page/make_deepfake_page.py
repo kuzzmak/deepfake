@@ -1,7 +1,7 @@
 from typing import Dict, Optional
 
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 from gui.pages.make_deepfake_page.tabs.inference_tab import InferenceTab
 from gui.pages.page import Page
 from gui.pages.make_deepfake_page.tabs.data_tab import DataTab
@@ -126,12 +126,12 @@ class MakeDeepfakePage(Page):
     def progress_value_changed(self, value: int):
         if value == 100:
             msg = qwt.QMessageBox(self)
-            msg.setIcon(qwt.QMessageBox.Information)
+            msg.setIcon(qwt.QMessageBox.Icon.Information)
             msg.setText("Face extraction successful.")
             msg.setInformativeText("Extracted faces are shown below.")
             msg.setWindowTitle("Face extraction information")
-            msg.setStandardButtons(qwt.QMessageBox.Ok)
-            msg.exec_()
+            msg.setStandardButtons(qwt.QMessageBox.StandardButton.Ok)
+            msg.exec()
 
     @qtc.pyqtSlot(Message)
     def extract_frames(self, msg: Message):

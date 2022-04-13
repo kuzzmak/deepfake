@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 import cv2 as cv
 
 from enums import (

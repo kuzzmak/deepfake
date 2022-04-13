@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Iterator, Optional
 
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 import torch
 from torch.optim import Optimizer
 from torch.nn.parameter import Parameter

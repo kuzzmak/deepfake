@@ -2,8 +2,8 @@ from operator import itemgetter
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from core.face import Face
 from core.sort import sort_faces_by_image_hash

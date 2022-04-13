@@ -1,6 +1,6 @@
-import PyQt5.QtGui as qtg
-import PyQt5.QtCore as qtc
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtGui as qtg
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from config import APP_CONFIG
 from console import Console
@@ -91,9 +91,13 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def init_toolbar(self):
         self.toolbar = qwt.QToolBar(self)
-        self.addToolBar(qtc.Qt.LeftToolBarArea, self.toolbar)
-        self.toolbar.setToolButtonStyle(qtc.Qt.ToolButtonTextBesideIcon)
-        icon = qwt.QApplication.style().standardIcon(qwt.QStyle.SP_ArrowLeft)
+        self.addToolBar(qtc.Qt.ToolBarArea.LeftToolBarArea, self.toolbar)
+        self.toolbar.setToolButtonStyle(
+            qtc.Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+        icon = qwt.QApplication.style().standardIcon(
+            qwt.QStyle.StandardPixmap.SP_ArrowLeft
+        )
         back_action = self.toolbar.addAction(icon, 'Back')
         back_action.triggered.connect(self.test)
 
