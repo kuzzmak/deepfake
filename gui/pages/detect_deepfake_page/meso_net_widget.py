@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from enums import SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
