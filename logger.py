@@ -1,11 +1,15 @@
 from datetime import datetime
 import logging
+import sys
+from typing import TextIO
 
 from console import Console
 from enums import Level
 
 
 DATE_FORMAt = '%Y-%m-%d %H:%M:%S'
+
+WORKERS = ['LandmarkExtraction']
 
 
 class GuiHandler(logging.Handler):
@@ -22,3 +26,21 @@ class GuiHandler(logging.Handler):
         name = record.name
         msg = record.message
         Console.print(date, name, level, msg)
+
+
+class CustomConsoleHandler(logging.StreamHandler):
+
+    def __init__(self, stream: TextIO = sys.stdout) -> None:
+        super().__init__(stream)
+
+    def emit(self, record):
+        try:
+            record.source_type = 'worker' if record.name in WORKERS \
+                else 'widget'
+            msg = self.format(record)
+            stream = self.stream
+            stream.write(msg)
+            stream.write(self.terminator)
+            self.flush()
+        except Exception:
+            self.handleError(record)

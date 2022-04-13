@@ -3,11 +3,14 @@ formatters:
   simple:
     format: "[%(asctime)s] - %(name)s - %(levelname)s - %(message)s"
     datefmt: '%Y-%m-%d %H:%M:%S'
+  simple-with-source-type:
+    format: "[%(asctime)s] - [%(source_type)s] - %(name)s - %(levelname)s - %(message)s"
+    datefmt: '%Y-%m-%d %H:%M:%S'
 handlers:
   console:
-    class: logging.StreamHandler
+    (): logger.CustomConsoleHandler
     level: DEBUG
-    formatter: simple
+    formatter: simple-with-source-type
     stream: ext://sys.stdout
   file:
     class: logging.handlers.TimedRotatingFileHandler
@@ -19,8 +22,12 @@ handlers:
     (): logger.GuiHandler
     formatter: simple
     level: DEBUG
-    formatter: simple
+    formatter: simple-with-source-type
 loggers:
+  LandmarkExtraction:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   core.dataset.dataset:
     level: DEBUG
     handlers: [file, gui, console]
@@ -37,7 +44,7 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
-  gui.widgets.data_selector:
+  DataTab:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
