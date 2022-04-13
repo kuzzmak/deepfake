@@ -87,6 +87,7 @@ class SIGNAL_OWNER(Enum):
     DETECTION_ALGORITHM_TAB = 'detection_algorithm_tab'
     DETECTION_ALGORITHM_TAB_INPUT_PICTURE_VIEWER = \
         'detection_algorithm_tab_input_picture_viewer'
+    MRI_GAN_WIDGET = 'mri_gan_widget'
 
     # worker signals
     IO_WORKER = WORKER.IO_WORKER.value
@@ -137,6 +138,7 @@ class JOB_TYPE(Enum):
     NEXT_ELEMENT = 'next_element'
     NO_JOB = 'no_job'
     LANDMARK_ALIGNMENT = 'landmark_alignment'
+    LANDMARK_EXTRACTION = 'landmark_extraction'
 
 
 class APP_STATUS(Enum):
@@ -240,3 +242,7 @@ class LAYOUT(Enum):
 class DF_DETECTION_MODEL(Enum):
     MESO_NET = 'meso_net'
     MRI_GAN = 'mri_gan'
+
+
+class CONNECTION(Enum):
+    STOP = 'stop'
