@@ -1,4 +1,5 @@
-import PyQt5.QtWidgets as qwt
+import PyQt6.QtGui as qtg
+import PyQt6.QtWidgets as qwt
 
 from enums import LAYOUT
 
@@ -6,15 +7,15 @@ from enums import LAYOUT
 VerticalSpacer = qwt.QSpacerItem(
     1,
     1,
-    qwt.QSizePolicy.Fixed,
-    qwt.QSizePolicy.MinimumExpanding,
+    qwt.QSizePolicy.Policy.Fixed,
+    qwt.QSizePolicy.Policy.MinimumExpanding,
 )
 
 HorizontalSpacer = qwt.QSpacerItem(
     1,
     1,
-    qwt.QSizePolicy.MinimumExpanding,
-    qwt.QSizePolicy.Fixed,
+    qwt.QSizePolicy.Policy.MinimumExpanding,
+    qwt.QSizePolicy.Policy.Fixed,
 )
 
 
@@ -33,8 +34,8 @@ def VWidget() -> qwt.QWidget:
 
 
 MinimalSizePolicy = qwt.QSizePolicy(
-    qwt.QSizePolicy.Fixed,
-    qwt.QSizePolicy.Fixed,
+    qwt.QSizePolicy.Policy.Fixed,
+    qwt.QSizePolicy.Policy.Fixed,
 )
 
 
@@ -61,8 +62,20 @@ def GroupBox(
 def InfoButton(tooltip: str = '') -> Button:
     button = Button('', 20)
     button.setIcon(qwt.QApplication.style().standardIcon(
-        qwt.QStyle.SP_MessageBoxInformation
+        qwt.QStyle.StandardPixmap.SP_MessageBoxInformation
     ))
     button.setStyleSheet("border-radius: 10")
     button.setToolTip(tooltip)
     return button
+
+
+def PlayIcon() -> qtg.QIcon:
+    return qwt.QApplication.style().standardIcon(
+        qwt.QStyle.StandardPixmap.SP_MediaPlay
+    )
+
+
+def StopIcon() -> qtg.QIcon:
+    return qwt.QApplication.style().standardIcon(
+        qwt.QStyle.StandardPixmap.SP_MediaStop
+    )
