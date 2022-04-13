@@ -1,4 +1,4 @@
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 
 from config import APP_CONFIG
 from enums import (

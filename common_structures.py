@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 
-import PyQt5.QtCore as qtc
+import PyQt6.QtCore as qtc
 
 from enums import (
     DIALOG_MESSAGE_ICON,
@@ -25,11 +25,11 @@ class DialogMessage:
     message: str
 
     @property
-    def message_icon(self):
+    def message_icon(self) -> str:
         return self._message_icon.value
 
     @property
-    def message_type(self):
+    def message_type(self) -> str:
         return self._message_type.value
 
 
