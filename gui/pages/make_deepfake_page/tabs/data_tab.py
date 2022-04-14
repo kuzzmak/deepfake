@@ -21,7 +21,7 @@ from gui.widgets.common import (
 from gui.widgets.image_viewer.image_viewer import ImageViewer
 from gui.widgets.video_player import VideoPlayer
 
-logger = logging.getLogger('DataTab')
+logger = logging.getLogger(__name__)
 
 
 class GoogleImagesScraperWorker(qtc.QObject):
@@ -71,7 +71,7 @@ class DataTab(BaseWidget):
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         super().__init__(signals)
-
+        
         self._video_path = None
         self._gi_dir = APP_CONFIG \
             .app \
