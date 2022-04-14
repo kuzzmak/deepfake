@@ -5,7 +5,7 @@ from typing import Dict, Optional
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
-from core.worker.landmark_extraction_worker import NewLandmarkExtractionWorker
+from core.worker.landmark_extraction_worker import LandmarkExtractionWorker
 from enums import CONNECTION, LAYOUT, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
 from gui.widgets.common import (
@@ -104,7 +104,7 @@ class MriGanWidget(ModelWidget):
                 return
 
             thread = qtc.QThread()
-            worker = NewLandmarkExtractionWorker(
+            worker = LandmarkExtractionWorker(
                 num_proc,
                 self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
             )
