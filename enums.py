@@ -63,6 +63,8 @@ class WORKER(Enum):
     MESSAGE_WORKER = 'message_worker'
     NEXT_ELEMENT_WORKER = 'next_element_worker'
     FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
+    LANDMARK_EXTRACTION_WORKER = 'landmark_extraction_worker'
+    CROPPING_FACES_WORKER = 'cropping_faces_worker'
 
 
 class SIGNAL_OWNER(Enum):
@@ -94,6 +96,8 @@ class SIGNAL_OWNER(Enum):
     MESSAGE_WORKER = WORKER.MESSAGE_WORKER.value
     NEXT_ELEMENT_WORKER = WORKER.NEXT_ELEMENT_WORKER.value
     FRAMES_EXTRACTION_WORKER = WORKER.FRAMES_EXTRACTION_WORKER.value
+    LANDMARK_EXTRACTION_WORKER = WORKER.LANDMARK_EXTRACTION_WORKER.value
+    CROPPING_FACES_WORKER = WORKER.CROPPING_FACES_WORKER.value
 
     # worker signals next element
     FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = \
@@ -139,6 +143,7 @@ class JOB_TYPE(Enum):
     NO_JOB = 'no_job'
     LANDMARK_ALIGNMENT = 'landmark_alignment'
     LANDMARK_EXTRACTION = 'landmark_extraction'
+    CROPING_FACES = 'cropping_faces'
 
 
 class APP_STATUS(Enum):
