@@ -8,19 +8,18 @@ formatters:
     datefmt: '%Y-%m-%d %H:%M:%S'
 handlers:
   console:
-    (): logger.CustomConsoleHandler
+    (): logger.ConsoleHandler
     level: DEBUG
     formatter: simple-with-source-type
     stream: ext://sys.stdout
   file:
-    class: logging.handlers.TimedRotatingFileHandler
-    formatter: simple
+    class: logger.FileHandler
+    formatter: simple-with-source-type
     filename: logs/df.log
     when: midnight
     interval: 1
   gui:
     (): logger.GuiHandler
-    formatter: simple
     level: DEBUG
     formatter: simple-with-source-type
 loggers:

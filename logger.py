@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import sys
 from typing import TextIO
 
@@ -25,10 +26,12 @@ class GuiHandler(logging.Handler):
         level = Level[record.levelname]
         name = record.name
         msg = record.message
-        Console.print(date, name, level, msg)
+        source_type = 'worker' if record.name in WORKERS \
+            else 'widget'
+        Console.print(date, name, source_type, level, msg)
 
 
-class CustomConsoleHandler(logging.StreamHandler):
+class ConsoleHandler(logging.StreamHandler):
 
     def __init__(self, stream: TextIO = sys.stdout) -> None:
         super().__init__(stream)
@@ -42,5 +45,40 @@ class CustomConsoleHandler(logging.StreamHandler):
             stream.write(msg)
             stream.write(self.terminator)
             self.flush()
+        except Exception:
+            self.handleError(record)
+
+
+class FileHandler(TimedRotatingFileHandler):
+
+    def __init__(
+        self,
+        filename,
+        when='h',
+        interval=1,
+        backupCount=0,
+        encoding=None,
+        delay=False,
+        utc=False,
+        atTime=None,
+    ) -> None:
+        super().__init__(
+            filename,
+            when,
+            interval,
+            backupCount,
+            encoding,
+            delay,
+            utc,
+            atTime,
+        )
+
+    def emit(self, record):
+        try:
+            if self.shouldRollover(record):
+                self.doRollover()
+            record.source_type = 'worker' if record.name in WORKERS \
+                else 'widget'
+            logging.FileHandler.emit(self, record)
         except Exception:
             self.handleError(record)
