@@ -29,12 +29,10 @@ class CroppingFacesWorker(WorkerWithPool):
 
     def __init__(
         self,
-        num_processes: int = 2,
+        num_instances: int = 2,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
-        super().__init__(message_worker_sig)
-
-        self._num_processes = num_processes
+        super().__init__(num_instances, message_worker_sig)
 
     def run_job(self) -> None:
         self.logger.info('Started cropping faces for DFDC dataset.')
@@ -52,9 +50,9 @@ class CroppingFacesWorker(WorkerWithPool):
         self.logger.info(
             f'Cropped faces will be saved in {crops_path} directory.'
         )
-        os.makedirs(self._num_processes, exist_ok=True)
+        os.makedirs(crops_path, exist_ok=True)
 
-        with multiprocessing.Pool(self._num_processes) as pool:
+        with multiprocessing.Pool(self._num_instances) as pool:
             jobs = []
             results = []
             for input_filepath in file_paths:
