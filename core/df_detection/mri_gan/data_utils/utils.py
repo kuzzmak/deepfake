@@ -69,7 +69,6 @@ def get_dfdc_training_real_fake_pairs(root_dir):
 def get_dfdc_training_video_filepaths(root_dir):
     video_filepaths = []
     for json_path in glob(os.path.join(root_dir, "metadata.json")):
-        print(json_path)
         pdir = Path(json_path).parent
         with open(json_path, "r") as f:
             metadata = json.load(f)
