@@ -88,9 +88,7 @@ class LandmarkExtractionWorker(WorkerWithPool):
                 #     qtc.QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents
                 # )
                 if self.should_exit():
-                    self.logger.info('Received stop signal, exiting now.')
-                    self.close_pool(pool)
-                    self.finished.emit()
+                    self.handle_exit(pool)
                     return
 
                 results.append(job.get())

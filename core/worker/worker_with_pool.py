@@ -42,3 +42,14 @@ class WorkerWithPool(Worker):
         pool.terminate()
         pool.join()
         self.logger.debug('Process pool closed.')
+
+    def handle_exit(self, pool: multiprocessing.pool.Pool) -> None:
+        """Gracefully closes pool of processes or threads and emits `finished`
+        signal.
+
+        Args:
+            pool (multiprocessing.pool.Pool): pool to close on exit
+        """
+        self.logger.info('Received stop signal, exiting now.')
+        self.close_pool(pool)
+        self.finished.emit()
