@@ -24,6 +24,14 @@ from message.message import Body, Message, Messages
 
 
 class CroppingFacesWorker(WorkerWithPool):
+    """Worker for cropping faces from images.
+
+    Args:
+        num_instances (int, optional): how many instances of this worker
+            will be spawned. Defaults to 2.
+        message_worker_sig (Optional[qtc.pyqtSignal], optional): signal to
+            the message worker. Defaults to None.
+    """
 
     logger = logging.getLogger(__name__)
 
