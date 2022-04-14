@@ -10,7 +10,7 @@ from enums import Level
 
 DATE_FORMAt = '%Y-%m-%d %H:%M:%S'
 
-WORKERS = ['LandmarkExtraction']
+WORKER_LOGGERS = ['core.worker.landmark_extraction_worker']
 
 
 class GuiHandler(logging.Handler):
@@ -26,7 +26,7 @@ class GuiHandler(logging.Handler):
         level = Level[record.levelname]
         name = record.name
         msg = record.message
-        source_type = 'worker' if record.name in WORKERS \
+        source_type = 'worker' if record.name in WORKER_LOGGERS \
             else 'widget'
         Console.print(date, name, source_type, level, msg)
 
@@ -38,7 +38,7 @@ class ConsoleHandler(logging.StreamHandler):
 
     def emit(self, record):
         try:
-            record.source_type = 'worker' if record.name in WORKERS \
+            record.source_type = 'worker' if record.name in WORKER_LOGGERS \
                 else 'widget'
             msg = self.format(record)
             stream = self.stream
@@ -77,7 +77,7 @@ class FileHandler(TimedRotatingFileHandler):
         try:
             if self.shouldRollover(record):
                 self.doRollover()
-            record.source_type = 'worker' if record.name in WORKERS \
+            record.source_type = 'worker' if record.name in WORKER_LOGGERS \
                 else 'widget'
             logging.FileHandler.emit(self, record)
         except Exception:
