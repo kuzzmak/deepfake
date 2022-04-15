@@ -8,6 +8,7 @@ import PyQt6.QtWidgets as qwt
 from core.worker.landmark_extraction_worker import LandmarkExtractionWorker
 from enums import CONNECTION, LAYOUT, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
+from gui.pages.detect_deepfake_page.mri_gan.common import NumOfInstancesRow
 from gui.widgets.common import (
     Button,
     GroupBox,
@@ -39,6 +40,9 @@ class MriGanWidget(ModelWidget):
         self._lmrks_extraction_in_progress = False
 
     def _init_ui(self) -> None:
+        ##############################
+        # LANDMARK EXTRACTION GROUPBOX
+        ##############################
         lmrks_extraction_gb = GroupBox(
             'Landmark extraction',
             LAYOUT.HORIZONTAL,
@@ -49,13 +53,10 @@ class MriGanWidget(ModelWidget):
         lmrks_extraction_left_part = VWidget()
         lmrks_extraction_gb.layout().addWidget(lmrks_extraction_left_part)
 
-        num_of_proc_row = HWidget()
-        lmrks_extraction_left_part.layout().addWidget(num_of_proc_row)
-        num_of_proc_row.setMaximumWidth(200)
-        num_of_proc_row.layout().setContentsMargins(0, 0, 0, 0)
-        num_of_proc_row.layout().addWidget(qwt.QLabel(
-            text='number or processes'
-        ))
+        self.lmrks_extraction_num_of_instances = NumOfInstancesRow()
+        lmrks_extraction_left_part.layout().addWidget(
+            self.lmrks_extraction_num_of_instances
+        )
 
         ext_buttons_row = HWidget()
         lmrks_extraction_left_part.layout().addWidget(ext_buttons_row)
@@ -70,10 +71,6 @@ class MriGanWidget(ModelWidget):
         lmrks_extraction_right_part = VWidget()
         lmrks_extraction_gb.layout().addWidget(lmrks_extraction_right_part)
 
-        self.num_proc_input = qwt.QLineEdit()
-        num_of_proc_row.layout().addWidget(self.num_proc_input)
-        self.num_proc_input.setText(str(2))
-
         self.extract_landmarks_btn = Button('start extraction')
         lmrks_extraction_right_part.layout().addWidget(
             self.extract_landmarks_btn
@@ -86,6 +83,18 @@ class MriGanWidget(ModelWidget):
             self.configure_ext_lmrks_paths
         )
 
+        #####################
+        # CROP FACES GROUPBOX
+        #####################
+        crop_faces_gb = GroupBox('Crop faces', LAYOUT.HORIZONTAL)
+        self.data_tab.layout().addWidget(crop_faces_gb)
+
+        crop_faces_left_part = VWidget()
+        crop_faces_gb.layout().addWidget(crop_faces_left_part)
+
+        crop_faces_right_part = VWidget()
+        crop_faces_gb.layout().addWidget(crop_faces_right_part)
+
         self.data_tab.layout().addItem(VerticalSpacer)
 
     @qtc.pyqtSlot()
@@ -95,7 +104,9 @@ class MriGanWidget(ModelWidget):
         if self._lmrks_extraction_in_progress:
             self._stop_landmark_extraction()
         else:
-            num_proc = parse_number(self.num_proc_input.text())
+            num_proc = parse_number(
+                self.lmrks_extraction_num_of_instances.num_of_instances_value
+            )
             if num_proc is None:
                 logger.error(
                     'Unable to parse your input for number of ' +
