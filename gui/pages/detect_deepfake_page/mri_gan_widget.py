@@ -99,7 +99,7 @@ class MriGanWidget(ModelWidget):
 
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:
-        """Initiates landmark extraction process or stopps it.
+        """Initiates landmark extraction process or stops it.
         """
         if self._lmrks_extraction_in_progress:
             self._stop_landmark_extraction()
