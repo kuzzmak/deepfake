@@ -2,6 +2,7 @@ import json
 from glob import glob
 import os
 from pathlib import Path
+from typing import List
 
 import cv2 as cv
 import pandas as pd
@@ -66,7 +67,7 @@ def get_dfdc_training_real_fake_pairs(root_dir):
     return pairs
 
 
-def get_dfdc_training_video_filepaths(root_dir):
+def get_dfdc_training_video_filepaths(root_dir) -> List[str]:
     video_filepaths = []
     for json_path in glob(os.path.join(root_dir, "metadata.json")):
         pdir = Path(json_path).parent
