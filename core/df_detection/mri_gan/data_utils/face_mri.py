@@ -220,7 +220,7 @@ def generate_MRI_dataset(test_size=0.2, dfdc_fract=0.5):
     dfr_base = pd.DataFrame(columns=['face_image', 'mri_image', 'class'])
     dfr_base['face_image'] = df_combined['real_image'].unique()
     dfr_base['mri_image'] = os.path.abspath(
-        ConfigParser.getInstance().get_blank_imagepath())
+        ConfigParser.getInstance().get_blank_image_path())
     dfr_base_len = len(dfr_base)
     dfr_base['class'][0:dfr_base_len] = 'real'
 

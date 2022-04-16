@@ -227,7 +227,7 @@ class ConfigParser:
         return os.path.join(self.get_assets_path(),
                             self.config['features']['mri_dataset_csv'])
 
-    def get_blank_imagepath(self):
+    def get_blank_image_path(self):
         return os.path.join(
             self.get_assets_path(),
             self.config['features']['blank_png'])
