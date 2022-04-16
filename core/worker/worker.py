@@ -6,6 +6,15 @@ from typing import Optional
 import PyQt6.QtCore as qtc
 
 from email.message import Message
+from enums import (
+    BODY_KEY,
+    JOB_NAME,
+    JOB_TYPE,
+    MESSAGE_STATUS,
+    MESSAGE_TYPE,
+    SIGNAL_OWNER,
+)
+from message.message import Body
 
 
 class Worker(qtc.QObject):
@@ -43,10 +52,24 @@ class Worker(qtc.QObject):
         return self._conn_q
 
     def send_message(self, message: Message):
+        """Send a message through message worker to wherever needed.
+
+        Parameters
+        ----------
+        message : Message
+            message to send
+        """
         if self._message_worker_sig is not None:
             self._message_worker_sig.emit(message)
 
     def should_exit(self) -> bool:
+        """Checks if someone requested for this worker to exit.
+
+        Returns
+        -------
+        bool
+            returns `True` if worker should exit, `False` otherwise
+        """
         if self._conn_q is None:
             return False
         try:
@@ -57,9 +80,58 @@ class Worker(qtc.QObject):
 
     @qtc.pyqtSlot()
     def run(self) -> None:
+        """Starts the execution of the worker's job, should be called by the
+        thread when she starts and not by your explicit call.
+        """
         self.started.emit()
         self.run_job()
         self.finished.emit()
 
     def run_job(self) -> None:
+        """Function which contains the code this worker should do.
+
+        Raises
+        ------
+        NotImplementedError
+            raised if not implemented by some worker
+        """
         raise NotImplementedError()
+
+    def report_progress(
+        self,
+        signal_owner: SIGNAL_OWNER,
+        job_type: JOB_TYPE,
+        part: int,
+        total_parts: int,
+    ) -> None:
+        """Used to report progress to the job widget.
+
+        Parameters
+        ----------
+        signal_owner : SIGNAL_OWNER
+            who sends the message to report progress
+        job_type : JOB_TYPE
+            what kind of job is executing
+        part : int
+            current step
+        total_parts : int
+            total steps
+        """
+        if self._message_worker_sig is None:
+            return
+        job_prog_msg = Message(
+            MESSAGE_TYPE.ANSWER,
+            MESSAGE_STATUS.OK,
+            signal_owner,
+            SIGNAL_OWNER.JOB_PROGRESS,
+            Body(
+                job_type,
+                {
+                    BODY_KEY.PART: part,
+                    BODY_KEY.TOTAL: total_parts,
+                    BODY_KEY.JOB_NAME: JOB_NAME[job_type.value.upper()].value
+                },
+                part == total_parts - 1,
+            )
+        )
+        self.send_message(job_prog_msg)
