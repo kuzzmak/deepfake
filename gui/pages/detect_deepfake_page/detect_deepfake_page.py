@@ -6,7 +6,7 @@ from config import APP_CONFIG
 
 from enums import DF_DETECTION_MODEL, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.meso_net_widget import MesoNetWidget
-from gui.pages.detect_deepfake_page.mri_gan_widget import MriGanWidget
+from gui.pages.detect_deepfake_page.mri_gan.mri_gan_widget import MriGanWidget
 from gui.pages.page import Page
 from gui.widgets.common import HWidget, HorizontalSpacer
 from names import DETECT_DEEPFAKE_PAGE_NAME
