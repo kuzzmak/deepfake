@@ -9,6 +9,14 @@ from enums import DATA_TYPE
 class MRIGANWorker:
 
     def __init__(self, data_type: DATA_TYPE) -> None:
+        """Simple class with convenient functions for getting data paths for
+        DFDC dataset based on the `data_type` argument.
+
+        Parameters
+        ----------
+        data_type : DATA_TYPE
+            on what kind of data type is worker working on
+        """
         self._data_type = data_type
 
     @staticmethod
@@ -39,3 +47,24 @@ class MRIGANWorker:
         return MRIGANWorker._get_fun_by_name_from_config(
             f'get_dfdc_crops_{self._data_type.value}_path'
         )()
+
+    def _get_dfdc_mri_medatata_csv_path(self) -> str:
+        return ConfigParser.getInstance().get_dfdc_mri_metadata_csv_path()
+
+    def _get_dfdc_mri_path(self) -> str:
+        return ConfigParser.getInstance().get_dfdc_mri_path()
+
+    def _get_blank_image_path(self) -> str:
+        return ConfigParser.getInstance().get_blank_image_path()
+
+    def _get_mri_train_real_dataset_csv_path(self) -> str:
+        return ConfigParser.getInstance().get_mri_train_real_dataset_csv_path()
+
+    def _get_mri_test_real_dataset_csv_path(self) -> str:
+        return ConfigParser.getInstance().get_mri_test_real_dataset_csv_path()
+
+    def _get_mri_train_fake_dataset_csv_path(self) -> str:
+        return ConfigParser.getInstance().get_mri_train_fake_dataset_csv_path()
+
+    def _get_mri_test_fake_dataset_csv_path(self) -> str:
+        return ConfigParser.getInstance().get_mri_test_fake_dataset_csv_path()
