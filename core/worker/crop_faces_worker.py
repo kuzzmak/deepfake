@@ -4,26 +4,16 @@ import os
 from typing import Optional
 
 import PyQt6.QtCore as qtc
-from tqdm import tqdm
 
 from core.df_detection.mri_gan.data_utils.face_detection import \
     crop_faces_from_video
-from core.df_detection.mri_gan.data_utils.utils import \
-    get_dfdc_training_video_filepaths
-from core.df_detection.mri_gan.utils import ConfigParser
+from core.worker.mri_gan_worker import MRIGANWorker
 from core.worker.worker_with_pool import WorkerWithPool
-from enums import (
-    BODY_KEY,
-    JOB_TYPE,
-    MESSAGE_STATUS,
-    MESSAGE_TYPE,
-    SIGNAL_OWNER,
-    WIDGET,
-)
-from message.message import Body, Message, Messages
+from enums import DATA_TYPE, JOB_TYPE, SIGNAL_OWNER, WIDGET
+from message.message import Messages
 
 
-class CroppingFacesWorker(WorkerWithPool):
+class CroppingFacesWorker(MRIGANWorker, WorkerWithPool):
     """Worker for cropping faces from images.
 
     Args:
@@ -37,24 +27,25 @@ class CroppingFacesWorker(WorkerWithPool):
 
     def __init__(
         self,
+        data_type: DATA_TYPE,
         num_instances: int = 2,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
-        super().__init__(num_instances, message_worker_sig)
+        MRIGANWorker.__init__(self, data_type)
+        WorkerWithPool.__init__(self, num_instances, message_worker_sig)
 
     def run_job(self) -> None:
-        self.logger.info('Started cropping faces for DFDC dataset.')
-        data_path_root = ConfigParser.getInstance().get_dfdc_train_data_path()
-        self.logger.info(f'Starting cropping in {data_path_root} directory.')
-        file_paths = get_dfdc_training_video_filepaths(data_path_root)
-        self.logger.info(f'Found {len(file_paths)} videos in directory.')
-        landmarks_path = ConfigParser \
-            .getInstance() \
-            .get_dfdc_landmarks_train_path()
+        self.logger.info(
+            'Started cropping faces process on DFDC ' +
+            f'{self._data_type.value} dataset.'
+        )
+        data_paths = self._get_data_paths()
+        self.logger.info(f'Found {len(data_paths)} videos in directory.')
+        landmarks_path = self._get_dfdc_landmarks_data_paths()
         self.logger.info(
             f'Using landmarks file from {landmarks_path} directory.'
         )
-        crops_path = ConfigParser.getInstance().get_dfdc_crops_train_path()
+        crops_path = self._get_dfdc_crops_data_path()
         self.logger.info(
             f'Cropped faces will be saved in {crops_path} directory.'
         )
@@ -63,12 +54,12 @@ class CroppingFacesWorker(WorkerWithPool):
         with multiprocessing.Pool(self._num_instances) as pool:
             jobs = []
             results = []
-            for input_filepath in file_paths:
+            for dp in data_paths:
                 jobs.append(
                     pool.apply_async(
                         crop_faces_from_video,
                         (
-                            input_filepath,
+                            dp,
                             landmarks_path,
                             crops_path,
                         ),
@@ -93,22 +84,11 @@ class CroppingFacesWorker(WorkerWithPool):
 
                 results.append(job.get())
 
-                if self._message_worker_sig is not None:
-                    job_prog_msg = Message(
-                        MESSAGE_TYPE.ANSWER,
-                        MESSAGE_STATUS.OK,
-                        SIGNAL_OWNER.CROPPING_FACES_WORKER,
-                        SIGNAL_OWNER.JOB_PROGRESS,
-                        Body(
-                            JOB_TYPE.CROPING_FACES,
-                            {
-                                BODY_KEY.PART: idx,
-                                BODY_KEY.TOTAL: len(jobs),
-                                BODY_KEY.JOB_NAME: 'cropping faces'
-                            },
-                            idx == len(jobs) - 1,
-                        )
-                    )
-                    self.send_message(job_prog_msg)
+                self.report_progress(
+                    SIGNAL_OWNER.CROPPING_FACES_WORKER,
+                    JOB_TYPE.CROPING_FACES,
+                    idx,
+                    len(jobs),
+                )
 
         self.logger.info('Face cropping finished.')
