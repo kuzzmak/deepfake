@@ -62,7 +62,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.job_info_window = JobInfoWindow(self)
 
         # -- setup workers --
-        self.setup_io_worker()
+        # self.setup_io_worker()
         # self.setup_frame_extraction_worker()
         # self.setup_next_element_worker()
         self.setup_message_worker()
