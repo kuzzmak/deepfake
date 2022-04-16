@@ -121,11 +121,6 @@ class MESSAGE_STATUS(Enum):
     FAILED = 'failed'
 
 
-class DATA_TYPE(Enum):
-    INPUT = 'Input'
-    OUTPUT = 'Output'
-
-
 class IMAGE_FORMAT(Enum):
     PNG = 'png'
     JPG = 'jpg'
@@ -251,3 +246,14 @@ class DF_DETECTION_MODEL(Enum):
 
 class CONNECTION(Enum):
     STOP = 'stop'
+
+
+class DATA_TYPE(Enum):
+    TRAIN = 'train'
+    TEST = 'test'
+    VALID = 'valid'
+    ALL = 'all'
+
+
+class JOB_NAME(Enum):
+    CROP_FACES = 'cropping faces'
