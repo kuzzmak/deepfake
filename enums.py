@@ -65,6 +65,7 @@ class WORKER(Enum):
     FRAMES_EXTRACTION_WORKER = 'frames_extraction_workers'
     LANDMARK_EXTRACTION_WORKER = 'landmark_extraction_worker'
     CROPPING_FACES_WORKER = 'cropping_faces_worker'
+    GENERATE_MRI_DATASET_WORKER = 'generate_mri_dataset_worker'
 
 
 class SIGNAL_OWNER(Enum):
@@ -98,6 +99,7 @@ class SIGNAL_OWNER(Enum):
     FRAMES_EXTRACTION_WORKER = WORKER.FRAMES_EXTRACTION_WORKER.value
     LANDMARK_EXTRACTION_WORKER = WORKER.LANDMARK_EXTRACTION_WORKER.value
     CROPPING_FACES_WORKER = WORKER.CROPPING_FACES_WORKER.value
+    GENERATE_MRI_DATASET_WORKER = WORKER.GENERATE_MRI_DATASET_WORKER.value
 
     # worker signals next element
     FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = \
@@ -257,3 +259,4 @@ class DATA_TYPE(Enum):
 
 class JOB_NAME(Enum):
     CROP_FACES = 'cropping faces'
+    GENERATE_MRI_DATASET = 'generating mri dataset'
