@@ -5,8 +5,8 @@ import PyQt6.QtCore as qtc
 from config import APP_CONFIG
 from enums import (
     COLOR,
-    Level,
-    LevelColor,
+    LEVEL,
+    LEVEL_COLOR,
 )
 
 console_message_template = '<span style="font-size:{}pt; ' + \
@@ -16,7 +16,7 @@ console_message_template = '<span style="font-size:{}pt; ' + \
 class Console(qtc.QObject):
 
     __instance = None
-    _int_print_sig = qtc.pyqtSignal(str, str, str, Level, str)
+    _int_print_sig = qtc.pyqtSignal(str, str, str, LEVEL, str)
     print_sig = qtc.pyqtSignal(str)
 
     def __init__(self) -> None:
@@ -38,7 +38,7 @@ class Console(qtc.QObject):
             date: str,
             name: str,
             source_type: str,
-            level: Level,
+            level: LEVEL,
             msg: str) -> None:
         Console.get_instance()._int_print_sig.emit(
             date,
@@ -48,13 +48,13 @@ class Console(qtc.QObject):
             msg,
         )
 
-    @qtc.pyqtSlot(str, str, str, Level, str)
+    @qtc.pyqtSlot(str, str, str, LEVEL, str)
     def _print(
         self,
         date: str,
         name: str,
         source_type: str,
-        level: Level,
+        level: LEVEL,
         msg: str,
     ) -> None:
         prefix = self._get_prefix(date, name, source_type, level)
@@ -70,11 +70,11 @@ class Console(qtc.QObject):
         date: str,
         name: str,
         source_type: str,
-        level: Level,
+        level: LEVEL,
     ) -> str:
         prefix = console_message_template.format(
             APP_CONFIG.app.gui.widgets.console.text_size,
-            LevelColor[level.value].value.value,
+            LEVEL_COLOR[level.value].value.value,
             f'[{date}] - [{source_type}] - {name} - {level.value} - '
         )
         return prefix
