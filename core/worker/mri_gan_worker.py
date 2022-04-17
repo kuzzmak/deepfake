@@ -1,8 +1,8 @@
 from typing import Callable, List
+from configs.mri_gan_config import MRIGANConfig
 
 from core.df_detection.mri_gan.data_utils.utils import \
     get_dfdc_training_video_filepaths
-from core.df_detection.mri_gan.utils import ConfigParser
 from enums import DATA_TYPE
 
 
@@ -21,7 +21,7 @@ class MRIGANWorker:
 
     @staticmethod
     def _get_fun_by_name_from_config(name: str) -> Callable:
-        return getattr(ConfigParser.getInstance(), name)
+        return getattr(MRIGANConfig.getInstance(), name)
 
     def _get_dfdc_data_path(self) -> str:
         return MRIGANWorker._get_fun_by_name_from_config(
@@ -49,22 +49,22 @@ class MRIGANWorker:
         )()
 
     def _get_dfdc_mri_medatata_csv_path(self) -> str:
-        return ConfigParser.getInstance().get_dfdc_mri_metadata_csv_path()
+        return MRIGANConfig.getInstance().get_dfdc_mri_metadata_csv_path()
 
     def _get_dfdc_mri_path(self) -> str:
-        return ConfigParser.getInstance().get_dfdc_mri_path()
+        return MRIGANConfig.getInstance().get_dfdc_mri_path()
 
     def _get_blank_image_path(self) -> str:
-        return ConfigParser.getInstance().get_blank_image_path()
+        return MRIGANConfig.getInstance().get_blank_image_path()
 
     def _get_mri_train_real_dataset_csv_path(self) -> str:
-        return ConfigParser.getInstance().get_mri_train_real_dataset_csv_path()
+        return MRIGANConfig.getInstance().get_mri_train_real_dataset_csv_path()
 
     def _get_mri_test_real_dataset_csv_path(self) -> str:
-        return ConfigParser.getInstance().get_mri_test_real_dataset_csv_path()
+        return MRIGANConfig.getInstance().get_mri_test_real_dataset_csv_path()
 
     def _get_mri_train_fake_dataset_csv_path(self) -> str:
-        return ConfigParser.getInstance().get_mri_train_fake_dataset_csv_path()
+        return MRIGANConfig.getInstance().get_mri_train_fake_dataset_csv_path()
 
     def _get_mri_test_fake_dataset_csv_path(self) -> str:
-        return ConfigParser.getInstance().get_mri_test_fake_dataset_csv_path()
+        return MRIGANConfig.getInstance().get_mri_test_fake_dataset_csv_path()

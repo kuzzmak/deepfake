@@ -18,6 +18,8 @@ from gui.widgets.common import (
     VWidget,
     VerticalSpacer,
 )
+from gui.widgets.custom_dialog import CustomDialog
+from gui.widgets.dialog import Dialog
 from utils import parse_number
 
 
@@ -73,9 +75,12 @@ class MriGanWidget(ModelWidget):
         self.extract_landmarks_btn.setIcon(PlayIcon())
         self.extract_landmarks_btn.clicked.connect(self._extract_landmarks)
 
-        self.configure_ext_lmrks_paths = Button('configure paths')
+        self.configure_ext_lmrks_paths_btn = Button('configure paths')
         lmrks_extraction_right_part.layout().addWidget(
-            self.configure_ext_lmrks_paths
+            self.configure_ext_lmrks_paths_btn
+        )
+        self.configure_ext_lmrks_paths_btn.clicked.connect(
+            self._configure_ext_lmrks_paths
         )
 
         #########################
@@ -195,3 +200,8 @@ class MriGanWidget(ModelWidget):
     @qtc.pyqtSlot()
     def _crop_faces(self) -> None:
         ...
+
+    @qtc.pyqtSlot()
+    def _configure_ext_lmrks_paths(self) -> None:
+        dialog = CustomDialog()
+        dialog.exec()
