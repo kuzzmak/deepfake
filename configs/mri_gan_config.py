@@ -161,10 +161,6 @@ class MRIGANConfig:
     def get_dfdc_mri_path(self):
         return self._config['features']['dfdc']['mri_path']
 
-    def get_celeb_df_v2_landmarks_path(self):
-        return self._config['features']['celeb_df_v2']['landmarks_path'][
-            'train']
-
     def get_mri_train_real_dataset_csv_path(self):
         return os.path.join(self.get_assets_path(),
                             self._config['features']
@@ -291,7 +287,12 @@ def _get_default_config(
                     'train': str(base / crop_faces / 'train'),
                     'valid': str(base / crop_faces / 'valid'),
                     'test': str(base / crop_faces / 'test'),
-                }
+                },
+                'mri_path': str(base / dataset / 'mri'),
+                'mri_metadata_csv': 'dfdc_mri_metadata.csv',
+                'train_mriframe_label': 'train_mriframe_labels.csv',
+                'valid_mriframe_label': 'valid_mriframe_labels.csv',
+                'test_mriframe_label': 'test_mriframe_labels.csv',
             },
             'mri_dataset_real_train_csv': 'mri_real_train_dataset.csv',
             'mri_dataset_fake_train_csv': 'mri_fake_train_dataset.csv',
