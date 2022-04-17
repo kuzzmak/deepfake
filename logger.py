@@ -5,12 +5,15 @@ import sys
 from typing import TextIO
 
 from console import Console
-from enums import Level
+from enums import LEVEL
+from variables import LONG_DATE_FORMAt
 
 
-DATE_FORMAt = '%Y-%m-%d %H:%M:%S'
-
-WORKER_LOGGERS = ['core.worker.landmark_extraction_worker']
+WORKER_LOGGERS = [
+    'core.worker.landmark_extraction_worker',
+    'core.worker.generate_mri_dataset_worker',
+    'core.worker.mri_gan_worker',
+]
 
 
 class GuiHandler(logging.Handler):
@@ -22,8 +25,10 @@ class GuiHandler(logging.Handler):
         super().__init__()
 
     def emit(self, record: logging.LogRecord):
-        date = datetime.fromtimestamp(record.created).strftime(DATE_FORMAt)
-        level = Level[record.levelname]
+        date = datetime.fromtimestamp(record.created).strftime(
+            LONG_DATE_FORMAt
+        )
+        level = LEVEL[record.levelname]
         name = record.name
         msg = record.message
         source_type = 'worker' if record.name in WORKER_LOGGERS \
