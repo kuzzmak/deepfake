@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import torch
 
@@ -55,7 +55,7 @@ class _LandmarkDetection:
 class _DFDetectionModel:
     id: str
     name: str
-    parameters: Dict[str, any]
+    parameters: Dict[str, Any]
 
 
 @dataclass
