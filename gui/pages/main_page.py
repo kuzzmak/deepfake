@@ -1,3 +1,5 @@
+from queue import LifoQueue
+
 import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
@@ -65,9 +67,10 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         # self.setup_io_worker()
         # self.setup_frame_extraction_worker()
         # self.setup_next_element_worker()
-        self.setup_message_worker()
+        # self.setup_message_worker()
 
         self.m_pages = {}
+        self._page_nav = LifoQueue()
 
         self.init_ui()
 
@@ -99,15 +102,19 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             qwt.QStyle.StandardPixmap.SP_ArrowLeft
         )
         back_action = self.toolbar.addAction(icon, 'Back')
-        back_action.triggered.connect(self.test)
+        back_action.triggered.connect(self._go_back)
 
-        icon = qtg.QIcon(qtg.QPixmap(':/job_info.svg'))
+        icon = qwt.QApplication.style().standardIcon(
+            qwt.QStyle.StandardPixmap.SP_FileDialogInfoView
+        )
         job_info = self.toolbar.addAction(icon, 'Job info')
         job_info.triggered.connect(self.open_job_info)
         self.show_toolbar(False)
 
-    def test(self):
-        print('ok')
+    def _go_back(self):
+        _ = self._page_nav.get_nowait()
+        page = self._page_nav.queue[-1]
+        self.goto(page, False)
 
     def terminate_threads(self):
         print('terminating')
@@ -355,11 +362,16 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.console.append(msg)
 
     @qtc.pyqtSlot(str)
-    def goto(self, name: str):
-        if name in self.m_pages:
-            page = self.m_pages[name]
-            self.stacked_widget.setCurrentWidget(page)
-            self.setWindowTitle(page.windowTitle())
+    def goto(self, name: str, add_to_nav: bool = True):
+        page = self.m_pages[name]
+        self.stacked_widget.setCurrentWidget(page)
+        self.setWindowTitle(page.windowTitle())
+        if add_to_nav:
+            self._page_nav.put(name)
+        if name == START_PAGE_NAME:
+            self.show_console(False)
+            self.show_toolbar(False)
+            self.show_menubar(False)
 
     def show_widget(self, widget: qwt.QWidget, show: bool):
         if show:
