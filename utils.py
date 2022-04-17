@@ -3,7 +3,7 @@ import errno
 import logging
 import os
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2 as cv
 import gdown
@@ -345,3 +345,48 @@ def get_aligned_landmarks_filename(image_size: int) -> str:
         str: _description_
     """
     return f'aligned_landmarks_{image_size}.json'
+
+
+def get_val_from_dict(dict: Dict[str, Any], key: Union[List[str], str]) -> Any:
+    """Fetches data from the dictionary `dict` based on the list of keys in
+    list `key`.
+
+    Parameters
+    ----------
+    dict : Dict[str, Any]
+        dictionary with data
+    key : Union[List[str], str]
+        keys from dictionary
+
+    Returns
+    -------
+    Any
+        data from the dictionary based on the key
+    """
+    if len(key) == 1:
+        return dict[key[0]]
+    else:
+        return get_val_from_dict(dict[key[0]], key[1:])
+
+
+def set_val_on_dict(
+    dict: Dict[str, Any],
+    key: Union[List[str], str],
+    value: Any,
+) -> None:
+    """Sets data in the dictionary `dict` based on the list of keys in
+    list `key`.
+
+    Parameters
+    ----------
+    dict : Dict[str, Any]
+        dictionary to update
+    key : Union[List[str], str]
+        on which key to put new value
+    value : Any
+        new value
+    """
+    if len(key) == 1:
+        dict[key[0]] = value
+    else:
+        set_val_on_dict(dict[key[0]], key[1:], value)
