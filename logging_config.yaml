@@ -83,6 +83,10 @@ loggers:
     level: DEBUG
     handlers: [console, gui, file]
     propagate: no
+  gui.widgets.configure_data_paths_dialog:
+    level: DEBUG
+    handlers: [console, gui, file]
+    propagate: no
 root:
   level: DEBUG
   handlers: [console, file]
