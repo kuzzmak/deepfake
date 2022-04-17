@@ -38,7 +38,7 @@ class ImageViewerWithImageCount(BaseWidget):
         label_row_wgt_layout = qwt.QHBoxLayout()
         label_row_wgt.setLayout(label_row_wgt_layout)
         label = qwt.QLabel(text='images: ')
-        label.setSizePolicy(MinimalSizePolicy)
+        label.setSizePolicy(MinimalSizePolicy())
         label_row_wgt_layout.addWidget(label)
         self.label_value = qwt.QLabel(text='0')
         label_row_wgt_layout.addWidget(self.label_value)
@@ -84,7 +84,7 @@ class ImageViewerWithImageCount(BaseWidget):
         page_row = HWidget()
         layout.addWidget(page_row)
         page_row.layout().setContentsMargins(0, 0, 0, 0)
-        page_row.layout().addItem(HorizontalSpacer)
+        page_row.layout().addItem(HorizontalSpacer())
         page_label = qwt.QLabel(text='page ')
         page_row.layout().addWidget(page_label)
         self.current_page_label = qwt.QLabel(text='0')
@@ -93,7 +93,7 @@ class ImageViewerWithImageCount(BaseWidget):
         page_row.layout().addWidget(divider_label)
         self.total_pages_label = qwt.QLabel(text='0')
         page_row.layout().addWidget(self.total_pages_label)
-        page_row.layout().addItem(HorizontalSpacer)
+        page_row.layout().addItem(HorizontalSpacer())
 
         self.setLayout(layout)
 

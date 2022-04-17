@@ -4,19 +4,22 @@ import PyQt6.QtWidgets as qwt
 from enums import LAYOUT
 
 
-VerticalSpacer = qwt.QSpacerItem(
-    1,
-    1,
-    qwt.QSizePolicy.Policy.Fixed,
-    qwt.QSizePolicy.Policy.MinimumExpanding,
-)
+def VerticalSpacer() -> qwt.QSpacerItem:
+    return qwt.QSpacerItem(
+        1,
+        1,
+        qwt.QSizePolicy.Policy.Fixed,
+        qwt.QSizePolicy.Policy.MinimumExpanding,
+    )
 
-HorizontalSpacer = qwt.QSpacerItem(
-    1,
-    1,
-    qwt.QSizePolicy.Policy.MinimumExpanding,
-    qwt.QSizePolicy.Policy.Fixed,
-)
+
+def HorizontalSpacer() -> qwt.QSpacerItem:
+    return qwt.QSpacerItem(
+        1,
+        1,
+        qwt.QSizePolicy.Policy.MinimumExpanding,
+        qwt.QSizePolicy.Policy.Fixed,
+    )
 
 
 def HWidget() -> qwt.QWidget:
@@ -33,10 +36,11 @@ def VWidget() -> qwt.QWidget:
     return wgt
 
 
-MinimalSizePolicy = qwt.QSizePolicy(
-    qwt.QSizePolicy.Policy.Fixed,
-    qwt.QSizePolicy.Policy.Fixed,
-)
+def MinimalSizePolicy() -> qwt.QSizePolicy:
+    return qwt.QSizePolicy(
+        qwt.QSizePolicy.Policy.Fixed,
+        qwt.QSizePolicy.Policy.Fixed,
+    )
 
 
 def Button(text: str = 'click', width: int = 150) -> qwt.QPushButton:

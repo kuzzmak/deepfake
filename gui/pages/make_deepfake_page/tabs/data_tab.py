@@ -147,7 +147,7 @@ class DataTab(BaseWidget):
         n_th_frame_edit.setFixedWidth(150)
         n_th_frame_gb.layout().addWidget(n_th_frame_edit)
 
-        left_part.layout().addItem(VerticalSpacer)
+        left_part.layout().addItem(VerticalSpacer())
 
         self.start_extraction_btn = Button('Start extaction')
         left_part.layout().addWidget(self.start_extraction_btn)
@@ -207,7 +207,7 @@ class DataTab(BaseWidget):
         left_part_gi.layout().addWidget(self.scraping_btn)
         self.scraping_btn.clicked.connect(self._scraping_op)
 
-        left_part_gi.layout().addItem(VerticalSpacer)
+        left_part_gi.layout().addItem(VerticalSpacer())
 
         right_part_gi = VWidget()
         self.google_images_wgt.layout().addWidget(right_part_gi)

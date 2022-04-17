@@ -38,7 +38,7 @@ class DetectDeepFakePage(Page):
         ))
         self.model_cb = qwt.QComboBox()
         model_selection_row.layout().addWidget(self.model_cb)
-        model_selection_row.layout().addItem(HorizontalSpacer)
+        model_selection_row.layout().addItem(HorizontalSpacer())
         self.model_cb.currentIndexChanged.connect(
             self._model_selection_changed
         )

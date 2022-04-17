@@ -95,7 +95,7 @@ class MriGanWidget(ModelWidget):
         crop_faces_right_part = VWidget()
         crop_faces_gb.layout().addWidget(crop_faces_right_part)
 
-        self.data_tab.layout().addItem(VerticalSpacer)
+        self.data_tab.layout().addItem(VerticalSpacer())
 
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:

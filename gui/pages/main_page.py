@@ -240,7 +240,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         device_row_layout.addWidget(self.devices_dropdown)
 
         device_tab_wgt_layout.addWidget(device_row)
-        device_tab_wgt_layout.addItem(VerticalSpacer)
+        device_tab_wgt_layout.addItem(VerticalSpacer())
 
         # -- window tab ---
         window_tab_wgt = qwt.QWidget(tab_wgt)
@@ -272,7 +272,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         window_tab_wgt_layout.addWidget(preferred_width_row)
         window_tab_wgt_layout.addWidget(preferred_height_row)
-        window_tab_wgt_layout.addItem(VerticalSpacer)
+        window_tab_wgt_layout.addItem(VerticalSpacer())
 
         tab_wgt.addTab(window_tab_wgt, 'Window')
 
@@ -281,7 +281,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         button_row_layout = qwt.QHBoxLayout()
         button_row.setLayout(button_row_layout)
         central_wgt_layout.addWidget(button_row)
-        button_row_layout.addItem(HorizontalSpacer)
+        button_row_layout.addItem(HorizontalSpacer())
 
         ok_btn = qwt.QPushButton(text='Ok')
         ok_btn.setFixedWidth(120)

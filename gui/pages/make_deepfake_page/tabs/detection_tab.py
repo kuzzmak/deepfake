@@ -134,7 +134,7 @@ class DetectionAlgorithmTab(BaseWidget):
         input_directory_wgt_layout.addWidget(qwt.QLabel(
             text='Directory with face images or \nmetadata directory')
         )
-        input_directory_wgt_layout.addItem(HorizontalSpacer)
+        input_directory_wgt_layout.addItem(HorizontalSpacer())
         self.select_input_faces_directory_btn = qwt.QPushButton(text='Select')
         self.select_input_faces_directory_btn.clicked.connect(
             self.select_faces_directory
@@ -171,7 +171,7 @@ class DetectionAlgorithmTab(BaseWidget):
 
         # widget containing possible options for a particular sorting method
         self.sort_method_wgt = qwt.QStackedWidget()
-        self.sort_method_wgt.setSizePolicy(MinimalSizePolicy)
+        self.sort_method_wgt.setSizePolicy(MinimalSizePolicy())
         sort_method_wgt_layout = self.sort_method_wgt.layout()
         sort_method_wgt_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -186,7 +186,7 @@ class DetectionAlgorithmTab(BaseWidget):
         self.eps_edit = qwt.QLineEdit()
         self.eps_edit.setText(str(self._image_hash_eps))
         eps_row_layout.addWidget(eps_label)
-        eps_row_layout.addItem(VerticalSpacer)
+        eps_row_layout.addItem(VerticalSpacer())
         eps_row_layout.addWidget(self.eps_edit)
         image_hash_method_layout.addWidget(eps_row)
         self.sort_method_wgt.addWidget(self.image_hash_method)
@@ -199,7 +199,7 @@ class DetectionAlgorithmTab(BaseWidget):
         self.sort_method_wgt.addWidget(self.some_other_method)
 
         left_part_layout.addWidget(self.sort_method_wgt)
-        left_part_layout.addItem(VerticalSpacer)
+        left_part_layout.addItem(VerticalSpacer())
 
         button_row_wgt = qwt.QWidget()
         button_row_wgt_layout = qwt.QHBoxLayout()

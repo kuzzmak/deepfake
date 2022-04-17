@@ -99,7 +99,7 @@ class InferenceTab(BaseWidget):
             device_row.layout().addWidget(btn)
             self.device_bg.addButton(btn)
 
-        left_part.layout().addItem(VerticalSpacer)
+        left_part.layout().addItem(VerticalSpacer())
 
         start_btn = qwt.QPushButton(text='start')
         self._widgets_to_disable_on_inference.append(start_btn)
