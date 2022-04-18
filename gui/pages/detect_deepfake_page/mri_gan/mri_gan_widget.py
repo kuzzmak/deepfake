@@ -2,12 +2,19 @@ import logging
 from typing import Dict, Optional
 
 import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
 
 from core.worker.landmark_extraction_worker import LandmarkExtractionWorker
 from enums import CONNECTION, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
 from gui.pages.detect_deepfake_page.mri_gan.common import Step
-from gui.widgets.common import PlayIcon, StopIcon, VerticalSpacer
+from gui.widgets.common import (
+    HWidget,
+    PlayIcon,
+    StopIcon,
+    VWidget,
+    VerticalSpacer,
+)
 from gui.widgets.configure_data_paths_dialog import ConfigureDataPathsDialog
 from utils import parse_number
 
@@ -18,6 +25,7 @@ logger = logging.getLogger(__name__)
 class MriGanWidget(ModelWidget):
 
     stop_landmark_extraction_sig = qtc.pyqtSignal()
+    stop_cropping_faces_sig = qtc.pyqtSignal()
 
     def __init__(
         self,
@@ -29,8 +37,33 @@ class MriGanWidget(ModelWidget):
 
         self._threads = []
         self._lmrks_extraction_in_progress = False
+        self._cropping_faces_in_progress = False
 
     def _init_ui(self) -> None:
+        central_wgt = HWidget()
+        self.data_tab.layout().addWidget(central_wgt)
+        central_wgt.layout().setContentsMargins(0, 0, 0, 0)
+
+        left_part = VWidget()
+        central_wgt.layout().addWidget(left_part)
+        left_part.setMaximumWidth(460)
+
+        left_part.layout().addWidget(qwt.QLabel(text='mri gan model'))
+
+        line = qwt.QFrame()
+        line.setFrameShape(qwt.QFrame.Shape.VLine)
+        line.setFrameShadow(qwt.QFrame.Shadow.Sunken)
+        central_wgt.layout().addWidget(line)
+
+        right_part = VWidget()
+        central_wgt.layout().addWidget(right_part)
+
+        right_part.layout().addWidget(qwt.QLabel(
+            text='deepkafe detection model'
+        ))
+
+        right_part.layout().addItem(VerticalSpacer())
+
         ##########################
         # LANDMARK EXTRACTION STEP
         ##########################
@@ -38,7 +71,7 @@ class MriGanWidget(ModelWidget):
             'Landmark extraction',
             'start extraction',
         )
-        self.data_tab.layout().addWidget(self.lmrks_extraction_step)
+        left_part.layout().addWidget(self.lmrks_extraction_step)
         self.lmrks_extraction_step.start_btn.clicked.connect(
             self._extract_landmarks
         )
@@ -50,7 +83,7 @@ class MriGanWidget(ModelWidget):
         # CROPPING FACES GROUPBOX
         #########################
         self.crop_faces_step = Step('Crop faces', 'start cropping')
-        self.data_tab.layout().addWidget(self.crop_faces_step)
+        left_part.layout().addWidget(self.crop_faces_step)
         self.crop_faces_step.start_btn.clicked.connect(self._crop_faces)
         self.crop_faces_step.configure_paths_btn.clicked.connect(
             self._configure_crop_faces_paths
@@ -63,12 +96,12 @@ class MriGanWidget(ModelWidget):
             'Generate MRI dataset',
             'generate dataset',
         )
-        self.data_tab.layout().addWidget(self.gen_mri_dataset_step)
+        left_part.layout().addWidget(self.gen_mri_dataset_step)
         self.gen_mri_dataset_step.configure_paths_btn.clicked.connect(
             self._configure_generate_mri_dataset_paths
         )
 
-        self.data_tab.layout().addItem(VerticalSpacer())
+        left_part.layout().addItem(VerticalSpacer())
 
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:
@@ -149,7 +182,19 @@ class MriGanWidget(ModelWidget):
 
     @qtc.pyqtSlot()
     def _crop_faces(self) -> None:
-        ...
+        """Initiates or stops cropping faces process.
+        """
+        if self._cropping_faces_in_progress:
+            self._stop_cropping_faces()
+        else:
+            ...
+
+    def _stop_cropping_faces(self) -> None:
+        """Sends signal to stop cropping faces.
+        """
+        logger.info('Requested stop of cropping faces, please wait...')
+        self.enable_widget(self.crop_faces_step.start_btn, False)
+        self.stop_cropping_faces_sig.emit()
 
     @qtc.pyqtSlot()
     def _configure_ext_lmrks_paths(self) -> None:
