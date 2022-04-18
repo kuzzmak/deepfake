@@ -27,6 +27,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  core.worker.crop_faces_worker:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   core.dataset.dataset:
     level: DEBUG
     handlers: [file, gui, console]
