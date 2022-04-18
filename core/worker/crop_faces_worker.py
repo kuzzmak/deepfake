@@ -13,7 +13,7 @@ from enums import DATA_TYPE, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
 
 
-class CroppingFacesWorker(MRIGANWorker, WorkerWithPool):
+class CropFacesWorker(MRIGANWorker, WorkerWithPool):
     """Worker for cropping faces from images.
 
     Args:
