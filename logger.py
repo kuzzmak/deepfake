@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 import sys
 from typing import TextIO
 
@@ -9,11 +10,13 @@ from enums import LEVEL
 from variables import LONG_DATE_FORMAt
 
 
-WORKER_LOGGERS = [
-    'core.worker.landmark_extraction_worker',
-    'core.worker.generate_mri_dataset_worker',
-    'core.worker.mri_gan_worker',
-]
+_root = Path(__name__).parent
+_core_worker = Path('core') / 'worker'
+_p = _root / _core_worker
+_workers = list(_p.glob('*.py'))
+_restricted_workers = ['worker', 'worker_with_pool', 'mri_gan_worker']
+_workers = list(filter(lambda w: w.stem not in _restricted_workers, _workers))
+WORKER_LOGGERS = ['.'.join([*_core_worker.parts, w.stem]) for w in _workers]
 
 
 class GuiHandler(logging.Handler):
