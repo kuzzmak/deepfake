@@ -1,5 +1,5 @@
 import logging
-import multiprocessing
+from multiprocessing.pool import Pool
 from typing import Optional
 
 import PyQt6.QtCore as qtc
@@ -29,7 +29,7 @@ class WorkerWithPool(Worker):
 
         self._num_instances = num_instances
 
-    def close_pool(self, pool: multiprocessing.pool.Pool) -> None:
+    def close_pool(self, pool: Pool) -> None:
         """Closes pool of threads or processes which is passed as an argument.
         This method can be used when stop signal is received and the running
         processes or threads need to be terminated.
@@ -43,7 +43,7 @@ class WorkerWithPool(Worker):
         pool.join()
         self.logger.debug('Process pool closed.')
 
-    def handle_exit(self, pool: multiprocessing.pool.Pool) -> None:
+    def handle_exit(self, pool: Pool) -> None:
         """Gracefully closes pool of processes or threads and emits `finished`
         signal.
 
