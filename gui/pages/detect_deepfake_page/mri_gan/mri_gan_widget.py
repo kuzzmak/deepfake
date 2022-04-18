@@ -4,8 +4,8 @@ from typing import Dict, Optional
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
-from core.worker.landmark_extraction_worker import LandmarkExtractionWorker
-from enums import CONNECTION, SIGNAL_OWNER
+from core.worker import CropFacesWorker, LandmarkExtractionWorker
+from enums import CONNECTION, JOB_TYPE, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
 from gui.pages.detect_deepfake_page.mri_gan.common import Step
 from gui.widgets.common import (
@@ -35,7 +35,7 @@ class MriGanWidget(ModelWidget):
 
         self._init_ui()
 
-        self._threads = []
+        self._threads = dict()
         self._lmrks_extraction_in_progress = False
         self._cropping_faces_in_progress = False
 
@@ -130,7 +130,7 @@ class MriGanWidget(ModelWidget):
                 lambda: worker.conn_q.put(CONNECTION.STOP)
             )
             worker.moveToThread(thread)
-            self._threads.append((thread, worker))
+            self._threads[JOB_TYPE.LANDMARK_EXTRACTION] = (thread, worker)
             thread.started.connect(worker.run)
             worker.started.connect(
                 self._on_landmark_extraction_worker_started
@@ -147,10 +147,10 @@ class MriGanWidget(ModelWidget):
     def _on_landmark_extraction_worker_finished(self) -> None:
         """Waits for landmark extraction thread to finish and exit gracefully.
         """
-        for thread, _ in self._threads:
-            thread.quit()
-            thread.wait()
-        self._threads = []
+        thread, _ = self._threads[JOB_TYPE.LANDMARK_EXTRACTION]
+        thread.quit()
+        thread.wait()
+        self._threads.pop(JOB_TYPE.LANDMARK_EXTRACTION, None)
         self.enable_widget(self.lmrks_extraction_step.start_btn, True)
         self.lmrks_extraction_step.start_btn.setIcon(PlayIcon())
         self.lmrks_extraction_step.start_btn.setText('start extraction')
@@ -158,7 +158,7 @@ class MriGanWidget(ModelWidget):
 
     @qtc.pyqtSlot()
     def _on_landmark_extraction_worker_started(self) -> None:
-        """pyqtSlot which disables button for starting or stopping landmark
+        """Slot which disables button for starting or stopping landmark
         extraction until worker is set up.
         """
         self.enable_widget(self.lmrks_extraction_step.start_btn, False)
@@ -166,7 +166,7 @@ class MriGanWidget(ModelWidget):
 
     @qtc.pyqtSlot()
     def _on_landmark_extraction_worker_running(self) -> None:
-        """pyqtSlot which enables button for starting or stopping landmark
+        """Slot which enables button for starting or stopping landmark
         extraction and changes icon of the button to the stop icon.
         """
         self.enable_widget(self.lmrks_extraction_step.start_btn, True)
@@ -187,7 +187,31 @@ class MriGanWidget(ModelWidget):
         if self._cropping_faces_in_progress:
             self._stop_cropping_faces()
         else:
-            ...
+            num_proc = parse_number(
+                self.crop_faces_step.num_of_instances
+            )
+            if num_proc is None:
+                logger.error(
+                    'Unable to parse your input for number of ' +
+                    'processes, you should put integer number.'
+                )
+                return
+            
+            thread = qtc.QThread()
+            worker = CropFacesWorker(
+                self.crop_faces_step.selected_data_type,
+                num_proc,
+                self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+            )
+            self.stop_cropping_faces_sig.connect(
+                lambda: worker.conn_q.put(CONNECTION.STOP)
+            )
+            worker.moveToThread(thread)
+            self._threads[JOB_TYPE.CROPING_FACES] = (thread, worker)
+            thread.started.connect(worker.run)
+            worker.started.connect(self._on_crop_faces_worker_started)
+            worker.running.connect(self._on_crop_faces_worker_running)
+            worker.finished.connect(self._on_crop_faces_worker_finished)
 
     def _stop_cropping_faces(self) -> None:
         """Sends signal to stop cropping faces.
@@ -195,6 +219,36 @@ class MriGanWidget(ModelWidget):
         logger.info('Requested stop of cropping faces, please wait...')
         self.enable_widget(self.crop_faces_step.start_btn, False)
         self.stop_cropping_faces_sig.emit()
+
+    @qtc.pyqtSlot()
+    def _on_crop_faces_worker_started(self) -> None:
+        """Disables button for stopping the cropping face process until
+        everything is set up and runs correctly.
+        """
+        self.enable_widget(self.crop_faces_step.start_btn, False)
+        self._cropping_faces_in_progress = True
+
+    @qtc.pyqtSlot()
+    def _on_crop_faces_worker_running(self) -> None:
+        """Updates icon and text of the button which starts of stops process
+        of cropping faces.
+        """
+        self.enable_widget(self.crop_faces_step.start_btn, True)
+        self.crop_faces_step.start_btn.setIcon(StopIcon())
+        self.crop_faces_step.start_btn.setText('stop cropping faces')
+
+    @qtc.pyqtSlot()
+    def _on_crop_faces_worker_finished(self) -> None:
+        """Waits for cropping thread to quit, handles button update for text and icon.
+        """
+        thread, _ = self._threads[JOB_TYPE.CROPING_FACES]
+        thread.quit()
+        thread.wait()
+        self._threads.pop(JOB_TYPE.CROPING_FACES, None)
+        self.enable_widget(self.crop_faces_step.start_btn, True)
+        self.crop_faces_step.start_btn.setIcon(PlayIcon())
+        self.crop_faces_step.start_btn.setText('crop faces')
+        self._cropping_faces_in_progress = False
 
     @qtc.pyqtSlot()
     def _configure_ext_lmrks_paths(self) -> None:
