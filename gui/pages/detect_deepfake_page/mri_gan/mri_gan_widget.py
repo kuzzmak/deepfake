@@ -196,7 +196,7 @@ class MriGanWidget(ModelWidget):
                     'processes, you should put integer number.'
                 )
                 return
-            
+
             thread = qtc.QThread()
             worker = CropFacesWorker(
                 self.crop_faces_step.selected_data_type,
