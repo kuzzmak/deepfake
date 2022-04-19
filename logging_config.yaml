@@ -23,6 +23,10 @@ handlers:
     level: DEBUG
     formatter: simple-with-source-type
 loggers:
+  core.worker.generate_mri_dataset_worker:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no 
   core.worker.landmark_extraction_worker:
     level: DEBUG
     handlers: [file, gui, console]
