@@ -1,10 +1,16 @@
 import logging
-from typing import Dict, Optional
+from multiprocessing import Lock
+from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
-from core.worker import CropFacesWorker, LandmarkExtractionWorker
+from core.worker import (
+    CropFacesWorker,
+    GenerateMRIDatasetWorker,
+    LandmarkExtractionWorker,
+)
+from core.worker.worker import Worker
 from enums import CONNECTION, JOB_TYPE, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
 from gui.pages.detect_deepfake_page.mri_gan.common import Step
@@ -26,6 +32,7 @@ class MriGanWidget(ModelWidget):
 
     stop_landmark_extraction_sig = qtc.pyqtSignal()
     stop_cropping_faces_sig = qtc.pyqtSignal()
+    stop_gen_mri_dataset_sig = qtc.pyqtSignal()
 
     def __init__(
         self,
@@ -35,9 +42,11 @@ class MriGanWidget(ModelWidget):
 
         self._init_ui()
 
-        self._threads = dict()
+        self._threads: Dict[JOB_TYPE, Tuple[qtc.QThread, Worker]] = dict()
         self._lmrks_extraction_in_progress = False
         self._cropping_faces_in_progress = False
+        self._gen_mri_dataset_in_progress = False
+        self._lock = Lock()
 
     def _init_ui(self) -> None:
         central_wgt = HWidget()
@@ -97,6 +106,9 @@ class MriGanWidget(ModelWidget):
             'generate dataset',
         )
         left_part.layout().addWidget(self.gen_mri_dataset_step)
+        self.gen_mri_dataset_step.start_btn.clicked.connect(
+            self._gen_mri_dataset
+        )
         self.gen_mri_dataset_step.configure_paths_btn.clicked.connect(
             self._configure_generate_mri_dataset_paths
         )
@@ -207,11 +219,12 @@ class MriGanWidget(ModelWidget):
                 lambda: worker.conn_q.put(CONNECTION.STOP)
             )
             worker.moveToThread(thread)
-            self._threads[JOB_TYPE.CROPING_FACES] = (thread, worker)
+            self._threads[JOB_TYPE.CROPPING_FACES] = (thread, worker)
             thread.started.connect(worker.run)
             worker.started.connect(self._on_crop_faces_worker_started)
             worker.running.connect(self._on_crop_faces_worker_running)
             worker.finished.connect(self._on_crop_faces_worker_finished)
+            thread.start()
 
     def _stop_cropping_faces(self) -> None:
         """Sends signal to stop cropping faces.
@@ -239,16 +252,103 @@ class MriGanWidget(ModelWidget):
 
     @qtc.pyqtSlot()
     def _on_crop_faces_worker_finished(self) -> None:
-        """Waits for cropping thread to quit, handles button update for text and icon.
+        """Waits for cropping thread to quit, handles button update for text
+        and icon.
         """
-        thread, _ = self._threads[JOB_TYPE.CROPING_FACES]
-        thread.quit()
-        thread.wait()
-        self._threads.pop(JOB_TYPE.CROPING_FACES, None)
+        self._lock.acquire()
+        try:
+            val = self._threads.get(JOB_TYPE.CROPPING_FACES, None)
+            if val is not None:
+                thread, _ = val
+                thread.quit()
+                thread.wait()
+                self._threads.pop(JOB_TYPE.CROPPING_FACES, None)
+        finally:
+            self._lock.release()
         self.enable_widget(self.crop_faces_step.start_btn, True)
         self.crop_faces_step.start_btn.setIcon(PlayIcon())
         self.crop_faces_step.start_btn.setText('crop faces')
         self._cropping_faces_in_progress = False
+
+    @qtc.pyqtSlot()
+    def _gen_mri_dataset(self) -> None:
+        """Initiates or stops generation of the mri dataset.
+        """
+        if self._gen_mri_dataset_in_progress:
+            self._stop_gen_mri_dataset()
+        else:
+            num_proc = parse_number(
+                self.gen_mri_dataset_step.num_of_instances
+            )
+            if num_proc is None:
+                logger.error(
+                    'Unable to parse your input for number of ' +
+                    'processes, you should put integer number.'
+                )
+                return
+
+            thread = qtc.QThread()
+            worker = GenerateMRIDatasetWorker(
+                self.gen_mri_dataset_step.selected_data_type,
+                num_proc,
+                self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+            )
+            self.stop_gen_mri_dataset_sig.connect(
+                lambda: worker.conn_q.put(CONNECTION.STOP)
+            )
+            worker.moveToThread(thread)
+            self._threads[JOB_TYPE.GENERATE_MRI_DATASET] = (thread, worker)
+            thread.started.connect(worker.run)
+            worker.started.connect(self._on_gen_mri_dataset_worker_started)
+            worker.running.connect(self._on_gen_mri_dataset_worker_running)
+            worker.finished.connect(self._on_gen_mri_dataset_worker_finished)
+            thread.start()
+
+    def _stop_gen_mri_dataset(self) -> None:
+        """Sends signal to stop generation of the mri dataset.
+        """
+        logger.info(
+            'Requested stop of the generating mri ' +
+            f'dataset, please wait...'
+        )
+        self.enable_widget(self.gen_mri_dataset_step.start_btn, False)
+        self.stop_gen_mri_dataset_sig.emit()
+
+    @qtc.pyqtSlot()
+    def _on_gen_mri_dataset_worker_started(self) -> None:
+        """Disables button for stopping worker until setup is done.
+        """
+        self.enable_widget(self.gen_mri_dataset_step.start_btn, False)
+        self._gen_mri_dataset_in_progress = True
+
+    @qtc.pyqtSlot()
+    def _on_gen_mri_dataset_worker_running(self) -> None:
+        """Changes icon and text of the button which is used to start or stop
+        generation of the mri dataset.
+        """
+        self.enable_widget(self.gen_mri_dataset_step.start_btn, True)
+        self.gen_mri_dataset_step.start_btn.setIcon(StopIcon())
+        self.gen_mri_dataset_step.start_btn.setText('stop generating')
+
+    @qtc.pyqtSlot()
+    def _on_gen_mri_dataset_worker_finished(self) -> None:
+        """Waits for gen mri worker to quit in order to shutdown threads or
+        processes gracefully.
+        """
+        self._lock.acquire()
+        try:
+            val = self._threads.get(JOB_TYPE.GENERATE_MRI_DATASET, None)
+            if val is not None:
+                thread, _ = val
+                thread.quit()
+                thread.wait()
+                self._threads.pop(JOB_TYPE.GENERATE_MRI_DATASET, None)
+        finally:
+            self._lock.release()
+        self.enable_widget(self.gen_mri_dataset_step.start_btn, True)
+        self.gen_mri_dataset_step.start_btn.setIcon(PlayIcon())
+        self.gen_mri_dataset_step.start_btn.setText('generate dataset')
+        self._gen_mri_dataset_in_progress = False
 
     @qtc.pyqtSlot()
     def _configure_ext_lmrks_paths(self) -> None:
@@ -269,6 +369,7 @@ class MriGanWidget(ModelWidget):
         dialog = ConfigureDataPathsDialog(keys, labels)
         dialog.exec()
 
+    @qtc.pyqtSlot()
     def _configure_crop_faces_paths(self) -> None:
         """Shows dialog for configuring paths for face cropping process.
         """
@@ -286,15 +387,30 @@ class MriGanWidget(ModelWidget):
             'DFDC test landmarks path',
             'DFDC cropped faces train path',
             'DFDC cropped faces valid path',
-            'DFDC cropped faces test path'
+            'DFDC cropped faces test path',
         ]
         dialog = ConfigureDataPathsDialog(keys, labels)
         dialog.exec()
 
+    @qtc.pyqtSlot()
     def _configure_generate_mri_dataset_paths(self) -> None:
         """Show dialog for configuring paths for generating MRI dataset.
         """
-        keys = [ConfigureDataPathsDialog.mri_metadata_csv_path]
-        labels = ['DFDC mri metadata csv path']
+        keys = [
+            ConfigureDataPathsDialog.mri_metadata_csv_path,
+            *ConfigureDataPathsDialog.dfdc_data_path_all,
+            ConfigureDataPathsDialog.dfdc_mri_path,
+            *ConfigureDataPathsDialog.dfdc_crop_faces_path_all,
+        ]
+        labels = [
+            'DFDC mri metadata csv path',
+            'DFDC train dataset path',
+            'DFDC valid dataset path',
+            'DFDC test dataset path',
+            'DFDF mri path',
+            'DFDC cropped faces train path',
+            'DFDC cropped faces valid path',
+            'DFDC cropped faces test path',
+        ]
         dialog = ConfigureDataPathsDialog(keys, labels)
         dialog.exec()
