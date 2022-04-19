@@ -53,6 +53,8 @@ class ConfigureDataPathsDialog(qwt.QDialog):
 
     mri_metadata_csv_path = [*dfdc_features, 'mri_metadata_csv']
 
+    dfdc_mri_path = [*dfdc_features, 'mri_path']
+
     def __init__(self, keys: List[List[str]], labels: List[str]):
         super().__init__()
 
