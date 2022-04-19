@@ -18,6 +18,8 @@ class LandmarkExtractionWorker(MRIGANWorker, WorkerWithPool):
     """Worker used to extact face landmarks from the images with faces.
 
     Args:
+        data_type (DATA_TYPE): for what kind of data is dataset being
+            generated
         num_processes (int, optional): how many instances of the worker
             will be spawned. Defaults to 2.
         message_worker_sig (Optional[qtc.pyqtSignal], optional): signal to
