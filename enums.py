@@ -140,7 +140,8 @@ class JOB_TYPE(Enum):
     NO_JOB = 'no_job'
     LANDMARK_ALIGNMENT = 'landmark_alignment'
     LANDMARK_EXTRACTION = 'landmark_extraction'
-    CROPING_FACES = 'cropping_faces'
+    CROPPING_FACES = 'cropping_faces'
+    GENERATE_MRI_DATASET = 'generate_mri_dataset'
 
 
 class APP_STATUS(Enum):
@@ -258,5 +259,6 @@ class DATA_TYPE(Enum):
 
 
 class JOB_NAME(Enum):
-    CROP_FACES = 'cropping faces'
+    LANDMARK_EXTRACTION = 'landmark extraction'
+    CROPPING_FACES = 'cropping faces'
     GENERATE_MRI_DATASET = 'generating mri dataset'
