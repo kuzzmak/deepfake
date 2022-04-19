@@ -17,6 +17,8 @@ class CropFacesWorker(MRIGANWorker, WorkerWithPool):
     """Worker for cropping faces from images.
 
     Args:
+        data_type (DATA_TYPE): for what kind of data is dataset being
+            generated
         num_instances (int, optional): how many instances of this worker
             will be spawned. Defaults to 2.
         message_worker_sig (Optional[qtc.pyqtSignal], optional): signal to
@@ -86,7 +88,7 @@ class CropFacesWorker(MRIGANWorker, WorkerWithPool):
 
                 self.report_progress(
                     SIGNAL_OWNER.CROPPING_FACES_WORKER,
-                    JOB_TYPE.CROPING_FACES,
+                    JOB_TYPE.CROPPING_FACES,
                     idx,
                     len(jobs),
                 )
