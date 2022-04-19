@@ -12,7 +12,7 @@ from core.df_detection.mri_gan.data_utils.face_mri import \
     gen_face_mri_per_folder
 from core.df_detection.mri_gan.data_utils.utils import \
     get_dfdc_training_real_fake_pairs
-from core.worker.mri_gan_worker import MRIGANWorker
+from core.worker import MRIGANWorker
 from core.worker.worker_with_pool import WorkerWithPool
 from enums import DATA_TYPE, JOB_NAME, SIGNAL_OWNER, WIDGET
 from message.message import Messages
