@@ -14,7 +14,7 @@ from core.df_detection.mri_gan.data_utils.utils import \
     get_dfdc_training_real_fake_pairs
 from core.worker import MRIGANWorker
 from core.worker.worker_with_pool import WorkerWithPool
-from enums import DATA_TYPE, JOB_NAME, SIGNAL_OWNER, WIDGET
+from enums import DATA_TYPE, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
 
 
@@ -28,6 +28,16 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
         num_instances: int = 2,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
+        """Worker for generating MRI dataset.
+
+        Args:
+            data_type (DATA_TYPE): for what kind of data is dataset being
+                generated
+            num_instances (int, optional): number of workers to spawn.
+                Defaults to 2.
+            message_worker_sig (Optional[qtc.pyqtSignal], optional): signal to
+                the message worker. Defaults to None.
+        """
         MRIGANWorker.__init__(self, data_type)
         WorkerWithPool.__init__(self, num_instances, message_worker_sig)
 
@@ -90,7 +100,7 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
 
                 self.report_progress(
                     SIGNAL_OWNER.GENERATE_MRI_DATASET_WORKER,
-                    JOB_NAME.GENERATE_MRI_DATASET,
+                    JOB_TYPE.GENERATE_MRI_DATASET,
                     idx,
                     len(jobs),
                 )
@@ -109,7 +119,8 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
 
         df_combined = dfdc_df
 
-        # convert ['real_image', 'fake_image', 'mri_image'] to ['face_image', 'mri_image']
+        # convert ['real_image', 'fake_image', 'mri_image'] to
+        # ['face_image', 'mri_image']
         # where if image is real => use blank image as mri
         #       else use the mri(real_image, fake_image)
 
@@ -140,11 +151,16 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
 
         total_samples = dfr_len + dff_len
 
-        print(f'Total Fake samples {dff_len}')
-        print(f'Total Real samples {dfr_len}')
-        print(f'Fake Train samples {len(fake_train)}')
-        print(f'Real Train samples {len(real_train)}')
-        print(f'Fake Test samples {len(fake_test)}')
-        print(f'Real Test samples {len(real_test)}')
-        print(
-            f'Total samples {total_samples}, real={round(dfr_len / total_samples, 2)}% fake={round(dff_len / total_samples, 2)}%')
+        self.logger.info(f'Total fake samples {dff_len}')
+        self.logger.info(f'Total real samples {dfr_len}')
+        self.logger.info(f'Fake train samples {len(fake_train)}')
+        self.logger.info(f'Real train samples {len(real_train)}')
+        self.logger.info(f'Fake test samples {len(fake_test)}')
+        self.logger.info(f'Real test samples {len(real_test)}')
+        self.logger.info(
+            f'Total samples {total_samples}, ' +
+            f'real={round(dfr_len / total_samples, 2)}% ' +
+            f'fake={round(dff_len / total_samples, 2)}%'
+        )
+
+        self.logger.info('Generating MRI dataset finished.')
