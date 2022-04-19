@@ -7,7 +7,7 @@ import PyQt6.QtCore as qtc
 
 from core.df_detection.mri_gan.data_utils.face_detection import \
     crop_faces_from_video
-from core.worker.mri_gan_worker import MRIGANWorker
+from core.worker import MRIGANWorker
 from core.worker.worker_with_pool import WorkerWithPool
 from enums import DATA_TYPE, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
