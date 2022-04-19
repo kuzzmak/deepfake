@@ -5,7 +5,6 @@ from typing import Optional
 
 import PyQt6.QtCore as qtc
 
-from email.message import Message
 from enums import (
     BODY_KEY,
     JOB_NAME,
@@ -14,7 +13,7 @@ from enums import (
     MESSAGE_TYPE,
     SIGNAL_OWNER,
 )
-from message.message import Body
+from message.message import Body, Message
 
 
 class Worker(qtc.QObject):
@@ -129,7 +128,7 @@ class Worker(qtc.QObject):
                 {
                     BODY_KEY.PART: part,
                     BODY_KEY.TOTAL: total_parts,
-                    BODY_KEY.JOB_NAME: JOB_NAME[job_type.value.upper()].value
+                    BODY_KEY.JOB_NAME: JOB_NAME[job_type.value.upper()].value,
                 },
                 part == total_parts - 1,
             )
