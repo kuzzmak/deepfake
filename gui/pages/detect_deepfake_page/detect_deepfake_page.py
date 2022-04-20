@@ -6,7 +6,7 @@ from config import APP_CONFIG
 
 from enums import DF_DETECTION_MODEL, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.meso_net_widget import MesoNetWidget
-from gui.pages.detect_deepfake_page.mri_gan.mri_gan_widget import MriGanWidget
+from gui.pages.detect_deepfake_page.mri_gan.mri_gan_widget import MRIGANWidget
 from gui.pages.page import Page
 from gui.widgets.common import HWidget, HorizontalSpacer
 from names import DETECT_DEEPFAKE_PAGE_NAME
@@ -58,7 +58,7 @@ class DetectDeepFakePage(Page):
         self.meso_net_wgt = MesoNetWidget(signals)
         self.stacked_wgt.addWidget(self.meso_net_wgt)
 
-        self.mri_gan_wgt = MriGanWidget(signals)
+        self.mri_gan_wgt = MRIGANWidget(signals)
         self.stacked_wgt.addWidget(self.mri_gan_wgt)
 
         self.stacked_wgt.setCurrentWidget(self.mri_gan_wgt)

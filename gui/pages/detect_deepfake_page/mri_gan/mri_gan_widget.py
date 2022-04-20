@@ -29,7 +29,7 @@ from utils import parse_number
 logger = logging.getLogger(__name__)
 
 
-class MriGanWidget(ModelWidget):
+class MRIGANWidget(ModelWidget):
 
     stop_landmark_extraction_sig = qtc.pyqtSignal()
     stop_cropping_faces_sig = qtc.pyqtSignal()
