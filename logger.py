@@ -7,7 +7,7 @@ from typing import TextIO
 
 from console import Console
 from enums import LEVEL
-from variables import LONG_DATE_FORMAt
+from variables import LONG_DATE_FORMAT
 
 
 _root = Path(__name__).parent
@@ -29,7 +29,7 @@ class GuiHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         date = datetime.fromtimestamp(record.created).strftime(
-            LONG_DATE_FORMAt
+            LONG_DATE_FORMAT
         )
         level = LEVEL[record.levelname]
         name = record.name
