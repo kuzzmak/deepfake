@@ -14,6 +14,7 @@ from enums import (
     BODY_KEY,
     FILE_TYPE,
     IO_OPERATION_TYPE,
+    JOB_NAME,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
     SIGNAL_OWNER,
@@ -48,6 +49,7 @@ class FramesExtractionWorker(Worker):
             WIDGET.JOB_PROGRESS,
             'setMaximum',
             [total_frames],
+            JOB_NAME.FRAMES_EXTRACTION,
         )
         self.signals[SIGNAL_OWNER.MESSAGE_WORKER].emit(msg)
 

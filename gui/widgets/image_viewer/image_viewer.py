@@ -14,6 +14,7 @@ from enums import (
     BODY_KEY,
     INDEX_TYPE,
     IO_OPERATION_TYPE,
+    JOB_NAME,
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
@@ -50,6 +51,7 @@ class LoaderWorker(qtc.QObject):
             WIDGET.JOB_PROGRESS,
             'setMaximum',
             [len(self._data_paths)],
+            JOB_NAME.LOADING,
         )
         self._message_worker_sig.emit(conf_wgt_msg)
         for idx, i_p in enumerate(self._data_paths):

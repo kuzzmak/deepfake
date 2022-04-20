@@ -7,7 +7,6 @@ import PyQt6.QtCore as qtc
 
 from enums import (
     BODY_KEY,
-    JOB_NAME,
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
@@ -133,7 +132,6 @@ class Worker(qtc.QObject):
                 {
                     BODY_KEY.PART: part,
                     BODY_KEY.TOTAL: total_parts,
-                    BODY_KEY.JOB_NAME: JOB_NAME[job_type.value.upper()].value,
                 },
                 part == total_parts - 1,
             )

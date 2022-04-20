@@ -9,7 +9,7 @@ import PyQt6.QtCore as qtc
 from core.df_detection.mri_gan.data_utils.face_detection import \
     extract_landmarks_from_video
 from core.worker import MRIGANWorker, WorkerWithPool
-from enums import DATA_TYPE, JOB_TYPE, SIGNAL_OWNER, WIDGET
+from enums import DATA_TYPE, JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
 
 
@@ -67,6 +67,7 @@ class LandmarkExtractionWorker(MRIGANWorker, WorkerWithPool):
                 WIDGET.JOB_PROGRESS,
                 'setMaximum',
                 [len(jobs)],
+                JOB_NAME.LANDMARK_EXTRACTION,
             )
             self.send_message(conf_wgt_msg)
 

@@ -12,6 +12,7 @@ import numpy as np
 from core.dictionary import Dictionary
 from enums import (
     BODY_KEY,
+    JOB_NAME,
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
@@ -131,6 +132,7 @@ class Aligner:
                 WIDGET.JOB_PROGRESS,
                 'setMaximum',
                 [len(metadata_paths)],
+                JOB_NAME.ALIGNING_LANDMARKS,
             )
             self._message_worker_sig.emit(conf_wgt_msg)
 
