@@ -4,7 +4,7 @@ from typing import Optional
 
 import PyQt6.QtCore as qtc
 
-from core.worker.worker import Worker
+from core.worker import Worker
 
 
 class WorkerWithPool(Worker):
