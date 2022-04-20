@@ -4,7 +4,8 @@ from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
-
+from gui.pages.detect_deepfake_page.mri_gan.train_mri_gan_widget import \
+    TrainMRIGANWidget
 from core.worker import (
     CropFacesWorker,
     GenerateMRIDatasetWorker,
@@ -49,29 +50,32 @@ class MriGanWidget(ModelWidget):
         self._lock = Lock()
 
     def _init_ui(self) -> None:
-        central_wgt = HWidget()
-        self.data_tab.layout().addWidget(central_wgt)
-        central_wgt.layout().setContentsMargins(0, 0, 0, 0)
+        ######
+        # DATA
+        ######
+        central_wgt_data_tab = HWidget()
+        self.data_tab.layout().addWidget(central_wgt_data_tab)
+        central_wgt_data_tab.layout().setContentsMargins(0, 0, 0, 0)
 
-        left_part = VWidget()
-        central_wgt.layout().addWidget(left_part)
-        left_part.setMaximumWidth(460)
+        left_part_data_tab = VWidget()
+        central_wgt_data_tab.layout().addWidget(left_part_data_tab)
+        left_part_data_tab.setMaximumWidth(460)
 
-        left_part.layout().addWidget(qwt.QLabel(text='mri gan model'))
+        left_part_data_tab.layout().addWidget(qwt.QLabel(text='mri gan model'))
 
         line = qwt.QFrame()
         line.setFrameShape(qwt.QFrame.Shape.VLine)
         line.setFrameShadow(qwt.QFrame.Shadow.Sunken)
-        central_wgt.layout().addWidget(line)
+        central_wgt_data_tab.layout().addWidget(line)
 
-        right_part = VWidget()
-        central_wgt.layout().addWidget(right_part)
+        right_part_data_tab = VWidget()
+        central_wgt_data_tab.layout().addWidget(right_part_data_tab)
 
-        right_part.layout().addWidget(qwt.QLabel(
+        right_part_data_tab.layout().addWidget(qwt.QLabel(
             text='deepkafe detection model'
         ))
 
-        right_part.layout().addItem(VerticalSpacer())
+        right_part_data_tab.layout().addItem(VerticalSpacer())
 
         ##########################
         # LANDMARK EXTRACTION STEP
@@ -80,7 +84,7 @@ class MriGanWidget(ModelWidget):
             'Landmark extraction',
             'start extraction',
         )
-        left_part.layout().addWidget(self.lmrks_extraction_step)
+        left_part_data_tab.layout().addWidget(self.lmrks_extraction_step)
         self.lmrks_extraction_step.start_btn.clicked.connect(
             self._extract_landmarks
         )
@@ -88,11 +92,11 @@ class MriGanWidget(ModelWidget):
             self._configure_ext_lmrks_paths
         )
 
-        #########################
-        # CROPPING FACES GROUPBOX
-        #########################
+        #####################
+        # CROPPING FACES STEP
+        #####################
         self.crop_faces_step = Step('Crop faces', 'start cropping')
-        left_part.layout().addWidget(self.crop_faces_step)
+        left_part_data_tab.layout().addWidget(self.crop_faces_step)
         self.crop_faces_step.start_btn.clicked.connect(self._crop_faces)
         self.crop_faces_step.configure_paths_btn.clicked.connect(
             self._configure_crop_faces_paths
@@ -105,7 +109,7 @@ class MriGanWidget(ModelWidget):
             'Generate MRI dataset',
             'generate dataset',
         )
-        left_part.layout().addWidget(self.gen_mri_dataset_step)
+        left_part_data_tab.layout().addWidget(self.gen_mri_dataset_step)
         self.gen_mri_dataset_step.start_btn.clicked.connect(
             self._gen_mri_dataset
         )
@@ -113,7 +117,48 @@ class MriGanWidget(ModelWidget):
             self._configure_generate_mri_dataset_paths
         )
 
-        left_part.layout().addItem(VerticalSpacer())
+        left_part_data_tab.layout().addItem(VerticalSpacer())
+
+        ##########
+        # TRAINING
+        ##########
+        central_wgt_training_tab = HWidget()
+        self.training_tab.layout().addWidget(central_wgt_training_tab)
+        central_wgt_training_tab.layout().setContentsMargins(0, 0, 0, 0)
+
+        left_part_training_tab = VWidget()
+        central_wgt_training_tab.layout().addWidget(left_part_training_tab)
+        left_part_training_tab.setMaximumWidth(460)
+
+        left_part_training_tab.layout().addWidget(qwt.QLabel(
+            text='mri gan model'
+        ))
+
+        line = qwt.QFrame()
+        line.setFrameShape(qwt.QFrame.Shape.VLine)
+        line.setFrameShadow(qwt.QFrame.Shadow.Sunken)
+        central_wgt_training_tab.layout().addWidget(line)
+
+        right_part_training_tab = VWidget()
+        central_wgt_training_tab.layout().addWidget(right_part_training_tab)
+
+        right_part_training_tab.layout().addWidget(qwt.QLabel(
+            text='deepkafe detection model'
+        ))
+
+        right_part_training_tab.layout().addItem(VerticalSpacer())
+
+        ###############
+        # TRAIN MRI GAN
+        ###############
+        signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER:
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
+        }
+        train_mri_wgt = TrainMRIGANWidget(signals)
+        left_part_training_tab.layout().addWidget(train_mri_wgt)
+
+        left_part_training_tab.layout().addItem(VerticalSpacer())
 
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:
