@@ -7,6 +7,7 @@ from enums import (
     CONSOLE_MESSAGE_TYPE,
     FILE_TYPE,
     IO_OPERATION_TYPE,
+    JOB_NAME,
     JOB_TYPE,
     MESSAGE_STATUS,
     MESSAGE_TYPE,
@@ -56,6 +57,7 @@ class Messages:
         widget: WIDGET,
         method: str,
         args: List,
+        job_name: JOB_NAME,
     ):
         return Message(
             MESSAGE_TYPE.REQUEST,
@@ -68,6 +70,7 @@ class Messages:
                     BODY_KEY.WIDGET: widget,
                     BODY_KEY.METHOD: method,
                     BODY_KEY.ARGS: args,
+                    BODY_KEY.JOB_NAME: job_name.value,
                 }
             )
         )
