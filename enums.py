@@ -266,3 +266,6 @@ class JOB_NAME(Enum):
     CROPPING_FACES = 'cropping faces'
     GENERATE_MRI_DATASET = 'generating mri dataset'
     TRAIN_MRI_GAN = 'training mri gan'
+    FRAMES_EXTRACTION = 'extracting frames'
+    LOADING = 'loading'
+    ALIGNING_LANDMARKS = 'aligning landmarks'
