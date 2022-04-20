@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from pathlib import Path
 from pprint import pprint
@@ -5,7 +6,11 @@ from typing import Any, Dict, Optional, Union
 
 import yaml
 
-from variables import DATA_ROOT, MRI_GAN_CONFIG_PATH
+from variables import (
+    DATA_ROOT,
+    LONG_DATE_FORMAT_FILE_NAME,
+    MRI_GAN_CONFIG_PATH,
+)
 
 
 class MRIGANConfig:
@@ -30,6 +35,10 @@ class MRIGANConfig:
             self._config = yaml.safe_load(f)
 
         self.create_placeholders()
+
+        self.init_time_str = str(datetime.now().strftime(
+            LONG_DATE_FORMAT_FILE_NAME
+        ))
 
     @property
     def config(self) -> Dict[str, Any]:
