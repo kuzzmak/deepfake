@@ -67,7 +67,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         # self.setup_io_worker()
         # self.setup_frame_extraction_worker()
         # self.setup_next_element_worker()
-        # self.setup_message_worker()
+        self.setup_message_worker()
 
         self.m_pages = {}
         self._page_nav = LifoQueue()
@@ -214,6 +214,12 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         if widget == WIDGET.JOB_PROGRESS:
             method = getattr(self.job_progressbar, widget_method)
             method(*method_args)
+            self.show_widget(self.job_progressbar, True)
+            self.app_status_label_sig.emit(
+                APP_STATUS.BUSY.value +
+                f' - {msg.body.data.get(BODY_KEY.JOB_NAME, "")}'
+            )
+            self.job_progressbar_value_sig.emit(0)
 
     def settings(self):
         """App settings window.
@@ -329,13 +335,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     @qtc.pyqtSlot(Message)
     def job_progress(self, msg: Message):
-        if self.job_progress_value == 0:
-            self.show_widget(self.job_progressbar, True)
-            self.app_status_label_sig.emit(
-                APP_STATUS.BUSY.value +
-                f' - {msg.body.data.get(BODY_KEY.JOB_NAME, "")}'
-            )
-
         self.job_progress_value += 1
         self.job_progressbar_value_sig.emit(self.job_progress_value)
 
