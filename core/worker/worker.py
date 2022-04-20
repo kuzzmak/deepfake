@@ -1,7 +1,7 @@
 import logging
 from multiprocessing import Queue
 from multiprocessing.queues import Empty
-from typing import Optional
+from typing import Optional, Union
 
 import PyQt6.QtCore as qtc
 
@@ -50,6 +50,10 @@ class Worker(qtc.QObject):
     def conn_q(self) -> Queue:
         return self._conn_q
 
+    @property
+    def message_worker_sig(self) -> Union[qtc.pyqtSignal, None]:
+        return self._message_worker_sig
+
     def send_message(self, message: Message):
         """Send a message through message worker to wherever needed.
 
@@ -58,8 +62,9 @@ class Worker(qtc.QObject):
         message : Message
             message to send
         """
-        if self._message_worker_sig is not None:
-            self._message_worker_sig.emit(message)
+        if self.message_worker_sig is None:
+            return
+        self.message_worker_sig.emit(message)
 
     def should_exit(self) -> bool:
         """Checks if someone requested for this worker to exit.
