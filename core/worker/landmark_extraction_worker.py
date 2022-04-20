@@ -62,14 +62,13 @@ class LandmarkExtractionWorker(MRIGANWorker, WorkerWithPool):
                         (dp, out_dir,),
                     )
                 )
-            if self._message_worker_sig is not None:
-                conf_wgt_msg = Messages.CONFIGURE_WIDGET(
-                    SIGNAL_OWNER.LANDMARK_EXTRACTION_WORKER,
-                    WIDGET.JOB_PROGRESS,
-                    'setMaximum',
-                    [len(jobs)],
-                )
-                self.send_message(conf_wgt_msg)
+            conf_wgt_msg = Messages.CONFIGURE_WIDGET(
+                SIGNAL_OWNER.LANDMARK_EXTRACTION_WORKER,
+                WIDGET.JOB_PROGRESS,
+                'setMaximum',
+                [len(jobs)],
+            )
+            self.send_message(conf_wgt_msg)
 
             self.running.emit()
 
