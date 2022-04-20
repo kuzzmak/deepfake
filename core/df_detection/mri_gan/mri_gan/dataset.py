@@ -5,7 +5,7 @@ import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
 
-from core.df_detection.mri_gan.utils import ConfigParser
+from configs.mri_gan_config import MRIGANConfig
 
 
 class MRIDataset(Dataset):
@@ -13,17 +13,17 @@ class MRIDataset(Dataset):
         self.transforms = transforms
 
         if mode == "train":
-            self.real_data_csv = ConfigParser \
+            self.real_data_csv = MRIGANConfig \
                 .getInstance() \
                 .get_mri_train_real_dataset_csv_path()
-            self.fake_data_csv = ConfigParser \
+            self.fake_data_csv = MRIGANConfig \
                 .getInstance() \
                 .get_mri_train_fake_dataset_csv_path()
         elif mode == "test":
-            self.real_data_csv = ConfigParser \
+            self.real_data_csv = MRIGANConfig \
                 .getInstance() \
                 .get_mri_test_real_dataset_csv_path()
-            self.fake_data_csv = ConfigParser \
+            self.fake_data_csv = MRIGANConfig \
                 .getInstance() \
                 .get_mri_test_fake_dataset_csv_path()
         else:
