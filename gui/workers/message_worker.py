@@ -10,7 +10,6 @@ class MessageWorker(Worker):
         super().__init__(signals, *args, **kwargs)
 
     def process(self, msg: Message):
-
         if msg.recipient == SIGNAL_OWNER.MESSAGE_WORKER:
             if msg.body.job_type == JOB_TYPE.ADD_SIGNAL:
                 data = msg.body.data
