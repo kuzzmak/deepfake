@@ -2,7 +2,8 @@ import json
 from glob import glob
 import os
 from pathlib import Path
-from typing import List
+import re
+from typing import List, Match, Union
 
 import cv2 as cv
 import pandas as pd
@@ -67,17 +68,40 @@ def get_dfdc_training_real_fake_pairs(root_dir):
     return pairs
 
 
-def get_dfdc_training_video_filepaths(root_dir) -> List[str]:
-    video_filepaths = []
-    for json_path in glob(os.path.join(root_dir, "metadata.json")):
-        pdir = Path(json_path).parent
-        with open(json_path, "r") as f:
-            metadata = json.load(f)
-        for k, v in metadata.items():
-            full_path = os.path.join(pdir, k)
-            video_filepaths.append(full_path)
+def match_dfdc_dirs(directory: str) -> Union[Match, None]:
+    return re.match(r'dfdc_(train|test|valid)_part_[0-9]+', directory)
 
-    return video_filepaths
+
+def filter_dfdc_dirs(dirs) -> List[str]:
+    matches = [match_dfdc_dirs(d) for d in dirs]
+    matches = list(filter(lambda x: x is not None, matches))
+    return [m.group(0) for m in matches]
+
+
+def get_dfdc_training_video_filepaths(root_dir: Path) -> List[str]:
+    dirs = os.listdir(root_dir)
+    dirs = filter_dfdc_dirs(dirs)
+    dirs = [root_dir / d for d in dirs]
+    json_paths = [d / 'metadata.json' for d in dirs]
+    fps = []
+    for json_path in json_paths:
+        with open(json_path, 'r') as f:
+            metadata = json.load(f)
+        for k, _ in metadata.items():
+            fps.append(json_path.parent / k)
+    return fps
+
+
+# def get_dfdc_training_video_filepaths(root_dir) -> List[str]:
+#     video_filepaths = []
+#     for json_path in glob(os.path.join(root_dir, "metadata.json")):
+#         pdir = Path(json_path).parent
+#         with open(json_path, "r") as f:
+#             metadata = json.load(f)
+#         for k, v in metadata.items():
+#             full_path = os.path.join(pdir, k)
+#             video_filepaths.append(full_path)
+#     return video_filepaths
 
 
 def get_training_reals_and_fakes():
