@@ -204,10 +204,16 @@ class MRIGANWidget(ModelWidget):
     def _on_landmark_extraction_worker_finished(self) -> None:
         """Waits for landmark extraction thread to finish and exit gracefully.
         """
-        thread, _ = self._threads[JOB_TYPE.LANDMARK_EXTRACTION]
-        thread.quit()
-        thread.wait()
-        self._threads.pop(JOB_TYPE.LANDMARK_EXTRACTION, None)
+        self._lock.acquire()
+        try:
+            val = self._threads.get(JOB_TYPE.LANDMARK_EXTRACTION, None)
+            if val is not None:
+                thread, _ = val
+                thread.quit()
+                thread.wait()
+                self._threads.pop(JOB_TYPE.LANDMARK_EXTRACTION, None)
+        finally:
+            self._lock.release()
         self.enable_widget(self.lmrks_extraction_step.start_btn, True)
         self.lmrks_extraction_step.start_btn.setIcon(PlayIcon())
         self.lmrks_extraction_step.start_btn.setText('start extraction')
