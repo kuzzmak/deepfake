@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Callable, List
 from configs.mri_gan_config import MRIGANConfig
 
@@ -28,14 +29,14 @@ class MRIGANWorker:
             f'get_dfdc_{self._data_type.value}_data_path'
         )()
 
-    def _get_dfdc_landmarks_data_path(self) -> str:
-        return MRIGANWorker._get_fun_by_name_from_config(
+    def _get_dfdc_landmarks_data_path(self) -> Path:
+        return Path(MRIGANWorker._get_fun_by_name_from_config(
             f'get_dfdc_landmarks_{self._data_type.value}_path'
-        )()
+        )())
 
     def _get_data_paths(self) -> List[str]:
         data_path_root = self._get_dfdc_data_path()
-        file_paths = get_dfdc_training_video_filepaths(data_path_root)
+        file_paths = get_dfdc_training_video_filepaths(Path(data_path_root))
         return file_paths
 
     def _get_dfdc_landmarks_data_paths(self) -> str:
