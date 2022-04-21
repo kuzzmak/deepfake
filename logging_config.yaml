@@ -67,6 +67,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  gui.pages.detect_deepfake_page.mri_gan.train_mri_gan_widget:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   gui.pages.make_deepfake_page.inference_tab:
     level: DEBUG
     handlers: [file, gui, console]
