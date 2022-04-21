@@ -3,6 +3,7 @@ from glob import glob
 import json
 import multiprocessing
 import os
+from pathlib import Path
 from typing import List
 import torch
 from torch.utils.data import DataLoader
@@ -69,19 +70,23 @@ def locate_face_in_videofile(input_filepath=None, outfile_filepath=None):
 
 
 def extract_landmarks_from_video(
-    input_videofile,
-    out_dir,
+    input_videofile: Path,
+    out_dir: Path,
     batch_size=32,
     detector=None,
     overwrite=False,
 ):
-    id = os.path.splitext(os.path.basename(input_videofile))[0]
-    out_file = os.path.join(out_dir, "{}.json".format(id))
+    # part of the dataset, e.g. dfdc_train_part_2
+    part = input_videofile.parts[-2]
+    # name of the video + .json for landmark file, e.g. aayrffkzxn.json
+    name = input_videofile.stem + '.json'
+    os.makedirs(out_dir / part, exist_ok=True)
+    out_file = out_dir / part / name
 
-    if not overwrite and os.path.isfile(out_file):
+    if not overwrite and out_file.is_file():
         return
 
-    capture = cv.VideoCapture(input_videofile)
+    capture = cv.VideoCapture(str(input_videofile))
     frames_num = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
     if detector is None:
         detector = get_face_detector_model()
@@ -109,9 +114,12 @@ def extract_landmarks_from_video(
     for j, frames_list in enumerate(batches):
         frame_indices, frame_items = frames_list
         batch_boxes, prob, keypoints = detector.detect(
-            frame_items, landmarks=True)
+            frame_items,
+            landmarks=True,
+        )
         batch_boxes = [
-            b.tolist() if b is not None else None for b in batch_boxes]
+            b.tolist() if b is not None else None for b in batch_boxes
+        ]
         keypoints = [k.tolist() if k is not None else None for k in keypoints]
 
         result.update({i: b for i, b in zip(
