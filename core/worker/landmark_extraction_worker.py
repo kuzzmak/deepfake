@@ -45,7 +45,6 @@ class LandmarkExtractionWorker(MRIGANWorker, WorkerWithPool):
         self.logger.info(f'Found {len(data_paths)} videos in directory.')
         out_dir = self._get_dfdc_landmarks_data_path()
         self.logger.info(f'Landmarks metadata will be saved in {out_dir}.')
-        os.makedirs(out_dir, exist_ok=True)
 
         self.logger.debug(
             'Launching landmark extraction with ' +
@@ -62,6 +61,7 @@ class LandmarkExtractionWorker(MRIGANWorker, WorkerWithPool):
                         (dp, out_dir,),
                     )
                 )
+
             conf_wgt_msg = Messages.CONFIGURE_WIDGET(
                 SIGNAL_OWNER.LANDMARK_EXTRACTION_WORKER,
                 WIDGET.JOB_PROGRESS,
