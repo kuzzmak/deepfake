@@ -14,6 +14,12 @@ logger = logging.getLogger(__name__)
 
 
 class TrainMRIGANWidget(BaseWidget):
+    """Widget containing necessary things to start mri gan training.
+
+    Args:
+        signals (Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]], optional):
+            dictionary of keys this widget needs. Defaults to None.
+    """
 
     stop_mri_training_sig = qtc.pyqtSignal()
 
