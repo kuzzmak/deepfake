@@ -172,7 +172,7 @@ class TrainMRIGANWorker(Worker):
         pp.pprint(m_p)
         print_line()
 
-        self.started.emit()
+        self.running.emit()
 
         conf_wgt_msg = Messages.CONFIGURE_WIDGET(
             SIGNAL_OWNER.TRAIN_MRI_GAN_WORKER,
@@ -184,6 +184,11 @@ class TrainMRIGANWorker(Worker):
         self.send_message(conf_wgt_msg)
 
         for e in range(m_p['n_epochs']):
+
+            if self.should_exit():
+                logger.info('Received stop signal, exiting now.')
+                return
+
             if e < start_epoch:
                 logger.debug(f'Skipping epoch {e}')
                 continue
@@ -227,6 +232,10 @@ class TrainMRIGANWorker(Worker):
             pbar = tqdm(train_dataloader, desc=desc)
 
             for local_batch_num, batch in enumerate(pbar):
+
+                if self.should_exit():
+                    logger.info('Received stop signal, exiting now.')
+                    return
 
                 generator.train()
                 discriminator.train()
