@@ -1,7 +1,6 @@
 import logging
 import multiprocessing
 from multiprocessing.pool import AsyncResult
-import os
 from typing import List, Optional
 
 import PyQt6.QtCore as qtc
