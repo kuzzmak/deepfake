@@ -34,20 +34,15 @@ class MRIGANWorker:
             f'get_dfdc_landmarks_{self._data_type.value}_path'
         )())
 
-    def _get_data_paths(self) -> List[str]:
+    def _get_data_paths(self) -> List[Path]:
         data_path_root = self._get_dfdc_data_path()
         file_paths = get_dfdc_training_video_filepaths(Path(data_path_root))
         return file_paths
 
-    def _get_dfdc_landmarks_data_paths(self) -> str:
-        return MRIGANWorker._get_fun_by_name_from_config(
-            f'get_dfdc_landmarks_{self._data_type.value}_path'
-        )()
-
     def _get_dfdc_crops_data_path(self) -> str:
-        return MRIGANWorker._get_fun_by_name_from_config(
+        return Path(MRIGANWorker._get_fun_by_name_from_config(
             f'get_dfdc_crops_{self._data_type.value}_path'
-        )()
+        )())
 
     def _get_dfdc_mri_medatata_csv_path(self) -> str:
         return MRIGANConfig.getInstance().get_dfdc_mri_metadata_csv_path()

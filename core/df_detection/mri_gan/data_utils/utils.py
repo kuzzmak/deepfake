@@ -78,7 +78,7 @@ def filter_dfdc_dirs(dirs) -> List[str]:
     return [m.group(0) for m in matches]
 
 
-def get_dfdc_training_video_filepaths(root_dir: Path) -> List[str]:
+def get_dfdc_training_video_filepaths(root_dir: Path) -> List[Path]:
     dirs = os.listdir(root_dir)
     dirs = filter_dfdc_dirs(dirs)
     dirs = [root_dir / d for d in dirs]
