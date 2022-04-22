@@ -42,7 +42,7 @@ class CropFacesWorker(MRIGANWorker, WorkerWithPool):
         )
         data_paths = self._get_data_paths()
         self.logger.info(f'Found {len(data_paths)} videos in directory.')
-        landmarks_path = self._get_dfdc_landmarks_data_paths()
+        landmarks_path = self._get_dfdc_landmarks_data_path()
         self.logger.info(
             f'Using landmarks file from {landmarks_path} directory.'
         )
@@ -50,7 +50,6 @@ class CropFacesWorker(MRIGANWorker, WorkerWithPool):
         self.logger.info(
             f'Cropped faces will be saved in {crops_path} directory.'
         )
-        os.makedirs(crops_path, exist_ok=True)
 
         with multiprocessing.Pool(self._num_instances) as pool:
             jobs = []
