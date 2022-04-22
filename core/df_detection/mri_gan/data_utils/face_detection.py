@@ -245,31 +245,35 @@ def draw_landmarks_on_video(in_videofile, out_videofile, landmarks_file):
 
 
 def crop_faces_from_video(
-        in_videofile,
-        landmarks_path,
-        crop_faces_out_dir,
-        overwrite=False,
-        frame_hops=10,
-        buf=0.10,
-        clean_up=True):
-    id = os.path.splitext(os.path.basename(in_videofile))[0]
-    json_file = os.path.join(landmarks_path, id + '.json')
-    out_dir = os.path.join(crop_faces_out_dir, id)
-    if not os.path.isfile(json_file):
+    video_path: Path,
+    landmarks_dir_path: Path,
+    crop_faces_dir_path: Path,
+    overwrite=False,
+    frame_hops=10,
+    buf=0.10,
+    clean_up=True,
+):
+    part = video_path.parts[-2]
+    name = video_path.stem
+    name_metadata = name + '.json'
+    landmarks_file = landmarks_dir_path / part / name_metadata
+    out_dir = crop_faces_dir_path / part / name
+
+    if not landmarks_file.is_file():
         return
-    if not overwrite and os.path.isdir(out_dir):
+    if not overwrite and out_dir.is_dir():
         return
 
     try:
-        with open(json_file, 'r') as jf:
+        with open(landmarks_file, 'r') as jf:
             face_box_dict = json.load(jf)
     except Exception as e:
-        print(f'failed to parse {json_file}')
+        print(f'Failed to parse landmark file: {str(landmarks_file)}.')
         print(e)
         raise e
 
     os.makedirs(out_dir, exist_ok=True)
-    capture = cv.VideoCapture(in_videofile)
+    capture = cv.VideoCapture(str(video_path))
     frames_num = int(capture.get(cv.CAP_PROP_FRAME_COUNT))
 
     for i in range(frames_num):
