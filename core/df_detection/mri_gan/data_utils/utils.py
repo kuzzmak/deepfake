@@ -3,7 +3,7 @@ from glob import glob
 import os
 from pathlib import Path
 import re
-from typing import List, Match, Union
+from typing import List, Match, Tuple, Union
 
 import cv2 as cv
 import pandas as pd
@@ -48,23 +48,26 @@ def extract_images_from_video(input_video_filename, output_folder, res=None):
 """
 sample entries from metadata.json of DFDC
 
-{"iqqejyggsm.mp4": {"label": "FAKE", "split": "train", "original": "gzesfubacw.mp4"}
+{"iqqejyggsm.mp4": {"label": "FAKE", "split": "train", "original": 
+"gzesfubacw.mp4"}
 {"ooafcxxfrs.mp4": {"label": "REAL", "split": "train"}
 
 """
 
 
-def get_dfdc_training_real_fake_pairs(root_dir):
+def get_dfdc_training_real_fake_pairs(root_dir: Path) -> List[Tuple[Path, Path]]:
     pairs = []
-    for json_path in glob(os.path.join(root_dir, "metadata.json")):
-        with open(json_path, "r") as f:
+    json_paths = get_metadata_file_paths(root_dir)
+    for json_path in json_paths:
+        with open(json_path, 'r') as f:
             metadata = json.load(f)
+        part = Path(json_path.parent.parts[-1])
         for k, v in metadata.items():
-            original = v.get("original", None)
-            if v["label"] == "FAKE":
-                pairs.append(
-                    (os.path.splitext(original)[0],
-                     os.path.splitext(k)[0]))
+            original = v.get('original', None)
+            if v['label'] == "FAKE":
+                original = part / Path(original).stem
+                fake = part / Path(k).stem
+                pairs.append((original, fake))
     return pairs
 
 
@@ -78,11 +81,16 @@ def filter_dfdc_dirs(dirs) -> List[str]:
     return [m.group(0) for m in matches]
 
 
-def get_dfdc_training_video_filepaths(root_dir: Path) -> List[Path]:
+def get_metadata_file_paths(root_dir: Path) -> List[Path]:
     dirs = os.listdir(root_dir)
     dirs = filter_dfdc_dirs(dirs)
     dirs = [root_dir / d for d in dirs]
     json_paths = [d / 'metadata.json' for d in dirs]
+    return json_paths
+
+
+def get_dfdc_training_video_filepaths(root_dir: Path) -> List[Path]:
+    json_paths = get_metadata_file_paths(root_dir)
     fps = []
     for json_path in json_paths:
         with open(json_path, 'r') as f:
