@@ -2,6 +2,7 @@ from glob import glob
 import json
 import multiprocessing
 import os
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -42,11 +43,42 @@ def gen_mri(image1_path, image2_path, mri_path=None, res=(256, 256)):
     return sim_index
 
 
+def gen_face_mri_per_directory(
+    real_dir: Path,
+    fake_dir: Path,
+    mri_basedir: Path,
+    overwrite=False,
+):
+    part = real_dir.parent.parts[-1]
+    dest_dir = mri_basedir / part / fake_dir.name
+    if not overwrite and dest_dir.is_dir():
+        return None
+
+    r_all_files = list(real_dir.glob('**/*'))
+    os.makedirs(dest_dir, exist_ok=True)
+    df = pd.DataFrame(columns=['real_image', 'fake_image', 'mri_image'])
+    for r_file in r_all_files:
+        r_file_base = r_file.name
+        f_file = fake_dir / r_file_base
+        if f_file.is_file():
+            mri_path = dest_dir / r_file_base
+            gen_mri(str(r_file), str(f_file), str(mri_path))
+            item = {
+                'real_image': str(r_file),
+                'fake_image': str(f_file),
+                'mri_image': str(mri_path),
+            }
+            df = df.append(item, ignore_index=True)
+
+    return df
+
+
 def gen_face_mri_per_folder(
-        real_dir=None,
-        fake_dir=None,
-        mri_basedir=None,
-        overwrite=False):
+    real_dir=None,
+    fake_dir=None,
+    mri_basedir=None,
+    overwrite=False,
+):
     dest_folder = os.path.join(mri_basedir, os.path.basename(fake_dir))
     if not overwrite and os.path.isdir(dest_folder):
         return None
