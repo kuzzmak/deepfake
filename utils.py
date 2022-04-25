@@ -1,4 +1,5 @@
 import builtins
+from datetime import timedelta
 import errno
 import logging
 import os
@@ -390,3 +391,32 @@ def set_val_on_dict(
         dict[key[0]] = value
     else:
         set_val_on_dict(dict[key[0]], key[1:], value)
+
+
+def format_timedelta(tdelta: timedelta) -> str:
+    """Formats time in `timedelta` format to convenient format where days,
+    hours, minutes and seconds are shown only if they are not zero.
+
+    Parameters
+    ----------
+    tdelta : timedelta
+        time in `timedelta` format
+
+    Returns
+    -------
+    str
+        formatted time
+    """
+    days = tdelta.days
+    hours, rem = divmod(tdelta.seconds, 3600)
+    minutes, seconds = divmod(rem, 60)
+    formatted = ''
+    if days > 0:
+        formatted += str(days) + ' days '
+    if hours > 0:
+        formatted += str(hours) + 'h '
+    if minutes > 0:
+        formatted += str(minutes) + 'm '
+    if seconds > 0:
+        formatted += str(seconds) + 's'
+    return formatted
