@@ -24,10 +24,10 @@ class MRIGANWorker:
     def _get_fun_by_name_from_config(name: str) -> Callable:
         return getattr(MRIGANConfig.getInstance(), name)
 
-    def _get_dfdc_data_path(self) -> str:
-        return MRIGANWorker._get_fun_by_name_from_config(
+    def _get_dfdc_data_path(self) -> Path:
+        return Path(MRIGANWorker._get_fun_by_name_from_config(
             f'get_dfdc_{self._data_type.value}_data_path'
-        )()
+        )())
 
     def _get_dfdc_landmarks_data_path(self) -> Path:
         return Path(MRIGANWorker._get_fun_by_name_from_config(
@@ -39,16 +39,18 @@ class MRIGANWorker:
         file_paths = get_dfdc_training_video_filepaths(Path(data_path_root))
         return file_paths
 
-    def _get_dfdc_crops_data_path(self) -> str:
+    def _get_dfdc_crops_data_path(self) -> Path:
         return Path(MRIGANWorker._get_fun_by_name_from_config(
             f'get_dfdc_crops_{self._data_type.value}_path'
         )())
 
-    def _get_dfdc_mri_medatata_csv_path(self) -> str:
-        return MRIGANConfig.getInstance().get_dfdc_mri_metadata_csv_path()
+    def _get_dfdc_mri_medatata_csv_path(self) -> Path:
+        return Path(
+            MRIGANConfig.getInstance().get_dfdc_mri_metadata_csv_path()
+        )
 
-    def _get_dfdc_mri_path(self) -> str:
-        return MRIGANConfig.getInstance().get_dfdc_mri_path()
+    def _get_dfdc_mri_path(self) -> Path:
+        return Path(MRIGANConfig.getInstance().get_dfdc_mri_path())
 
     def _get_blank_image_path(self) -> str:
         return MRIGANConfig.getInstance().get_blank_image_path()
