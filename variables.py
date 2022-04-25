@@ -14,3 +14,5 @@ MRI_GAN_CONFIG_PATH = CONFIGS_ROOT_PATH / 'mri_gan_config.yaml'
 
 LONG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 LONG_DATE_FORMAT_FILE_NAME = '%Y_%m_%d_%H_%M_%S'
+
+ETA_FORMAT = 'ETA: {}'
