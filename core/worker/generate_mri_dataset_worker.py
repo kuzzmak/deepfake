@@ -9,7 +9,7 @@ import PyQt6.QtCore as qtc
 from sklearn.model_selection import train_test_split
 
 from core.df_detection.mri_gan.data_utils.face_mri import \
-    gen_face_mri_per_folder
+    gen_face_mri_per_directory
 from core.df_detection.mri_gan.data_utils.utils import \
     get_dfdc_training_real_fake_pairs
 from core.worker import MRIGANWorker, WorkerWithPool
@@ -43,12 +43,12 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
     def run_job(self) -> None:
         test_size = 0.2
         dfdc_fract = 0.5
-        overwrite = False
+        overwrite = True
 
         metadata_csv_file = self._get_dfdc_mri_medatata_csv_path()
         self.logger.info(
             f'Metadata file for {self._data_type.value} ' +
-            f'mri dataset location: {metadata_csv_file}.'
+            f'mri dataset location: {str(metadata_csv_file)}.'
         )
         if not overwrite and os.path.isfile(metadata_csv_file):
             return pd.read_csv(metadata_csv_file)
@@ -57,11 +57,11 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
 
         mri_basedir = self._get_dfdc_mri_path()
         self.logger.info(
-            f'Mri datasets will be saved in directory: {mri_basedir}.'
+            f'Mri datasets will be saved in directory: {str(mri_basedir)}.'
         )
         crops_path = self._get_dfdc_crops_data_path()
         self.logger.debug(
-            f'DFDC dataset cropped faces directory: {crops_path}.'
+            f'DFDC dataset cropped faces directory: {str(crops_path)}.'
         )
 
         results = []
@@ -69,12 +69,12 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
         with multiprocessing.Pool(self._num_instances) as pool:
             jobs: List[AsyncResult] = []
             for pid in range(len(pairs)):
-                item = pairs[pid]
-                reals = os.path.join(crops_path, item[0])
-                fakes = os.path.join(crops_path, item[1])
+                real, fake = pairs[pid]
+                reals = crops_path / real
+                fakes = crops_path / fake
                 jobs.append(
                     pool.apply_async(
-                        gen_face_mri_per_folder,
+                        gen_face_mri_per_directory,
                         (reals, fakes, mri_basedir,),
                     )
                 )
