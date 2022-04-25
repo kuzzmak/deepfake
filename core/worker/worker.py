@@ -1,9 +1,12 @@
 import logging
 from multiprocessing import Queue
 from multiprocessing.queues import Empty
+from datetime import timedelta
 from typing import Optional, Union
 
 import PyQt6.QtCore as qtc
+import enlighten
+from enlighten._counter import Counter
 
 from enums import (
     BODY_KEY,
@@ -13,6 +16,7 @@ from enums import (
     SIGNAL_OWNER,
 )
 from message.message import Body, Message
+from utils import format_timedelta
 
 
 class Worker(qtc.QObject):
@@ -44,6 +48,8 @@ class Worker(qtc.QObject):
 
         self._message_worker_sig = message_worker_sig
         self._conn_q = Queue()
+        self._tick_manager = enlighten.get_manager()
+        self._ticks = None
 
     @property
     def conn_q(self) -> Queue:
@@ -52,6 +58,10 @@ class Worker(qtc.QObject):
     @property
     def message_worker_sig(self) -> Union[qtc.pyqtSignal, None]:
         return self._message_worker_sig
+
+    @property
+    def ticks(self) -> Union[Counter, None]:
+        return self._ticks
 
     def send_message(self, message: Message):
         """Send a message through message worker to wherever needed.
@@ -63,6 +73,11 @@ class Worker(qtc.QObject):
         """
         if self.message_worker_sig is None:
             return
+        # intercept message and set new ticks if the message is to
+        # configure job progress widget before the job starts
+        if message.recipient == SIGNAL_OWNER.CONFIGURE_WIDGET and \
+                message.body.data[BODY_KEY.METHOD] == 'setMaximum':
+            self._init_ticks(message.body.data[BODY_KEY.ARGS][0])
         self.message_worker_sig.emit(message)
 
     def should_exit(self) -> bool:
@@ -89,6 +104,7 @@ class Worker(qtc.QObject):
         self.started.emit()
         self.run_job()
         self.finished.emit()
+        self._ticks = None
 
     def run_job(self) -> None:
         """Function which contains the code this worker should do.
@@ -122,6 +138,7 @@ class Worker(qtc.QObject):
         """
         if self._message_worker_sig is None:
             return
+
         job_prog_msg = Message(
             MESSAGE_TYPE.ANSWER,
             MESSAGE_STATUS.OK,
@@ -132,8 +149,38 @@ class Worker(qtc.QObject):
                 {
                     BODY_KEY.PART: part,
                     BODY_KEY.TOTAL: total_parts,
+                    BODY_KEY.ETA: self._calculate_eta(),
                 },
                 part == total_parts - 1,
             )
         )
         self.send_message(job_prog_msg)
+
+    def _init_ticks(self, length: int) -> None:
+        """Initializes counter which tracks how much until job is finished.
+
+        Parameters
+        ----------
+        length : int
+            number of steps
+        """
+        self._ticks = self._tick_manager.counter(total=length)
+
+    def _calculate_eta(self) -> Union[str, None]:
+        """Calculates how much is left till the job is done and formats the
+        remaining time in convenient format.
+
+        Returns
+        -------
+        Union[str, None]
+            remaining time if the ticks were initialized
+        """
+        if self.ticks is None:
+            return None
+        self.ticks.update()
+        iterations = self.ticks.count - self.ticks.start_count
+        elapsed = self.ticks.elapsed
+        rate = (iterations / elapsed) if elapsed else 0
+        eta = round((self.ticks.total - iterations) / rate, 2)
+        eta = timedelta(seconds=eta)
+        return format_timedelta(eta)

@@ -28,6 +28,7 @@ from gui.workers.threads.next_element_worker_thread \
     import NextElementWorkerThread
 from message.message import Message
 from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
+from variables import ETA_FORMAT
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
@@ -155,6 +156,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.job_progress_value = 0
 
         self.statusbar.addWidget(self.job_progressbar)
+
+        self.eta_label = qwt.QLabel()
+        self.statusbar.addWidget(self.eta_label)
 
         self.show_widget(self.job_progressbar, False)
 
@@ -337,6 +341,9 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def job_progress(self, msg: Message):
         self.job_progress_value += 1
         self.job_progressbar_value_sig.emit(self.job_progress_value)
+        eta = msg.body.data.get(BODY_KEY.ETA, None)
+        if eta is not None:
+            self.eta_label.setText(ETA_FORMAT.format(eta))
 
         finished = msg.body.finished
         if finished:
