@@ -42,9 +42,18 @@ class TrainMRIGANWorker(Worker):
 
     def __init__(
         self,
+        image_size: int,
+        batch_size: int,
+        lr: float,
+        epochs: int,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
         super().__init__(message_worker_sig)
+
+        self._image_size = image_size
+        self._batch_size = batch_size
+        self._lr = lr
+        self._epochs = epochs
 
         self._log_dir = Path(MRIGANConfig.getInstance().get_log_dir_name())
 
@@ -54,10 +63,7 @@ class TrainMRIGANWorker(Worker):
         device = torch.device("cuda" if use_cuda else "cpu")
 
         data_transforms = torchvision.transforms.Compose([
-            transforms.Resize((
-                m_p['imsize'],
-                m_p['imsize'],
-            )),
+            transforms.Resize((self._image_size, self._image_size)),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
@@ -77,10 +83,11 @@ class TrainMRIGANWorker(Worker):
         # Calculate output of image discriminator (PatchGAN)
         patch = (
             1,
-            m_p['imsize'] //
+            self._image_size //
             2 ** 4,
-            m_p['imsize'] //
-            2 ** 4)
+            self._image_size //
+            2 ** 4,
+        )
 
         # Initialize generator and discriminator
         generator = GeneratorUNet().to(device)
@@ -89,13 +96,13 @@ class TrainMRIGANWorker(Worker):
         # Optimizers
         optimizer_G = torch.optim.Adam(
             generator.parameters(),
-            lr=m_p['lr'],
+            lr=self._lr,
             betas=(
                 m_p['b1'],
                 m_p['b2']))
         optimizer_D = torch.optim.Adam(
             discriminator.parameters(),
-            lr=m_p['lr'],
+            lr=self._lr,
             betas=(
                 m_p['b1'],
                 m_p['b2'],
@@ -178,12 +185,12 @@ class TrainMRIGANWorker(Worker):
             SIGNAL_OWNER.TRAIN_MRI_GAN_WORKER,
             WIDGET.JOB_PROGRESS,
             'setMaximum',
-            [m_p['n_epochs']],
+            [self._epochs],
             JOB_NAME.TRAIN_MRI_GAN,
         )
         self.send_message(conf_wgt_msg)
 
-        for e in range(m_p['n_epochs']):
+        for e in range(self._epochs):
 
             if self.should_exit():
                 logger.info('Received stop signal, exiting now.')
@@ -215,20 +222,20 @@ class TrainMRIGANWorker(Worker):
             # num_workers = 0
             train_dataloader = DataLoader(
                 train_dataset,
-                batch_size=m_p['batch_size'],
+                batch_size=self._batch_size,
                 shuffle=True,
                 num_workers=num_workers,
             )
 
             test_dataloader = DataLoader(
                 test_dataset,
-                batch_size=m_p['batch_size'],
+                batch_size=self._batch_size,
                 shuffle=True,
                 num_workers=num_workers,
             )
 
             desc = "Training MRI-GAN [e:{e}/{n_epochs}] [G_loss:{loss_G}] [D_loss:{loss_D}]".format(
-                e=e, n_epochs=m_p['n_epochs'], loss_G='N/A', loss_D='N/A')
+                e=e, n_epochs=self._epochs, loss_G='N/A', loss_D='N/A')
             pbar = tqdm(train_dataloader, desc=desc)
 
             for local_batch_num, batch in enumerate(pbar):
@@ -283,7 +290,7 @@ class TrainMRIGANWorker(Worker):
                 optimizer_D.step()
 
                 desc = "Training MRI-GAN [e:{e}/{n_epochs}] [G_loss:{loss_G}] [D_loss:{loss_D}]".format(
-                    e=e, n_epochs=m_p['n_epochs'], loss_G=loss_G.item(), loss_D=loss_D.item())
+                    e=e, n_epochs=self._epochs, loss_G=loss_G.item(), loss_D=loss_D.item())
 
                 pbar.set_description(desc=desc, refresh=True)
 
@@ -307,7 +314,7 @@ class TrainMRIGANWorker(Worker):
                         imgs = next(iter(test_dataloader))
                         rand_start = random.randint(
                             0,
-                            m_p['batch_size'] -
+                            self._batch_size -
                             m_p['test_sample_size'],
                         )
                         rand_end = rand_start + \
@@ -397,7 +404,7 @@ class TrainMRIGANWorker(Worker):
                 SIGNAL_OWNER.LANDMARK_EXTRACTION_WORKER,
                 JOB_TYPE.TRAIN_MRI_GAN,
                 e,
-                m_p['n_epochs'],
+                self._epochs,
             )
 
         logger.info('MRI GAN training finished.')
