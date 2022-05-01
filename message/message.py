@@ -4,7 +4,6 @@ from typing import List, Optional
 import numpy as np
 
 from enums import (
-    CONSOLE_MESSAGE_TYPE,
     FILE_TYPE,
     IO_OPERATION_TYPE,
     JOB_NAME,
@@ -37,21 +36,6 @@ class Message:
 
 class Messages:
 
-    def CONSOLE_PRINT(msg_type: CONSOLE_MESSAGE_TYPE, message: str):
-        return Message(
-            MESSAGE_TYPE.REQUEST,
-            MESSAGE_STATUS.OK,
-            SIGNAL_OWNER.NO_OWNER,
-            SIGNAL_OWNER.CONSOLE,
-            Body(
-                JOB_TYPE.CONSOLE_PRINT,
-                {
-                    BODY_KEY.CONSOLE_MESSAGE_TYPE: msg_type,
-                    BODY_KEY.MESSAGE: message
-                }
-            )
-        )
-
     def CONFIGURE_WIDGET(
         sender: SIGNAL_OWNER,
         widget: WIDGET,
@@ -75,21 +59,6 @@ class Messages:
             )
         )
 
-    DIRECTORY_NOT_SELECTED = CONSOLE_PRINT(
-        CONSOLE_MESSAGE_TYPE.WARNING,
-        'No directory selected.'
-    )
-
-    FILE_NOT_SELECTED = CONSOLE_PRINT(
-        CONSOLE_MESSAGE_TYPE.WARNING,
-        'No file selected.'
-    )
-
-    NO_IMAGES_FOUND = CONSOLE_PRINT(
-        CONSOLE_MESSAGE_TYPE.WARNING,
-        'No images found in directory.'
-    )
-
 
 class IOOperationBody(Body):
 
@@ -105,17 +74,18 @@ class IOOperationBody(Body):
                  part: Optional[int] = None,
                  total: Optional[int] = None,
                  ):
-        super().__init__(JOB_TYPE.IO_OPERATION,
-                         {
-                             BODY_KEY.IO_OPERATION_TYPE: io_operation_type,
-                             BODY_KEY.FILE_PATH: file_path,
-                             BODY_KEY.NEW_FILE_PATH: new_file_path,
-                             BODY_KEY.FILE: file,
-                             BODY_KEY.FILE_TYPE: file_type,
-                             BODY_KEY.RESIZE: resize,
-                             BODY_KEY.NEW_SIZE: new_size,
-                             BODY_KEY.MULTIPART: multipart,
-                             BODY_KEY.PART: part,
-                             BODY_KEY.TOTAL: total,
-                         }
-                         )
+        super().__init__(
+            JOB_TYPE.IO_OPERATION,
+            {
+                BODY_KEY.IO_OPERATION_TYPE: io_operation_type,
+                BODY_KEY.FILE_PATH: file_path,
+                BODY_KEY.NEW_FILE_PATH: new_file_path,
+                BODY_KEY.FILE: file,
+                BODY_KEY.FILE_TYPE: file_type,
+                BODY_KEY.RESIZE: resize,
+                BODY_KEY.NEW_SIZE: new_size,
+                BODY_KEY.MULTIPART: multipart,
+                BODY_KEY.PART: part,
+                BODY_KEY.TOTAL: total,
+            }
+        )
