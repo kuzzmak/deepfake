@@ -158,8 +158,6 @@ class MRIGANWidget(ModelWidget):
         train_mri_wgt = TrainMRIGANWidget(signals)
         left_part_training_tab.layout().addWidget(train_mri_wgt)
 
-        left_part_training_tab.layout().addItem(VerticalSpacer())
-
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:
         """Initiates landmark extraction process or stops it.
