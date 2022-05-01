@@ -360,7 +360,7 @@ class MRIGANWidget(ModelWidget):
         """
         logger.info(
             'Requested stop of the generating mri ' +
-            f'dataset, please wait...'
+            'dataset, please wait...'
         )
         self.enable_widget(self.gen_mri_dataset_step.start_btn, False)
         self.stop_gen_mri_dataset_sig.emit()
