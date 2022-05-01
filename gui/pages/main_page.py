@@ -1,3 +1,4 @@
+import logging
 from queue import LifoQueue
 
 import PyQt6.QtGui as qtg
@@ -5,6 +6,7 @@ import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from config import APP_CONFIG
+from configs.mri_gan_config import generate_default_mri_gan_config
 from console import Console
 from enums import (
     APP_STATUS,
@@ -14,7 +16,13 @@ from enums import (
 )
 from gui.pages.detect_deepfake_page.detect_deepfake_page import \
     DetectDeepFakePage
-from gui.widgets.common import VerticalSpacer, HorizontalSpacer
+from gui.widgets.common import (
+    Button,
+    HWidget,
+    VWidget,
+    VerticalSpacer,
+    HorizontalSpacer,
+)
 from gui.widgets.job_info_window import JobInfoWindow
 from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 from gui.pages.page import Page
@@ -28,7 +36,9 @@ from gui.workers.threads.next_element_worker_thread \
     import NextElementWorkerThread
 from message.message import Message
 from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
-from variables import ETA_FORMAT
+from variables import ETA_FORMAT, MRI_GAN_CONFIG_PATH
+
+logger = logging.getLogger(__name__)
 
 
 class MainPage(qwt.QMainWindow, Ui_main_page):
@@ -293,6 +303,40 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         tab_wgt.addTab(window_tab_wgt, 'Window')
 
+        # --- configs tab ---
+        configs_tab = VWidget()
+        tab_wgt.addTab(configs_tab, 'Configs')
+
+        mri_gan_config = VWidget()
+        configs_tab.layout().addWidget(mri_gan_config)
+
+        mri_gan_config.layout().addWidget(qwt.QLabel(
+            text='MRI GAN config DFDC base path'
+        ))
+
+        base_path = HWidget()
+        mri_gan_config.layout().addWidget(base_path)
+        base_path.layout().setContentsMargins(0, 0, 0, 0)
+
+        self.mri_gan_config_base_path_input = qwt.QLineEdit()
+        base_path.layout().addWidget(self.mri_gan_config_base_path_input)
+
+        select_base_path_btn = Button(text='select')
+        base_path.layout().addWidget(select_base_path_btn)
+        select_base_path_btn.clicked.connect(
+            self._select_mri_gan_config_base_path
+        )
+
+        recreate_mri_gan_config_btn = Button(
+            text='Recreate config'
+        )
+        mri_gan_config.layout().addWidget(recreate_mri_gan_config_btn)
+        recreate_mri_gan_config_btn.clicked.connect(
+            self._recreate_mri_gan_config
+        )
+
+        configs_tab.layout().addItem(VerticalSpacer())
+
         # -- bottom buttons --
         button_row = qwt.QWidget()
         button_row_layout = qwt.QHBoxLayout()
@@ -319,6 +363,38 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         selected_device = self.devices_dropdown.currentData()
         APP_CONFIG.app.core.selected_device = selected_device
         self.settings_window.close()
+
+    @qtc.pyqtSlot()
+    def _recreate_mri_gan_config(self) -> None:
+        """Recreates MRI GAN config with the newly set up base path.
+        """
+        selected_dir = self.mri_gan_config_base_path_input.text()
+        if not selected_dir:
+            logger.error(
+                'No directory was provided for the MRI GAN config base path.'
+            )
+            return
+        generate_default_mri_gan_config(selected_dir)
+        logger.info(
+            'Generated new MRI GAN config with the base ' +
+            f'{selected_dir} located in {str(MRI_GAN_CONFIG_PATH)}'
+        )
+
+    @qtc.pyqtSlot()
+    def _select_mri_gan_config_base_path(self) -> None:
+        """Selects directory for the base of the MRI GAN config.
+        """
+        selected_dir = str(qwt.QFileDialog.getExistingDirectory(
+            self,
+            'Select directory path',
+        ))
+        if not selected_dir:
+            logger.warning('No directory selected.')
+            return
+        logger.debug(
+            f'Selected {selected_dir} for the base of the MRI GAN config.'
+        )
+        self.mri_gan_config_base_path_input.setText(selected_dir)
 
     def register_page(self, page: Page):
         self.m_pages[page.page_name] = page
