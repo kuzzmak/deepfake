@@ -270,3 +270,7 @@ class JOB_NAME(Enum):
     FRAMES_EXTRACTION = 'extracting frames'
     LOADING = 'loading'
     ALIGNING_LANDMARKS = 'aligning landmarks'
+
+
+class WORKER_THREAD(Enum):
+    MESSAGE_WORKER = 'message_worker_thread'
