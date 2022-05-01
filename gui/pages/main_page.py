@@ -1,5 +1,6 @@
 import logging
 from queue import LifoQueue
+from typing import Dict
 
 import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
@@ -12,6 +13,7 @@ from enums import (
     APP_STATUS,
     BODY_KEY,
     SIGNAL_OWNER,
+    WORKER_THREAD,
     WIDGET,
 )
 from gui.pages.detect_deepfake_page.detect_deepfake_page import \
@@ -63,6 +65,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self._threads: Dict[WORKER_THREAD, qtc.QThread] = dict()
 
         self.show_menubar_sig.connect(self.show_menubar)
         self.show_console_sig.connect(self.show_console)
@@ -128,7 +132,11 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.goto(page, False)
 
     def terminate_threads(self):
-        print('terminating')
+        """Closes running threads gracefully before exiting application.
+        """
+        for k, thread in self._threads.items():
+            thread.quit()
+            thread.wait()
 
     def open_job_info(self):
         self.job_info_window.show()
@@ -191,11 +199,12 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             SIGNAL_OWNER.JOB_PROGRESS: self.job_progress_sig,
             SIGNAL_OWNER.CONFIGURE_WIDGET: self.configure_widget_sig,
         }
-        self.message_worker_thread = MessageWorkerThread(
+        message_worker_thread = MessageWorkerThread(
             self.message_worker_sig,
             message_worker_signals,
         )
-        self.message_worker_thread.start()
+        message_worker_thread.start()
+        self._threads[WORKER_THREAD.MESSAGE_WORKER] = message_worker_thread
 
     def setup_frame_extraction_worker(self):
         frames_extraction_worker_signals = {
