@@ -22,6 +22,10 @@ class MRIGANConfig:
             MRIGANConfig()
         return MRIGANConfig.__instance
 
+    @staticmethod
+    def invalidate_instance() -> None:
+        MRIGANConfig.__instance = None
+
     def __init__(self):
         if MRIGANConfig.__instance is not None:
             raise Exception('ConfigParser class is a singleton!')
@@ -377,3 +381,4 @@ def generate_default_mri_gan_config(
     base: Optional[Union[str, Path]] = None
 ) -> None:
     save_yaml_config(_get_default_config(base), MRI_GAN_CONFIG_PATH)
+    MRIGANConfig.invalidate_instance()
