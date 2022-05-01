@@ -83,10 +83,8 @@ class TrainMRIGANWorker(Worker):
         # Calculate output of image discriminator (PatchGAN)
         patch = (
             1,
-            self._image_size //
-            2 ** 4,
-            self._image_size //
-            2 ** 4,
+            self._image_size // 2 ** 4,
+            self._image_size // 2 ** 4,
         )
 
         # Initialize generator and discriminator
@@ -109,7 +107,7 @@ class TrainMRIGANWorker(Worker):
             ),
         )
         losses = []
-        ssim_report = []
+        # ssim_report = []
         global_batches_done = 0
         start_epoch = 0
         mri_gan_metadata = dict()
@@ -162,8 +160,8 @@ class TrainMRIGANWorker(Worker):
             m_p['model_name'] / m_p['losses_file']
         metadata_file = self._log_dir / \
             m_p['model_name'] / m_p['metadata_file']
-        ssim_report_file = self._log_dir / \
-            m_p['model_name'] / m_p['ssim_report_file']
+        # ssim_report_file = self._log_dir / \
+        #     m_p['model_name'] / m_p['ssim_report_file']
 
         m_p['log_dir'] = self._log_dir
         checkpoint_best_G_path = self._log_dir / \
