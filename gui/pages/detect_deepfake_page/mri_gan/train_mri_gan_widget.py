@@ -4,13 +4,53 @@ from typing import Dict, Optional, Tuple
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
+from configs.mri_gan_config import MRIGANConfig
 from core.worker import TrainMRIGANWorker, Worker
-from enums import CONNECTION, JOB_TYPE, SIGNAL_OWNER
+from enums import CONNECTION, JOB_TYPE, NUMBER_TYPE, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.common import PlayIcon, StopIcon
+from gui.widgets.common import (
+    GroupBox,
+    HorizontalSpacer,
+    PlayIcon,
+    StopIcon,
+    VerticalSpacer,
+)
+from utils import parse_number
 
 
 logger = logging.getLogger(__name__)
+
+
+class ModelParameter(qwt.QWidget):
+
+    def __init__(self, label: str, config_key: str) -> None:
+        super().__init__()
+
+        self._label = label
+        self._config_key = config_key
+
+        self._init_ui()
+
+    def _init_ui(self) -> None:
+        layout = qwt.QHBoxLayout()
+        self.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(qwt.QLabel(text=self._label))
+        layout.addItem(HorizontalSpacer())
+        self._input = qwt.QLineEdit()
+        self._input.setMaximumWidth(100)
+        layout.addWidget(self._input)
+        self._input.setText(
+            str(
+                MRIGANConfig
+                .getInstance()
+                .get_mri_gan_model_params()[self._config_key]
+            )
+        )
+
+    @property
+    def input(self) -> str:
+        return self._input.text()
 
 
 class TrainMRIGANWidget(BaseWidget):
@@ -37,11 +77,40 @@ class TrainMRIGANWidget(BaseWidget):
     def _init_ui(self) -> None:
         layout = qwt.QVBoxLayout()
         self.setLayout(layout)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        gb = GroupBox('Model parameters')
+        layout.addWidget(gb)
+
+        self.batch_size = ModelParameter('batch size', 'batch_size')
+        gb.layout().addWidget(self.batch_size)
+
+        self.image_size = ModelParameter('image size', 'imsize')
+        gb.layout().addWidget(self.image_size)
+
+        self.batch_size = ModelParameter('batch size', 'batch_size')
+        gb.layout().addWidget(self.batch_size)
+
+        self.lr = ModelParameter('lr', 'lr')
+        gb.layout().addWidget(self.lr)
+
+        self.epochs = ModelParameter('epochs', 'n_epochs')
+        gb.layout().addWidget(self.epochs)
+
+        self.tau = ModelParameter('tau', 'tau')
+        gb.layout().addWidget(self.tau)
+
+        self.lambda_pixel = ModelParameter('lambda pixel', 'lambda_pixel')
+        gb.layout().addWidget(self.lambda_pixel)
+
+        layout.addItem(VerticalSpacer())
 
         self.start_training_btn = qwt.QPushButton(text='start training')
         layout.addWidget(self.start_training_btn)
         self.start_training_btn.setIcon(PlayIcon())
         self.start_training_btn.clicked.connect(self._mri_gan_train)
+
+        self.setMaximumWidth(250)
 
     @qtc.pyqtSlot()
     def _mri_gan_train(self) -> None:
@@ -49,21 +118,54 @@ class TrainMRIGANWidget(BaseWidget):
         """
         if self._train_mri_gan_in_progress:
             self._stop_mri_gan_training()
-        else:
-            thread = qtc.QThread()
-            worker = TrainMRIGANWorker(self.signals[
-                SIGNAL_OWNER.MESSAGE_WORKER
-            ])
-            self.stop_mri_training_sig.connect(
-                lambda: worker.conn_q.put(CONNECTION.STOP)
+            return
+
+        image_size = parse_number(self.image_size.input, NUMBER_TYPE.INT)
+        if image_size is None:
+            logger.error(
+                'Unable to parse image size input, must be integer.'
             )
-            worker.moveToThread(thread)
-            self._threads[JOB_TYPE.TRAIN_MRI_GAN] = (thread, worker)
-            thread.started.connect(worker.run)
-            worker.started.connect(self._on_train_mri_gan_worker_started)
-            worker.running.connect(self._on_train_mri_gan_worker_running)
-            worker.finished.connect(self._on_train_mri_gan_worker_finished)
-            thread.start()
+            return
+
+        batch_size = parse_number(self.batch_size.input, NUMBER_TYPE.INT)
+        if batch_size is None:
+            logger.error(
+                'Unable to parse batch size input, must be integer.'
+            )
+            return
+
+        lr = parse_number(self.lr.input, NUMBER_TYPE.FLOAT)
+        if lr is None:
+            logger.error(
+                'Unable to parse learning rate input, must be float.'
+            )
+            return
+
+        epochs = parse_number(self.lr.input, NUMBER_TYPE.INT)
+        if lr is None:
+            logger.error(
+                'Unable to parse epochs input, must be integer.'
+            )
+            return
+
+        thread = qtc.QThread()
+        worker = TrainMRIGANWorker(
+            image_size,
+            batch_size,
+            lr,
+            epochs,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+        )
+        self.stop_mri_training_sig.connect(
+            lambda: worker.conn_q.put(CONNECTION.STOP)
+        )
+        worker.moveToThread(thread)
+        self._threads[JOB_TYPE.TRAIN_MRI_GAN] = (thread, worker)
+        thread.started.connect(worker.run)
+        worker.started.connect(self._on_train_mri_gan_worker_started)
+        worker.running.connect(self._on_train_mri_gan_worker_running)
+        worker.finished.connect(self._on_train_mri_gan_worker_finished)
+        thread.start()
 
     def _stop_mri_gan_training(self) -> None:
         """Sends signal to stop training of the mri gan.
