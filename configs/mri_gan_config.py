@@ -258,21 +258,21 @@ def _get_default_config(
     base: Optional[Union[str, Path]] = None,
 ) -> Dict[str, Any]:
     if base is None:
-        base = DATA_ROOT / 'df_dataset'
+        base = DATA_ROOT / 'df_datasets'
     elif isinstance(base, str):
         base = Path(base)
 
-    dataset = Path('dfdc')
-    lmrks = dataset / 'landmarks'
-    crop_faces = dataset / 'crop_faces'
+    dfdc_dataset = base / Path('dfdc')
+    dfdc_lmrks = dfdc_dataset / 'landmarks'
+    crop_faces = dfdc_dataset / 'crop_faces'
 
     return {
         'assets': 'assets',
         'data_path': {
             'dfdc': {
-                'train': str(base / 'train'),
-                'valid': str(base / 'valid'),
-                'test': str(base / 'test'),
+                'train': str(dfdc_dataset / 'train'),
+                'valid': str(dfdc_dataset / 'valid'),
+                'test': str(dfdc_dataset / 'test'),
                 'train_labels_csv_filename': 'train_labels.csv',
                 'valid_labels_csv_filename': 'labels.csv',
                 'test_labels_csv_filename': 'labels.csv',
@@ -288,16 +288,16 @@ def _get_default_config(
         'features': {
             'dfdc': {
                 'landmarks_path': {
-                    'train': str(base / lmrks / 'train'),
-                    'valid': str(base / lmrks / 'valid'),
-                    'test': str(base / lmrks / 'test'),
+                    'train': str(dfdc_lmrks / 'train'),
+                    'valid': str(dfdc_lmrks / 'valid'),
+                    'test': str(dfdc_lmrks / 'test'),
                 },
                 'crop_faces': {
-                    'train': str(base / crop_faces / 'train'),
-                    'valid': str(base / crop_faces / 'valid'),
-                    'test': str(base / crop_faces / 'test'),
+                    'train': str(crop_faces / 'train'),
+                    'valid': str(crop_faces / 'valid'),
+                    'test': str(crop_faces / 'test'),
                 },
-                'mri_path': str(base / dataset / 'mri'),
+                'mri_path': str(dfdc_dataset / 'mri'),
                 'mri_metadata_csv': 'dfdc_mri_metadata.csv',
                 'train_mriframe_label': 'train_mriframe_labels.csv',
                 'valid_mriframe_label': 'valid_mriframe_labels.csv',
