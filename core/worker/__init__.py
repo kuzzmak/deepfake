@@ -5,6 +5,7 @@ from .crop_faces_worker import CropFacesWorker
 from .generate_mri_dataset_worker import GenerateMRIDatasetWorker
 from .landmark_extraction_worker import LandmarkExtractionWorker
 from .train_mri_gan_worker import TrainMRIGANWorker
+from .train_df_detector_worker import TrainDeepfakeDetectorWorker
 
 __all__ = [
     'CropFacesWorker',
@@ -14,4 +15,5 @@ __all__ = [
     'Worker',
     'WorkerWithPool',
     'TrainMRIGANWorker',
+    'TrainDeepfakeDetectorWorker',
 ]
