@@ -4,6 +4,8 @@ from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
+from gui.pages.detect_deepfake_page.mri_gan.train_df_detector_widget import \
+    TrainDeepfakeDetectorWidget
 from gui.pages.detect_deepfake_page.mri_gan.train_mri_gan_widget import \
     TrainMRIGANWidget
 from core.worker import (
@@ -157,6 +159,16 @@ class MRIGANWidget(ModelWidget):
         }
         train_mri_wgt = TrainMRIGANWidget(signals)
         left_part_training_tab.layout().addWidget(train_mri_wgt)
+
+        #########################
+        # TRAIN DEEPFAKE DETECTOR
+        #########################
+        signals = {
+            SIGNAL_OWNER.MESSAGE_WORKER:
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
+        }
+        train_df_detector = TrainDeepfakeDetectorWidget(signals)
+        right_part_training_tab.layout().addWidget(train_df_detector)
 
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:
