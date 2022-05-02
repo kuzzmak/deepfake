@@ -269,23 +269,25 @@ def _get_default_config(
     dfdc_dataset = base / Path('dfdc')
     dfdc_lmrks = dfdc_dataset / 'landmarks'
     crop_faces = dfdc_dataset / 'crop_faces'
+    assets = DATA_ROOT / 'df_detection' / 'assets'
+    dfdc_assets = assets / 'dfdc'
 
     return {
-        'assets': 'assets',
+        'assets': str(assets),
         'data_path': {
             'dfdc': {
                 'train': str(dfdc_dataset / 'train'),
                 'valid': str(dfdc_dataset / 'valid'),
                 'test': str(dfdc_dataset / 'test'),
-                'train_labels_csv_filename': 'train_labels.csv',
-                'valid_labels_csv_filename': 'labels.csv',
-                'test_labels_csv_filename': 'labels.csv',
-                'train_frame_labels_csv_filename': 'train_frame_labels.csv',
-                'valid_frame_labels_csv_filename': 'valid_frame_labels.csv',
-                'test_frame_labels_csv_filename': 'test_frame_labels.csv',
+                'train_labels_csv_filename': str(dfdc_assets / 'train_labels.csv'),
+                'valid_labels_csv_filename': str(dfdc_assets / 'labels.csv'),
+                'test_labels_csv_filename': str(dfdc_assets / 'labels.csv'),
+                'train_frame_labels_csv_filename': str(dfdc_assets / 'train_frame_labels.csv'),
+                'valid_frame_labels_csv_filename': str(dfdc_assets / 'valid_frame_labels.csv'),
+                'test_frame_labels_csv_filename': str(dfdc_assets / 'test_frame_labels.csv'),
                 'data_augmentation': {
-                    'plan_pkl_filename': 'data_augmentation_plan.pkl',
-                    'metadata': 'aug_metadata',
+                    'plan_pkl_filename': str(dfdc_assets / 'data_augmentation_plan.pkl'),
+                    'metadata': str(dfdc_assets / 'aug_metadata'),
                 },
             }
         },
@@ -302,17 +304,17 @@ def _get_default_config(
                     'test': str(crop_faces / 'test'),
                 },
                 'mri_path': str(dfdc_dataset / 'mri'),
-                'mri_metadata_csv': 'dfdc_mri_metadata.csv',
-                'train_mriframe_label': 'train_mriframe_labels.csv',
-                'valid_mriframe_label': 'valid_mriframe_labels.csv',
-                'test_mriframe_label': 'test_mriframe_labels.csv',
+                'mri_metadata_csv': str(dfdc_assets / 'dfdc_mri_metadata.csv'),
+                'train_mriframe_label': str(dfdc_assets / 'train_mriframe_labels.csv'),
+                'valid_mriframe_label': str(dfdc_assets / 'valid_mriframe_labels.csv'),
+                'test_mriframe_label': str(dfdc_assets / 'test_mriframe_labels.csv'),
             },
-            'mri_dataset_real_train_csv': 'mri_real_train_dataset.csv',
-            'mri_dataset_fake_train_csv': 'mri_fake_train_dataset.csv',
-            'mri_dataset_real_test_csv': 'mri_real_test_dataset.csv',
-            'mri_dataset_fake_test_csv': 'mri_fake_test_dataset.csv',
-            'mri_dataset_csv': 'mri_dataset.csv',
-            'blank_png': 'blank.png',
+            'mri_dataset_real_train_csv': str(assets / 'mri_real_train_dataset.csv'),
+            'mri_dataset_fake_train_csv': str(assets / 'mri_fake_train_dataset.csv'),
+            'mri_dataset_real_test_csv': str(assets / 'mri_real_test_dataset.csv'),
+            'mri_dataset_fake_test_csv': str(assets / 'mri_fake_test_dataset.csv'),
+            'mri_dataset_csv': str(assets / 'mri_dataset.csv'),
+            'blank_png': str(assets / 'blank.png'),
         },
         'MRI_GAN': {
             'weights': 'weights/MRI_GAN_weights.chkpt',
@@ -381,4 +383,3 @@ def generate_default_mri_gan_config(
     base: Optional[Union[str, Path]] = None
 ) -> None:
     save_yaml_config(_get_default_config(base), MRI_GAN_CONFIG_PATH)
-    MRIGANConfig.invalidate_instance()
