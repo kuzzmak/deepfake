@@ -145,6 +145,7 @@ class JOB_TYPE(Enum):
     CROPPING_FACES = 'cropping_faces'
     GENERATE_MRI_DATASET = 'generate_mri_dataset'
     TRAIN_MRI_GAN = 'train_mri_gan'
+    TRAIN_DF_DETECTOR = 'train_df_detector'
 
 
 class APP_STATUS(Enum):
@@ -270,6 +271,7 @@ class JOB_NAME(Enum):
     FRAMES_EXTRACTION = 'extracting frames'
     LOADING = 'loading'
     ALIGNING_LANDMARKS = 'aligning landmarks'
+    TRAIN_DF_DETECTOR = 'training df detector'
 
 
 class WORKER_THREAD(Enum):
