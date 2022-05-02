@@ -4,7 +4,7 @@
     "editor.formatOnType": true,
     "files.autoSave": "afterDelay",
     "files.exclude": {
-        "__pycache__": true,
+        "**/__pycache__": true,
         "env": true,
     },
     "python.formatting.provider": "autopep8",
