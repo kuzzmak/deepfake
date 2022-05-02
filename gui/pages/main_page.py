@@ -7,7 +7,10 @@ import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from config import APP_CONFIG
-from configs.mri_gan_config import generate_default_mri_gan_config
+from configs.mri_gan_config import (
+    MRIGANConfig,
+    generate_default_mri_gan_config,
+)
 from console import Console
 from enums import (
     APP_STATUS,
@@ -384,6 +387,7 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             )
             return
         generate_default_mri_gan_config(selected_dir)
+        MRIGANConfig.invalidate_instance()
         logger.info(
             'Generated new MRI GAN config with the base ' +
             f'{selected_dir} located in {str(MRI_GAN_CONFIG_PATH)}'
