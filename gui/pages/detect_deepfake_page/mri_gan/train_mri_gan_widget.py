@@ -88,9 +88,6 @@ class TrainMRIGANWidget(BaseWidget):
         self.image_size = ModelParameter('image size', 'imsize')
         gb.layout().addWidget(self.image_size)
 
-        self.batch_size = ModelParameter('batch size', 'batch_size')
-        gb.layout().addWidget(self.batch_size)
-
         self.lr = ModelParameter('lr', 'lr')
         gb.layout().addWidget(self.lr)
 
@@ -141,8 +138,8 @@ class TrainMRIGANWidget(BaseWidget):
             )
             return
 
-        epochs = parse_number(self.lr.input, NUMBER_TYPE.INT)
-        if lr is None:
+        epochs = parse_number(self.epochs.input, NUMBER_TYPE.INT)
+        if epochs is None:
             logger.error(
                 'Unable to parse epochs input, must be integer.'
             )
