@@ -118,6 +118,7 @@ class SIGNAL_OWNER(Enum):
 class MESSAGE_TYPE(Enum):
     REQUEST = 'request'
     ANSWER = 'answer'
+    JOB_EXIT = 'job_exit'
 
 
 class MESSAGE_STATUS(Enum):
@@ -133,7 +134,7 @@ class IMAGE_FORMAT(Enum):
 class JOB_TYPE(Enum):
     IO_OPERATION = 'io_operation'
     CONSOLE_PRINT = 'console_print'
-    FRAME_EXTRACTION = 'frame_extraction'
+    FRAMES_EXTRACTION = 'frames_extraction'
     WIDGET_CONFIGURATION = 'widget_configuration'
     FACE_DETECTION = 'face_detection'
     IMAGE_DISPLAY = 'image_display'
