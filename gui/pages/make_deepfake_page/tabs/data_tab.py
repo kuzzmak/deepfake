@@ -1,25 +1,28 @@
 import logging
-import os
 from pathlib import Path
-from typing import List, Optional, Dict, Union
+from typing import List, Optional, Dict, Tuple, Union
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from config import APP_CONFIG
 from core.scraper.google_images_scraper import GoogleImagesScraper
-from enums import LAYOUT, SIGNAL_OWNER
+from core.worker import FramesExtractionWorker, Worker
+from enums import CONNECTION, JOB_TYPE, LAYOUT, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     Button,
     GroupBox,
     HWidget,
     InfoButton,
+    PlayIcon,
+    StopIcon,
     VWidget,
     VerticalSpacer,
 )
 from gui.widgets.image_viewer.image_viewer import ImageViewer
 from gui.widgets.video_player import VideoPlayer
+from utils import parse_number
 
 logger = logging.getLogger(__name__)
 
@@ -65,20 +68,23 @@ class GoogleImagesScraperWorker(qtc.QObject):
 class DataTab(BaseWidget):
 
     stop_google_images_scraper_worker_sig = qtc.pyqtSignal()
+    stop_frames_extraction_sig = qtc.pyqtSignal()
 
     def __init__(
         self,
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         super().__init__(signals)
-        
+
         self._video_path = None
+        self._frames_directory = None
         self._gi_dir = APP_CONFIG \
             .app \
             .google_images_scraper \
             .default_save_directory
-        self._threads = []
         self._scraping_running = False
+        self._frames_extraction_in_progress = False
+        self._threads: Dict[JOB_TYPE, Tuple[qtc.QThread, Worker]] = dict()
 
         self.init_ui()
 
@@ -119,12 +125,15 @@ class DataTab(BaseWidget):
         # --- video widget ---
         self.video_wgt = HWidget()
         self.stacked_wgt.addWidget(self.video_wgt)
+        self.video_wgt.layout().setContentsMargins(0, 0, 0, 0)
 
         left_part = VWidget()
         self.video_wgt.layout().addWidget(left_part)
+        left_part.layout().setContentsMargins(0, 0, 0, 0)
         left_part.setFixedWidth(190)
         right_part = VWidget()
         self.video_wgt.layout().addWidget(right_part)
+        right_part.layout().setContentsMargins(0, 0, 0, 0)
 
         select_video_gb = GroupBox('Video source')
         left_part.layout().addWidget(select_video_gb)
@@ -137,20 +146,29 @@ class DataTab(BaseWidget):
 
         frames_gb = GroupBox('Directory for extracted frames')
         left_part.layout().addWidget(frames_gb)
-        self.select_output_directory_btn = Button('Select')
+        self.select_output_directory_btn = Button('select')
         frames_gb.layout().addWidget(self.select_output_directory_btn)
+        self.select_output_directory_btn.clicked.connect(
+            self._select_frames_directory
+        )
 
         n_th_frame_gb = GroupBox('Extract every n-th frame')
         left_part.layout().addWidget(n_th_frame_gb)
-        n_th_frame_edit = qwt.QLineEdit()
-        n_th_frame_edit.setText('1')
-        n_th_frame_edit.setFixedWidth(150)
-        n_th_frame_gb.layout().addWidget(n_th_frame_edit)
+        self.n_th_frame_edit = qwt.QLineEdit()
+        self.n_th_frame_edit.setText('10')
+        self.n_th_frame_edit.setFixedWidth(150)
+        n_th_frame_gb.layout().addWidget(self.n_th_frame_edit)
 
         left_part.layout().addItem(VerticalSpacer())
 
-        self.start_extraction_btn = Button('Start extaction')
-        left_part.layout().addWidget(self.start_extraction_btn)
+        self.extraction_btn = Button('start extraction')
+        left_part.layout().addWidget(
+            self.extraction_btn,
+            0,
+            qtc.Qt.AlignmentFlag.AlignHCenter,
+        )
+        self.extraction_btn.setIcon(PlayIcon())
+        self.extraction_btn.clicked.connect(self._frames_extraction_op)
 
         # --- google images scraper widget ---
         self.google_images_wgt = HWidget()
@@ -205,6 +223,7 @@ class DataTab(BaseWidget):
 
         self.scraping_btn = Button('start scraping')
         left_part_gi.layout().addWidget(self.scraping_btn)
+        self.scraping_btn.setIcon(PlayIcon())
         self.scraping_btn.clicked.connect(self._scraping_op)
 
         left_part_gi.layout().addItem(VerticalSpacer())
@@ -280,7 +299,7 @@ class DataTab(BaseWidget):
             worker = GoogleImagesScraperWorker(terms, self._gi_dir)
             self.stop_google_images_scraper_worker_sig.connect(worker.stop)
             worker.moveToThread(thread)
-            self._threads.append((thread, worker))
+            self._threads[JOB_TYPE.IMAGE_SCRAPING] = (thread, worker)
             thread.started.connect(worker.run)
             worker.started.connect(self._google_images_scraper_worker_started)
             worker.finished.connect(
@@ -302,15 +321,101 @@ class DataTab(BaseWidget):
         """
         self._scraping_running = True
         self.scraping_btn.setText('stop scraping')
+        self.scraping_btn.setIcon(StopIcon())
 
     @qtc.pyqtSlot()
     def _google_images_scraper_worker_finished(self) -> None:
         """Waits for google images scraper thread to finish and
         exit gracefully.
         """
-        for thread, worker in self._threads:
+        val = self._threads.get(JOB_TYPE.IMAGE_SCRAPING, None)
+        if val is not None:
+            thread, _ = val
             thread.quit()
             thread.wait()
-        self._threads = []
+            self._threads.pop(JOB_TYPE.IMAGE_SCRAPING, None)
         self._scraping_running = False
         self.scraping_btn.setText('start scraping')
+        self.scraping_btn.setIcon(PlayIcon())
+
+    @qtc.pyqtSlot()
+    def _select_frames_directory(self) -> None:
+        """Selects directory where extracted frames will be saved.
+        """
+        dir = qwt.QFileDialog.getExistingDirectory(
+            self,
+            'Select directory for extracted frames',
+        )
+        if not dir:
+            logger.warning('No directory selected.')
+            return
+        self._frames_directory = dir
+
+    @qtc.pyqtSlot()
+    def _frames_extraction_op(self) -> None:
+        """Starts or stops frames extraction process.
+        """
+        if self._frames_extraction_in_progress:
+            self._stop_frames_extraction()
+            return
+        video_path = self._video_path
+        if video_path is None:
+            logger.error('No video was selected.')
+            return
+        frames_directory = self._frames_directory
+        if frames_directory is None:
+            logger.error('No directory for frames was selected.')
+            return
+        every_nth = parse_number(self.n_th_frame_edit.text())
+        if every_nth is None:
+            logger.error(
+                'Unable to parse number for every nth ' +
+                'frame, must be integer.'
+            )
+            return
+        thread = qtc.QThread()
+        worker = FramesExtractionWorker(
+            video_path,
+            frames_directory,
+            every_nth,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+        )
+        self.stop_frames_extraction_sig.connect(
+            lambda: worker.conn_q.put(CONNECTION.STOP)
+        )
+        worker.moveToThread(thread)
+        self._threads[JOB_TYPE.FRAMES_EXTRACTION] = (thread, worker)
+        thread.started.connect(worker.run)
+        worker.started.connect(self._on_frames_extraction_worker_started)
+        worker.finished.connect(self._on_frames_extraction_worker_finished)
+        thread.start()
+
+    def _stop_frames_extraction(self) -> None:
+        """Emits signal to the frames extraction worker to stop.
+        """
+        logger.info('Requested stop of the frames extraction, please wait...')
+        self.stop_frames_extraction_sig.emit()
+
+    @qtc.pyqtSlot()
+    def _on_frames_extraction_worker_started(self) -> None:
+        """Changed text and icon of the button for frames extraction when
+        the process starts.
+        """
+        self._frames_extraction_in_progress = True
+        self.extraction_btn.setText('stop extraction')
+        self.extraction_btn.setIcon(StopIcon())
+
+    @qtc.pyqtSlot()
+    def _on_frames_extraction_worker_finished(self) -> None:
+        """Changed text and icon of the button for frames extraction when
+        the process ends.
+        """
+        val = self._threads.get(JOB_TYPE.FRAMES_EXTRACTION, None)
+        if val is not None:
+            thread, _ = val
+            thread.quit()
+            thread.wait()
+            self._threads.pop(JOB_TYPE.FRAMES_EXTRACTION, None)
+        self._frames_extraction_in_progress = False
+        self.extraction_btn.setText('start extraction')
+        self.extraction_btn.setIcon(PlayIcon())
