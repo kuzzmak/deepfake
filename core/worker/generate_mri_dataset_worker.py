@@ -16,10 +16,10 @@ from core.worker import MRIGANWorker, WorkerWithPool
 from enums import DATA_TYPE, JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
 
+logger = logging.getLogger(__name__)
+
 
 class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
-
-    logger = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -46,21 +46,24 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
         overwrite = True
 
         metadata_csv_file = self._get_dfdc_mri_medatata_csv_path()
-        self.logger.info(
+        logger.info(
             f'Metadata file for {self._data_type.value} ' +
             f'mri dataset location: {str(metadata_csv_file)}.'
         )
+
+        metadata_csv_file.parent.mkdir(exist_ok=True)
+
         if not overwrite and os.path.isfile(metadata_csv_file):
             return pd.read_csv(metadata_csv_file)
 
         pairs = get_dfdc_training_real_fake_pairs(self._get_dfdc_data_path())
 
         mri_basedir = self._get_dfdc_mri_path()
-        self.logger.info(
-            f'Mri datasets will be saved in directory: {str(mri_basedir)}.'
+        logger.info(
+            f'MRI datasets will be saved in directory: {str(mri_basedir)}.'
         )
         crops_path = self._get_dfdc_crops_data_path()
-        self.logger.debug(
+        logger.debug(
             f'DFDC dataset cropped faces directory: {str(crops_path)}.'
         )
 
@@ -109,15 +112,13 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
             if r is not None:
                 df = df.append(r, ignore_index=True)
 
+        logger.info('Generating MRI dataset finished.')
+
+        logger.info(f'Saving metadata to file: {str(metadata_csv_file)}.')
         df.to_csv(metadata_csv_file)
 
-        dfdc_df = df
-        # take dfdc_fract % of samples from DFDC dataset to train the MRI GAN.
-
         if dfdc_fract < 1.0:
-            dfdc_df, _ = train_test_split(dfdc_df, train_size=dfdc_fract)
-
-        df_combined = dfdc_df
+            df, _ = train_test_split(df, train_size=dfdc_fract)
 
         # convert ['real_image', 'fake_image', 'mri_image'] to
         # ['face_image', 'mri_image']
@@ -125,14 +126,14 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
         #       else use the mri(real_image, fake_image)
 
         dff = pd.DataFrame(columns=['face_image', 'mri_image', 'class'])
-        dff['face_image'] = df_combined['fake_image'].unique()
-        dff['mri_image'] = df_combined['mri_image']
+        dff['face_image'] = df['fake_image'].unique()
+        dff['mri_image'] = df['mri_image']
         dff_len = len(dff)
         dff['class'][0:dff_len] = 'fake'
         dff = dff.set_index('face_image')
 
         dfr_base = pd.DataFrame(columns=['face_image', 'mri_image', 'class'])
-        dfr_base['face_image'] = df_combined['real_image'].unique()
+        dfr_base['face_image'] = df['real_image'].unique()
         dfr_base['mri_image'] = os.path.abspath(self._get_blank_image_path())
         dfr_base_len = len(dfr_base)
         dfr_base['class'][0:dfr_base_len] = 'real'
@@ -142,25 +143,43 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
         dfr = dfr.set_index('face_image')
 
         real_train, real_test = train_test_split(dfr, test_size=test_size)
-        real_train.to_csv(self._get_mri_train_real_dataset_csv_path())
-        real_test.to_csv(self._get_mri_test_real_dataset_csv_path())
+        mri_train_real_csv_path = self._get_mri_train_real_dataset_csv_path()
+        logger.info(
+            f'Saving mri train real dataset csv to ' +
+            f'file: {mri_train_real_csv_path}.'
+        )
+        real_train.to_csv(mri_train_real_csv_path)
+        mri_test_real_csv_path = self._get_mri_test_real_dataset_csv_path()
+        logger.info(
+            f'Saving mri test real dataset csv to ' +
+            f'file: {mri_test_real_csv_path}.'
+        )
+        real_test.to_csv(mri_test_real_csv_path)
 
         fake_train, fake_test = train_test_split(dff, test_size=test_size)
-        fake_train.to_csv(self._get_mri_train_fake_dataset_csv_path())
-        fake_test.to_csv(self._get_mri_test_fake_dataset_csv_path())
+        mri_train_fake_csv_path = self._get_mri_train_fake_dataset_csv_path()
+        logger.info(
+            f'Saving mri train fake dataset csv to ' +
+            f'file: {mri_train_fake_csv_path}.'
+        )
+        fake_train.to_csv(mri_train_fake_csv_path)
+        mri_test_fake_csv_path = self._get_mri_test_fake_dataset_csv_path()
+        logger.info(
+            f'Saving mri test fake dataset csv to ' +
+            f'file: {mri_test_fake_csv_path}.'
+        )
+        fake_test.to_csv(mri_test_fake_csv_path)
 
         total_samples = dfr_len + dff_len
 
-        self.logger.info(f'Total fake samples {dff_len}')
-        self.logger.info(f'Total real samples {dfr_len}')
-        self.logger.info(f'Fake train samples {len(fake_train)}')
-        self.logger.info(f'Real train samples {len(real_train)}')
-        self.logger.info(f'Fake test samples {len(fake_test)}')
-        self.logger.info(f'Real test samples {len(real_test)}')
-        self.logger.info(
+        logger.info(f'Total fake samples {dff_len}')
+        logger.info(f'Total real samples {dfr_len}')
+        logger.info(f'Fake train samples {len(fake_train)}')
+        logger.info(f'Real train samples {len(real_train)}')
+        logger.info(f'Fake test samples {len(fake_test)}')
+        logger.info(f'Real test samples {len(real_test)}')
+        logger.info(
             f'Total samples {total_samples}, ' +
-            f'real={round(dfr_len / total_samples, 2)}% ' +
-            f'fake={round(dff_len / total_samples, 2)}%'
+            f'real={round((dfr_len / total_samples) * 100, 2)}% ' +
+            f'fake={round((dff_len / total_samples) * 100, 2)}%'
         )
-
-        self.logger.info('Generating MRI dataset finished.')
