@@ -59,6 +59,14 @@ class Messages:
             )
         )
 
+    def JOB_EXIT():
+        return Message(
+            MESSAGE_TYPE.JOB_EXIT,
+            MESSAGE_STATUS.OK,
+            SIGNAL_OWNER.NO_OWNER,
+            SIGNAL_OWNER.JOB_PROGRESS,
+        )
+
 
 class IOOperationBody(Body):
 
