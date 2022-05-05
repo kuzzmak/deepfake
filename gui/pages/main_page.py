@@ -15,6 +15,7 @@ from console import Console
 from enums import (
     APP_STATUS,
     BODY_KEY,
+    MESSAGE_TYPE,
     SIGNAL_OWNER,
     WORKER_THREAD,
     WIDGET,
@@ -33,12 +34,8 @@ from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
 from gui.templates.main_page import Ui_main_page
-from gui.workers.threads.frames_extraction_worker_thread \
-    import FramesExtractionWorkerThread
 from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
-from gui.workers.threads.next_element_worker_thread \
-    import NextElementWorkerThread
 from message.message import Message
 from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
 from variables import ETA_FORMAT, MRI_GAN_CONFIG_PATH
@@ -60,11 +57,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     # -- worker signals ---
     io_worker_sig = qtc.pyqtSignal(Message)
     message_worker_sig = qtc.pyqtSignal(Message)
-    next_element_worker_sig = qtc.pyqtSignal(Message)
-    frames_extraction_worker_sig = qtc.pyqtSignal(Message)
-
-    # -- next element signals ---
-    frames_extraction_worker_next_element_sig = qtc.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,8 +75,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         # -- setup workers --
         # self.setup_io_worker()
-        # self.setup_frame_extraction_worker()
-        # self.setup_next_element_worker()
         self.setup_message_worker()
 
         self.m_pages = {}
@@ -196,9 +186,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     def setup_message_worker(self):
         message_worker_signals = {
             SIGNAL_OWNER.IO_WORKER: self.io_worker_sig,
-            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER:
-            self.frames_extraction_worker_sig,
-            SIGNAL_OWNER.NEXT_ELEMENT_WORKER: self.next_element_worker_sig,
             SIGNAL_OWNER.JOB_PROGRESS: self.job_progress_sig,
             SIGNAL_OWNER.CONFIGURE_WIDGET: self.configure_widget_sig,
         }
@@ -208,29 +195,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         )
         message_worker_thread.start()
         self._threads[WORKER_THREAD.MESSAGE_WORKER] = message_worker_thread
-
-    def setup_frame_extraction_worker(self):
-        frames_extraction_worker_signals = {
-            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
-        }
-        self.frames_extraction_worker_thread = FramesExtractionWorkerThread(
-            self.frames_extraction_worker_sig,
-            frames_extraction_worker_signals,
-            self.frames_extraction_worker_next_element_sig,
-        )
-        self.frames_extraction_worker_thread.start()
-
-    def setup_next_element_worker(self):
-        next_element_worker_signals = {
-            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
-            SIGNAL_OWNER.FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT:
-            self.frames_extraction_worker_next_element_sig,
-        }
-        self.next_element_worker_thread = NextElementWorkerThread(
-            self.next_element_worker_sig,
-            next_element_worker_signals,
-        )
-        self.next_element_worker_thread.start()
 
     def configure_widget(self, msg: Message):
         data = msg.body.data
@@ -426,19 +390,28 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
             p = page(page_signals)
             self.register_page(p)
 
+    def _finish_job(self) -> None:
+        """Removes training status label and progress bar.
+        """
+        self.show_widget(self.job_progressbar, False)
+        self.app_status_label_sig.emit(APP_STATUS.NO_JOB.value)
+        self.job_progress_value = 0
+        self.eta_label.setText('')
+
     @qtc.pyqtSlot(Message)
     def job_progress(self, msg: Message):
+        if msg.type == MESSAGE_TYPE.JOB_EXIT:
+            self._finish_job()
+            return
+
         self.job_progress_value += 1
         self.job_progressbar_value_sig.emit(self.job_progress_value)
         eta = msg.body.data.get(BODY_KEY.ETA, None)
         if eta is not None:
             self.eta_label.setText(ETA_FORMAT.format(eta))
 
-        finished = msg.body.finished
-        if finished:
-            self.show_widget(self.job_progressbar, False)
-            self.app_status_label_sig.emit(APP_STATUS.NO_JOB.value)
-            self.job_progress_value = 0
+        if msg.body.finished:
+            self._finish_job()
 
     @qtc.pyqtSlot(bool)
     def show_console(self, show: bool):
