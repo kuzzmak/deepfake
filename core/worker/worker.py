@@ -15,7 +15,7 @@ from enums import (
     MESSAGE_TYPE,
     SIGNAL_OWNER,
 )
-from message.message import Body, Message
+from message.message import Body, Message, Messages
 from utils import format_timedelta
 
 
@@ -50,6 +50,7 @@ class Worker(qtc.QObject):
         self._conn_q = Queue()
         self._tick_manager = enlighten.get_manager()
         self._ticks = None
+        self._forced_exit = False
 
     @property
     def conn_q(self) -> Queue:
@@ -92,6 +93,7 @@ class Worker(qtc.QObject):
             return False
         try:
             _ = self._conn_q.get_nowait()
+            self._forced_exit = True
             return True
         except Empty:
             return False
@@ -104,6 +106,9 @@ class Worker(qtc.QObject):
         self.started.emit()
         self.run_job()
         self.finished.emit()
+        if self._forced_exit:
+            msg = Messages.JOB_EXIT()
+            self.send_message(msg)
         self._ticks = None
 
     def run_job(self) -> None:
