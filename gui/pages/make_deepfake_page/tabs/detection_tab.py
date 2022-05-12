@@ -66,7 +66,6 @@ class DetectionAlgorithmTab(BaseWidget):
         self._alignments = None
         self._face_extraction_in_progress = False
 
-
         self.init_ui()
         self.add_signals()
 
@@ -116,7 +115,7 @@ class DetectionAlgorithmTab(BaseWidget):
             text='Directory with face images or \nmetadata directory')
         )
         input_directory_wgt_layout.addItem(HorizontalSpacer())
-        self.select_input_faces_directory_btn = qwt.QPushButton(text='Select')
+        self.select_input_faces_directory_btn = qwt.QPushButton(text='select')
         self.select_input_faces_directory_btn.clicked.connect(
             self.select_faces_directory
         )
@@ -129,6 +128,7 @@ class DetectionAlgorithmTab(BaseWidget):
         sort_wgt = qwt.QWidget()
         sort_wgt_layout = qwt.QVBoxLayout()
         sort_wgt.setLayout(sort_wgt_layout)
+        sort_wgt_layout.setContentsMargins(0, 0, 0, 0)
 
         sort_gb = qwt.QGroupBox()
         sort_gb.setTitle('Sorting methods')
@@ -144,9 +144,9 @@ class DetectionAlgorithmTab(BaseWidget):
         sort_gb_layout.addWidget(image_hash_rbtn)
         sort_bg.addButton(image_hash_rbtn)
 
-        some_other_rbtn = qwt.QRadioButton(text='some other', parent=sort_gb)
-        sort_gb_layout.addWidget(some_other_rbtn)
-        sort_bg.addButton(some_other_rbtn)
+        # some_other_rbtn = qwt.QRadioButton(text='some other', parent=sort_gb)
+        # sort_gb_layout.addWidget(some_other_rbtn)
+        # sort_bg.addButton(some_other_rbtn)
 
         left_part_layout.addWidget(sort_wgt)
 
@@ -172,12 +172,12 @@ class DetectionAlgorithmTab(BaseWidget):
         image_hash_method_layout.addWidget(eps_row)
         self.sort_method_wgt.addWidget(self.image_hash_method)
 
-        self.some_other_method = qwt.QWidget()
-        some_other_method_layout = qwt.QVBoxLayout()
-        some_other_method_layout.setContentsMargins(0, 0, 0, 0)
-        self.some_other_method.setLayout(some_other_method_layout)
-        some_other_method_layout.addWidget(qwt.QLabel(text='something'))
-        self.sort_method_wgt.addWidget(self.some_other_method)
+        # self.some_other_method = qwt.QWidget()
+        # some_other_method_layout = qwt.QVBoxLayout()
+        # some_other_method_layout.setContentsMargins(0, 0, 0, 0)
+        # self.some_other_method.setLayout(some_other_method_layout)
+        # some_other_method_layout.addWidget(qwt.QLabel(text='something'))
+        # self.sort_method_wgt.addWidget(self.some_other_method)
 
         left_part_layout.addWidget(self.sort_method_wgt)
         left_part_layout.addItem(VerticalSpacer())
@@ -192,7 +192,7 @@ class DetectionAlgorithmTab(BaseWidget):
         self._face_extraction_btn.clicked.connect(self._face_extraction)
         self._face_extraction_btn.setIcon(PlayIcon())
 
-        self.sort_btn = qwt.QPushButton(text='Sort')
+        self.sort_btn = qwt.QPushButton(text='sort')
         self.enable_widget(self.sort_btn, False)
         self.sort_btn.clicked.connect(self._sort)
         button_row_wgt_layout.addWidget(self.sort_btn)
@@ -343,9 +343,9 @@ class DetectionAlgorithmTab(BaseWidget):
         if id == -2:
             self.image_sort_method = IMAGE_SORT.IMAGE_HASH
             self.sort_method_wgt.setCurrentWidget(self.image_hash_method)
-        elif id == -3:
-            # some other
-            self.sort_method_wgt.setCurrentWidget(self.some_other_method)
+        # elif id == -3:
+        #     # some other
+        #     self.sort_method_wgt.setCurrentWidget(self.some_other_method)
 
     @qtc.pyqtSlot()
     def select_faces_directory(self) -> None:
