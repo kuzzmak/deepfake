@@ -134,7 +134,7 @@ def np_array_to_qicon(image: np.ndarray) -> qtg.QIcon:
         image.shape[1],
         image.shape[0],
         image.shape[1] * 3,
-        qtg.QImage.Format_RGB888,
+        qtg.QImage.Format.Format_RGB888,
     ).rgbSwapped()
     image = qtg.QIcon(qtg.QPixmap(image))
     return image
