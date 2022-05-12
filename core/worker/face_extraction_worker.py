@@ -142,7 +142,12 @@ class FaceExtractionWorker(Worker):
         )
         self.send_message(msg)
 
-        for idx, i_p in enumerate(image_paths[:100]):
+        for idx, i_p in enumerate(image_paths):
+
+            if self.should_exit():
+                logger.info('Face extraction worker received stop signal.')
+                break
+
             image = Image.load(i_p)
             faces = self._detect_faces(image)
 
