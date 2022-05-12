@@ -67,6 +67,7 @@ class WORKER(Enum):
     CROPPING_FACES_WORKER = 'cropping_faces_worker'
     GENERATE_MRI_DATASET_WORKER = 'generate_mri_dataset_worker'
     TRAIN_MRI_GAN_WORKER = 'train_mri_gan_worker'
+    FACE_EXTRACTION_WORKER = 'face_extaction_worker'
 
 
 class SIGNAL_OWNER(Enum):
@@ -102,6 +103,7 @@ class SIGNAL_OWNER(Enum):
     CROPPING_FACES_WORKER = WORKER.CROPPING_FACES_WORKER.value
     GENERATE_MRI_DATASET_WORKER = WORKER.GENERATE_MRI_DATASET_WORKER.value
     TRAIN_MRI_GAN_WORKER = WORKER.TRAIN_MRI_GAN_WORKER.value
+    FACE_EXTRACTION_WORKER = WORKER.FACE_EXTRACTION_WORKER
 
     # worker signals next element
     FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = \
@@ -136,7 +138,6 @@ class JOB_TYPE(Enum):
     CONSOLE_PRINT = 'console_print'
     FRAMES_EXTRACTION = 'frames_extraction'
     WIDGET_CONFIGURATION = 'widget_configuration'
-    FACE_DETECTION = 'face_detection'
     IMAGE_DISPLAY = 'image_display'
     ADD_SIGNAL = 'add_dignal'
     NEXT_ELEMENT = 'next_element'
@@ -148,6 +149,7 @@ class JOB_TYPE(Enum):
     TRAIN_MRI_GAN = 'train_mri_gan'
     TRAIN_DF_DETECTOR = 'train_df_detector'
     IMAGE_SCRAPING = 'image_scraping'
+    FACE_EXTRACTION = 'face_extraction'
 
 
 class APP_STATUS(Enum):
@@ -275,6 +277,7 @@ class JOB_NAME(Enum):
     ALIGNING_LANDMARKS = 'aligning landmarks'
     TRAIN_DF_DETECTOR = 'training df detector'
     IMAGE_SCRAPING = 'scraping images'
+    FACE_EXTRACTION = 'extracting faces'
 
 
 class WORKER_THREAD(Enum):
