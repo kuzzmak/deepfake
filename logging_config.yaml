@@ -87,6 +87,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  gui.pages.make_deepfake_page.tabs.detection_tab:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   gui.workers.io_worker:
     level: DEBUG
     handlers: [file, gui, console]
