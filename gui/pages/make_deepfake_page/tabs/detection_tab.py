@@ -1,17 +1,18 @@
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
-import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from config import APP_CONFIG
 from core.dictionary import Dictionary
-from core.extractor import Extractor, ExtractorConfiguration
+from core.worker import Worker
+from core.worker.face_extraction_worker import FaceExtractionWorker
 from enums import (
     BODY_KEY,
+    CONNECTION,
     DEVICE,
     FACE_DETECTION_ALGORITHM,
     JOB_TYPE,
@@ -24,7 +25,10 @@ from enums import (
 from gui.widgets.image_viewer.image_viewer_sorter import ImageViewerSorter
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
+    Button,
     MinimalSizePolicy,
+    PlayIcon,
+    StopIcon,
     VerticalSpacer,
     HorizontalSpacer,
 )
@@ -35,36 +39,11 @@ from utils import get_file_paths_from_dir, parse_number
 logger = logging.getLogger(__name__)
 
 
-class FaceExtractionWorker(qtc.QObject):
-
-    finished = qtc.pyqtSignal()
-
-    def __init__(
-        self,
-        input_dir: str,
-        fda: FACE_DETECTION_ALGORITHM,
-        device: DEVICE = DEVICE.CPU,
-    ):
-        super().__init__()
-        self._input_dir = input_dir
-        self._fda = fda
-        self._device = device
-
-    def run(self) -> None:
-        conf = ExtractorConfiguration(
-            input_dir=self._input_dir,
-            fda=self._fda,
-            device=self._device,
-        )
-        extractor = Extractor(conf)
-        extractor.run()
-        self.finished.emit()
-
-
 class DetectionAlgorithmTab(BaseWidget):
 
     input_picture_added_sig = qtc.pyqtSignal()
     output_picture_added_sig = qtc.pyqtSignal()
+    stop_face_extraction_sig = qtc.pyqtSignal()
 
     def __init__(
         self,
@@ -72,19 +51,21 @@ class DetectionAlgorithmTab(BaseWidget):
     ):
         super().__init__(signals)
 
-        self.faces_directory = None
+        self._input_dir = None
         self.algorithm_selected_value = FACE_DETECTION_ALGORITHM.S3FD
         self.image_sort_method = IMAGE_SORT.IMAGE_HASH
 
         self._image_hash_eps = 18
         self._current_tab = 0
-        self._threads = []
+        self._threads: Dict[JOB_TYPE, Tuple[qtc.QThread, Worker]] = dict()
         self._landmarks_dir = None
         self._alignments_dir = None
         self._landmarks_file_present = False
         self._alignments_file_present = False
         self._landmarks = None
         self._alignments = None
+        self._face_extraction_in_progress = False
+
 
         self.init_ui()
         self.add_signals()
@@ -206,11 +187,10 @@ class DetectionAlgorithmTab(BaseWidget):
         button_row_wgt_layout.setContentsMargins(0, 0, 0, 0)
         button_row_wgt.setLayout(button_row_wgt_layout)
 
-        start_detection_btn = qwt.QPushButton(text='Start detection')
-        start_detection_btn.clicked.connect(self.start_detection)
-        # start_detection_btn.setFixedWidth(150)
-        start_detection_btn.setIcon(qtg.QIcon(qtg.QPixmap(':/play.svg')))
-        button_row_wgt_layout.addWidget(start_detection_btn)
+        self._face_extraction_btn = Button(text='start detection')
+        button_row_wgt_layout.addWidget(self._face_extraction_btn)
+        self._face_extraction_btn.clicked.connect(self._face_extraction)
+        self._face_extraction_btn.setIcon(PlayIcon())
 
         self.sort_btn = qwt.QPushButton(text='Sort')
         self.enable_widget(self.sort_btn, False)
@@ -339,13 +319,6 @@ class DetectionAlgorithmTab(BaseWidget):
             return
         self.image_viewer_sorter.sort_sig.emit(eps)
 
-    @qtc.pyqtSlot()
-    def _on_worker_finished(self):
-        for thread, worker in self._threads:
-            thread.quit()
-            thread.wait()
-        self._threads = []
-
     @qtc.pyqtSlot(int)
     def algorithm_selected(self, id: int) -> None:
         """Face detection algorithm selection changed.
@@ -394,7 +367,7 @@ class DetectionAlgorithmTab(BaseWidget):
             # send found paths to image viewer so they load
             self.image_viewer_sorter.data_paths_sig.emit(image_paths)
 
-        self.faces_directory = directory
+        self._input_dir = directory
         logger.info(f'Selected faces directory: {directory}.')
 
         # check if in selected directory already exist landmarks.json and
@@ -433,23 +406,70 @@ class DetectionAlgorithmTab(BaseWidget):
             self._alignments = Dictionary.load(self._alignments_dir)
             logger.debug('Alignments file loaded.')
 
-    def start_detection(self) -> None:
-        """Sends message with faces directories to make deepfake page.
+    def _stop_face_extraction(self) -> None:
+        """Sends signal to the face extraction worker to stop.
         """
-        if self.faces_directory is None:
-            logger.error(
-                'Unable to start face detection, ' +
-                'no directory is selected.'
-            )
+        logger.info('Requested stop of the face extraction, please wait...')
+        self.enable_widget(self._face_extraction_btn, False)
+        self.stop_face_extraction_sig.emit()
+
+    def _face_extraction(self) -> None:
+        """Starts or stops face extraction process.
+        """
+        if self._face_extraction_in_progress:
+            self._stop_face_extraction()
             return
+
+        if self._input_dir is None:
+            logger.error('No directory with face images was selected.')
+            return
+
         thread = qtc.QThread()
         worker = FaceExtractionWorker(
-            self.faces_directory,
-            self.algorithm_selected_value,
-            self.device,
+            self._input_dir,
+            device=DEVICE.CPU,
+            message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
-        self._threads.append((thread, worker))
+        self.stop_face_extraction_sig.connect(
+            lambda: worker.conn_q.put(CONNECTION.STOP)
+        )
         worker.moveToThread(thread)
+        self._threads[JOB_TYPE.FACE_EXTRACTION] = (thread, worker)
         thread.started.connect(worker.run)
-        worker.finished.connect(self._on_worker_finished)
+        worker.started.connect(self._on_face_extraction_worker_started)
+        worker.running.connect(self._on_face_extraction_worker_running)
+        worker.finished.connect(self._on_face_extraction_worker_finished)
         thread.start()
+
+    @qtc.pyqtSlot()
+    def _on_face_extraction_worker_started(self) -> None:
+        """Disables button for starting face extraction if the process
+        was already launched.
+        """
+        self.enable_widget(self._face_extraction_btn, False)
+        self._face_extraction_in_progress = True
+
+    @qtc.pyqtSlot()
+    def _on_face_extraction_worker_running(self) -> None:
+        """Changes text and icon on the face extraction worker once worker
+        starts starts executing job.
+        """
+        self.enable_widget(self._face_extraction_btn, True)
+        self._face_extraction_btn.setIcon(StopIcon())
+        self._face_extraction_btn.setText('stop extraction')
+
+    @qtc.pyqtSlot()
+    def _on_face_extraction_worker_finished(self) -> None:
+        """Once worker finished, button text and icon are changed to default
+        and thread is closed gracefully.
+        """
+        val = self._threads.get(JOB_TYPE.FACE_EXTRACTION, None)
+        if val is not None:
+            thread, _ = val
+            thread.quit()
+            thread.wait()
+            self._threads.pop(JOB_TYPE.FACE_EXTRACTION, None)
+        self.enable_widget(self._face_extraction_btn, True)
+        self._face_extraction_btn.setIcon(PlayIcon())
+        self._face_extraction_btn.setText('start extraction')
+        self._face_extraction_in_progress = False
