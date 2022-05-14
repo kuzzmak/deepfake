@@ -14,17 +14,17 @@ class MRIDataset(Dataset):
 
         if mode == "train":
             self.real_data_csv = MRIGANConfig \
-                .getInstance() \
+                .get_instance() \
                 .get_mri_train_real_dataset_csv_path()
             self.fake_data_csv = MRIGANConfig \
-                .getInstance() \
+                .get_instance() \
                 .get_mri_train_fake_dataset_csv_path()
         elif mode == "test":
             self.real_data_csv = MRIGANConfig \
-                .getInstance() \
+                .get_instance() \
                 .get_mri_test_real_dataset_csv_path()
             self.fake_data_csv = MRIGANConfig \
-                .getInstance() \
+                .get_instance() \
                 .get_mri_test_fake_dataset_csv_path()
         else:
             raise Exception("Unknown mode")

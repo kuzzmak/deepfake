@@ -11,7 +11,7 @@ from utils import get_val_from_dict, set_val_on_dict
 
 
 def _get_conf_value_by_key(key: List[str]) -> str:
-    return get_val_from_dict(MRIGANConfig.getInstance().config, key)
+    return get_val_from_dict(MRIGANConfig.get_instance().config, key)
 
 
 logger = logging.getLogger(__name__)
@@ -159,13 +159,13 @@ class ConfigureDataPathsDialog(qwt.QDialog):
     def _save_mri_gan_config(self) -> None:
         """Goes through all paths in current dialog and saves them.
         """
-        conf = MRIGANConfig.getInstance().config
+        conf = MRIGANConfig.get_instance().config
         for key in self._keys:
             lbl_key = ConfigureDataPathsDialog. \
                 _construct_label_name_from_key(key)
             lbl: qwt.QLabel = getattr(self, lbl_key)
             lbl_text = str(Path(lbl.text()))
             set_val_on_dict(conf, key, lbl_text)
-        MRIGANConfig.getInstance().config = conf
-        MRIGANConfig.getInstance().save()
+        MRIGANConfig.get_instance().config = conf
+        MRIGANConfig.get_instance().save()
         self.close()

@@ -51,7 +51,7 @@ class TrainDeepfakeDetectorWorker(Worker):
     def run_job(self) -> None:
         device = self._device.value
         model_params = MRIGANConfig \
-            .getInstance() \
+            .get_instance() \
             .get_deep_fake_training_params()
 
         #
@@ -60,7 +60,7 @@ class TrainDeepfakeDetectorWorker(Worker):
         #
 
         encoder_name = MRIGANConfig \
-            .getInstance() \
+            .get_instance() \
             .get_default_cnn_encoder_name()
         imsize = ENCODER_PARAMS[encoder_name]["imsize"]
         model_params['encoder_name'] = encoder_name
@@ -114,13 +114,13 @@ class TrainDeepfakeDetectorWorker(Worker):
         train_dataset = DFDCDatasetSimple(
             mode='train',
             transform=train_transform,
-            data_size=MRIGANConfig.getInstance().get_training_sample_size(),
+            data_size=MRIGANConfig.get_instance().get_training_sample_size(),
             dataset=model_params['dataset'],
             label_smoothing=model_params['label_smoothing'],
         )
         valid_dataset = DFDCDatasetSimple(
             mode='valid', transform=valid_transform,
-            data_size=MRIGANConfig.getInstance().get_valid_sample_size(),
+            data_size=MRIGANConfig.get_instance().get_valid_sample_size(),
             dataset=model_params['dataset'],
         )
 
@@ -221,7 +221,7 @@ class TrainDeepfakeDetectorWorker(Worker):
             desc=tqdm_train_descr,
         )
 
-        log_dir = MRIGANConfig.getInstance().get_log_dir_name()
+        log_dir = MRIGANConfig.get_instance().get_log_dir_name()
         train_writer = SummaryWriter(log_dir=os.path.join(log_dir, 'runs'))
 
         self.running.emit()
