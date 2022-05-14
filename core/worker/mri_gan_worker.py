@@ -22,7 +22,7 @@ class MRIGANWorker:
 
     @staticmethod
     def _get_fun_by_name_from_config(name: str) -> Callable:
-        return getattr(MRIGANConfig.getInstance(), name)
+        return getattr(MRIGANConfig.get_instance(), name)
 
     def _get_dfdc_data_path(self) -> Path:
         return Path(MRIGANWorker._get_fun_by_name_from_config(
@@ -46,23 +46,36 @@ class MRIGANWorker:
 
     def _get_dfdc_mri_medatata_csv_path(self) -> Path:
         return Path(
-            MRIGANConfig.getInstance().get_dfdc_mri_metadata_csv_path()
+            MRIGANConfig.get_instance().get_dfdc_mri_metadata_csv_path()
         )
 
     def _get_dfdc_mri_path(self) -> Path:
-        return Path(MRIGANConfig.getInstance().get_dfdc_mri_path())
+        return Path(MRIGANConfig.get_instance().get_dfdc_mri_path())
 
-    def _get_blank_image_path(self) -> str:
-        return MRIGANConfig.getInstance().get_blank_image_path()
+    def _get_blank_image_path(self) -> Path:
+        return Path(MRIGANConfig.get_instance().get_blank_image_path())
 
-    def _get_mri_train_real_dataset_csv_path(self) -> str:
-        return MRIGANConfig.getInstance().get_mri_train_real_dataset_csv_path()
+    def _get_mri_train_real_dataset_csv_path(self) -> Path:
+        return Path(
+            MRIGANConfig.get_instance().get_mri_train_real_dataset_csv_path()
+        )
 
-    def _get_mri_test_real_dataset_csv_path(self) -> str:
-        return MRIGANConfig.getInstance().get_mri_test_real_dataset_csv_path()
+    def _get_mri_test_real_dataset_csv_path(self) -> Path:
+        return Path(
+            MRIGANConfig.get_instance().get_mri_test_real_dataset_csv_path()
+        )
 
-    def _get_mri_train_fake_dataset_csv_path(self) -> str:
-        return MRIGANConfig.getInstance().get_mri_train_fake_dataset_csv_path()
+    def _get_mri_train_fake_dataset_csv_path(self) -> Path:
+        return Path(
+            MRIGANConfig.get_instance().get_mri_train_fake_dataset_csv_path()
+        )
 
-    def _get_mri_test_fake_dataset_csv_path(self) -> str:
-        return MRIGANConfig.getInstance().get_mri_test_fake_dataset_csv_path()
+    def _get_mri_test_fake_dataset_csv_path(self) -> Path:
+        return Path(
+            MRIGANConfig.get_instance().get_mri_test_fake_dataset_csv_path()
+        )
+
+    def _get_mrip2p_png_data_path(self) -> Path:
+        return Path(MRIGANWorker._get_fun_by_name_from_config(
+            f'get_{self._data_type.value}_mrip2p_png_data_path'
+        )())
