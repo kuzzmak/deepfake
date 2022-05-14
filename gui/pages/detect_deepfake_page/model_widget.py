@@ -5,7 +5,7 @@ import PyQt6.QtWidgets as qwt
 
 from enums import SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.common import VWidget
+from gui.widgets.common import NoMarginLayout, VWidget
 
 
 class ModelWidget(BaseWidget):
@@ -19,7 +19,7 @@ class ModelWidget(BaseWidget):
         self._init_main_ui()
 
     def _init_main_ui(self) -> None:
-        layout = qwt.QVBoxLayout()
+        layout = NoMarginLayout()
         self.setLayout(layout)
 
         self.tab_wgt = qwt.QTabWidget()
