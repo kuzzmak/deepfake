@@ -9,8 +9,11 @@ from core.worker import TrainMRIGANWorker, Worker
 from enums import CONNECTION, JOB_TYPE, NUMBER_TYPE, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
+    Button,
+    DeviceWidget,
     GroupBox,
     HorizontalSpacer,
+    NoMarginLayout,
     PlayIcon,
     StopIcon,
     VerticalSpacer,
@@ -43,7 +46,7 @@ class ModelParameter(qwt.QWidget):
         self._input.setText(
             str(
                 MRIGANConfig
-                .getInstance()
+                .get_instance()
                 .get_mri_gan_model_params()[self._config_key]
             )
         )
@@ -75,34 +78,36 @@ class TrainMRIGANWidget(BaseWidget):
         self._init_ui()
 
     def _init_ui(self) -> None:
-        layout = qwt.QVBoxLayout()
+        layout = NoMarginLayout()
         self.setLayout(layout)
-        layout.setContentsMargins(0, 0, 0, 0)
 
-        gb = GroupBox('Model parameters')
-        layout.addWidget(gb)
+        gb_mp = GroupBox('Model parameters')
+        layout.addWidget(gb_mp)
 
         self.batch_size = ModelParameter('batch size', 'batch_size')
-        gb.layout().addWidget(self.batch_size)
+        gb_mp.layout().addWidget(self.batch_size)
 
         self.image_size = ModelParameter('image size', 'imsize')
-        gb.layout().addWidget(self.image_size)
+        gb_mp.layout().addWidget(self.image_size)
 
         self.lr = ModelParameter('lr', 'lr')
-        gb.layout().addWidget(self.lr)
+        gb_mp.layout().addWidget(self.lr)
 
         self.epochs = ModelParameter('epochs', 'n_epochs')
-        gb.layout().addWidget(self.epochs)
+        gb_mp.layout().addWidget(self.epochs)
 
         self.tau = ModelParameter('tau', 'tau')
-        gb.layout().addWidget(self.tau)
+        gb_mp.layout().addWidget(self.tau)
 
         self.lambda_pixel = ModelParameter('lambda pixel', 'lambda_pixel')
-        gb.layout().addWidget(self.lambda_pixel)
+        gb_mp.layout().addWidget(self.lambda_pixel)
+
+        self._devices = DeviceWidget()
+        layout.addWidget(self._devices)
 
         layout.addItem(VerticalSpacer())
 
-        self.start_training_btn = qwt.QPushButton(text='start training')
+        self.start_training_btn = Button(text='start training')
         layout.addWidget(self.start_training_btn)
         self.start_training_btn.setIcon(PlayIcon())
         self.start_training_btn.clicked.connect(self._mri_gan_train)
@@ -151,6 +156,7 @@ class TrainMRIGANWidget(BaseWidget):
             batch_size,
             lr,
             epochs,
+            self._devices.device,
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
         self.stop_mri_training_sig.connect(
