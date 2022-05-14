@@ -24,7 +24,7 @@ from core.df_detection.mri_gan.mri_gan.model import (
 )
 from core.worker.worker import Worker
 from configs.mri_gan_config import MRIGANConfig, print_line
-from enums import JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
+from enums import DEVICE, JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -46,6 +46,7 @@ class TrainMRIGANWorker(Worker):
         batch_size: int,
         lr: float,
         epochs: int,
+        device: DEVICE = DEVICE.CPU,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
         super().__init__(message_worker_sig)
@@ -54,13 +55,12 @@ class TrainMRIGANWorker(Worker):
         self._batch_size = batch_size
         self._lr = lr
         self._epochs = epochs
-
-        self._log_dir = Path(MRIGANConfig.getInstance().get_log_dir_name())
+        self._device = device
+        self._log_dir = Path(MRIGANConfig.get_instance().get_log_dir_name())
 
     def run_job(self) -> None:
-        m_p = MRIGANConfig.getInstance().get_mri_gan_model_params()
-        use_cuda = torch.cuda.is_available()
-        device = torch.device("cuda" if use_cuda else "cpu")
+        m_p = MRIGANConfig.get_instance().get_mri_gan_model_params()
+        device = self._device.value
 
         data_transforms = torchvision.transforms.Compose([
             transforms.Resize((self._image_size, self._image_size)),
@@ -95,16 +95,12 @@ class TrainMRIGANWorker(Worker):
         optimizer_G = torch.optim.Adam(
             generator.parameters(),
             lr=self._lr,
-            betas=(
-                m_p['b1'],
-                m_p['b2']))
+            betas=(m_p['b1'], m_p['b2']),
+        )
         optimizer_D = torch.optim.Adam(
             discriminator.parameters(),
             lr=self._lr,
-            betas=(
-                m_p['b1'],
-                m_p['b2'],
-            ),
+            betas=(m_p['b1'], m_p['b2']),
         )
         losses = []
         # ssim_report = []
@@ -151,7 +147,7 @@ class TrainMRIGANWorker(Worker):
         #     loss_D_lowest = mri_gan_metadata['loss_D_lowest']
         #     loss_G_lowest = mri_gan_metadata['loss_G_lowest']
         # else:
-        logger.debug('Initializing weights')
+        logger.debug('Initializing weights.')
         generator.apply(weights_init_normal)
         discriminator.apply(weights_init_normal)
         checkpoint_path = self._log_dir / \
@@ -195,7 +191,7 @@ class TrainMRIGANWorker(Worker):
                 return
 
             if e < start_epoch:
-                logger.debug(f'Skipping epoch {e}')
+                logger.debug(f'Skipping epoch {e}.')
                 continue
 
             # we are creating dataloader at each epoch as we want to sample new
@@ -232,8 +228,8 @@ class TrainMRIGANWorker(Worker):
                 num_workers=num_workers,
             )
 
-            desc = "Training MRI-GAN [e:{e}/{n_epochs}] [G_loss:{loss_G}] [D_loss:{loss_D}]".format(
-                e=e, n_epochs=self._epochs, loss_G='N/A', loss_D='N/A')
+            desc = '[e:{}/{}] [G_loss:{}] [D_loss:{}]' \
+                .format(e, self._epochs, 'N/A', 'N/A')
             pbar = tqdm(train_dataloader, desc=desc)
 
             for local_batch_num, batch in enumerate(pbar):
@@ -244,8 +240,8 @@ class TrainMRIGANWorker(Worker):
 
                 generator.train()
                 discriminator.train()
-                real_A = batch["A"].to(device)
-                real_B = batch["B"].to(device)
+                real_A = batch['A'].to(device)
+                real_B = batch['B'].to(device)
 
                 valid = torch.ones((real_A.size(0), *patch)).to(device)
                 fake = torch.zeros((real_A.size(0), *patch)).to(device)
@@ -262,8 +258,9 @@ class TrainMRIGANWorker(Worker):
                 fake_B_dn = denormalize(fake_B)
                 real_B_dn = denormalize(real_B)
                 # SSIM loss
-                loss_ssim = torch.sqrt(1 -
-                                       criterion_ssim(fake_B_dn, real_B_dn))
+                loss_ssim = torch.sqrt(
+                    1 - criterion_ssim(fake_B_dn, real_B_dn)
+                )
                 # Total generator loss
                 loss_G = loss_GAN + m_p['lambda_pixel'] * (
                     m_p['tau'] * loss_pixel +
@@ -287,19 +284,24 @@ class TrainMRIGANWorker(Worker):
                 loss_D.backward()
                 optimizer_D.step()
 
-                desc = "Training MRI-GAN [e:{e}/{n_epochs}] [G_loss:{loss_G}] [D_loss:{loss_D}]".format(
-                    e=e, n_epochs=self._epochs, loss_G=loss_G.item(), loss_D=loss_D.item())
-
+                desc = '[e:{}/{}] [G_loss:{}] [D_loss:{}]' \
+                    .format(e, self._epochs, loss_G.item(), loss_D.item())
                 pbar.set_description(desc=desc, refresh=True)
 
                 losses.append(
-                    [e, local_batch_num, global_batches_done, loss_G.item(),
-                     loss_GAN.item(),
-                     loss_pixel.item(),
-                     loss_ssim.item(),
-                     loss_D.item(),
-                     loss_real.item(),
-                     loss_fake.item()])
+                    [
+                        e,
+                        local_batch_num,
+                        global_batches_done,
+                        loss_G.item(),
+                        loss_GAN.item(),
+                        loss_pixel.item(),
+                        loss_ssim.item(),
+                        loss_D.item(),
+                        loss_real.item(),
+                        loss_fake.item(),
+                    ]
+                )
 
                 mri_gan_metadata['global_batches_done'] = global_batches_done
                 mri_gan_metadata['model_params'] = m_p
@@ -317,8 +319,8 @@ class TrainMRIGANWorker(Worker):
                         )
                         rand_end = rand_start + \
                             m_p['test_sample_size']
-                        real_A = imgs["A"][rand_start:rand_end].to(device)
-                        real_B = imgs["B"][rand_start:rand_end].to(device)
+                        real_A = imgs['A'][rand_start:rand_end].to(device)
+                        real_B = imgs['B'][rand_start:rand_end].to(device)
                         fake_B = generator(real_A)
                         img_sample = torch.cat(
                             (real_A.data, real_B.data, fake_B.data),
@@ -344,8 +346,10 @@ class TrainMRIGANWorker(Worker):
                         #     global_batches_done - 1, model_params, imgs,
                         #     generator, device, save_img=False)
                         # ssim_report.append(
-                        #     [e, local_batch_num, global_batches_done, mean_ssim])
-                        # pickle.dump(ssim_report, open(ssim_report_file, "wb"))
+                        #     [e, local_batch_num, global_batches_done,
+                        # mean_ssim])
+                        # pickle.dump(ssim_report, open(ssim_report_file,
+                        # "wb"))
 
                         # generate_graphs(
                         #     losses_file, ssim_report_file, model_params)
@@ -395,8 +399,8 @@ class TrainMRIGANWorker(Worker):
 
                 mri_gan_metadata['loss_D_lowest'] = loss_D_lowest
                 mri_gan_metadata['loss_G_lowest'] = loss_G_lowest
-                pickle.dump(losses, open(losses_file, "wb"))
-                pickle.dump(mri_gan_metadata, open(metadata_file, "wb"))
+                pickle.dump(losses, open(losses_file, 'wb'))
+                pickle.dump(mri_gan_metadata, open(metadata_file, 'wb'))
 
             self.report_progress(
                 SIGNAL_OWNER.LANDMARK_EXTRACTION_WORKER,
