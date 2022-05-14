@@ -2,13 +2,13 @@ from typing import Dict, Optional
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
-from config import APP_CONFIG
 
+from config import APP_CONFIG
 from enums import DF_DETECTION_MODEL, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.meso_net_widget import MesoNetWidget
 from gui.pages.detect_deepfake_page.mri_gan.mri_gan_widget import MRIGANWidget
 from gui.pages.page import Page
-from gui.widgets.common import HWidget, HorizontalSpacer
+from gui.widgets.common import HWidget, HorizontalSpacer, NoMarginLayout
 from names import DETECT_DEEPFAKE_PAGE_NAME
 
 
@@ -23,7 +23,7 @@ class DetectDeepFakePage(Page):
         self._init_ui()
 
     def _init_ui(self) -> None:
-        _layout = qwt.QVBoxLayout()
+        _layout = NoMarginLayout()
         self.setLayout(_layout)
         central_wgt = qwt.QWidget()
         _layout.addWidget(central_wgt)
