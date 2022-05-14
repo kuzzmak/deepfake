@@ -17,7 +17,7 @@ class MRIGANConfig:
     __instance = None
 
     @staticmethod
-    def getInstance():
+    def get_instance():
         if MRIGANConfig.__instance is None:
             MRIGANConfig()
         return MRIGANConfig.__instance
@@ -234,7 +234,7 @@ class MRIGANConfig:
 
 
 def print_line():
-    print('-' * MRIGANConfig.getInstance()._config['logging']['line_len'])
+    print('-' * MRIGANConfig.get_instance()._config['logging']['line_len'])
 
 
 def print_green(text):
@@ -268,9 +268,10 @@ def _get_default_config(
 
     dfdc_dataset = base / Path('dfdc')
     dfdc_lmrks = dfdc_dataset / 'landmarks'
-    crop_faces = dfdc_dataset / 'crop_faces'
+    dfdc_crop_faces = dfdc_dataset / 'crop_faces'
     assets = DATA_ROOT / 'df_detection' / 'assets'
     dfdc_assets = assets / 'dfdc'
+    mri_to_detect = dfdc_dataset / 'mri_to_detect'
 
     return {
         'assets': str(assets),
@@ -299,15 +300,18 @@ def _get_default_config(
                     'test': str(dfdc_lmrks / 'test'),
                 },
                 'crop_faces': {
-                    'train': str(crop_faces / 'train'),
-                    'valid': str(crop_faces / 'valid'),
-                    'test': str(crop_faces / 'test'),
+                    'train': str(dfdc_crop_faces / 'train'),
+                    'valid': str(dfdc_crop_faces / 'valid'),
+                    'test': str(dfdc_crop_faces / 'test'),
                 },
                 'mri_path': str(dfdc_dataset / 'mri'),
                 'mri_metadata_csv': str(dfdc_assets / 'dfdc_mri_metadata.csv'),
                 'train_mriframe_label': str(dfdc_assets / 'train_mriframe_labels.csv'),
                 'valid_mriframe_label': str(dfdc_assets / 'valid_mriframe_labels.csv'),
                 'test_mriframe_label': str(dfdc_assets / 'test_mriframe_labels.csv'),
+                'train_mrip2p_faces': str(mri_to_detect / 'train'),
+                'valid_mrip2p_faces': str(mri_to_detect / 'valid'),
+                'test_mrip2p_faces': str(mri_to_detect / 'test'),
             },
             'mri_dataset_real_train_csv': str(assets / 'mri_real_train_dataset.csv'),
             'mri_dataset_fake_train_csv': str(assets / 'mri_fake_train_dataset.csv'),
