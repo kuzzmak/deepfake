@@ -134,7 +134,7 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
 
         dfr_base = pd.DataFrame(columns=['face_image', 'mri_image', 'class'])
         dfr_base['face_image'] = df['real_image'].unique()
-        dfr_base['mri_image'] = os.path.abspath(self._get_blank_image_path())
+        dfr_base['mri_image'] = self._get_blank_image_path().absolute()
         dfr_base_len = len(dfr_base)
         dfr_base['class'][0:dfr_base_len] = 'real'
 
@@ -146,13 +146,13 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
         mri_train_real_csv_path = self._get_mri_train_real_dataset_csv_path()
         logger.info(
             f'Saving mri train real dataset csv to ' +
-            f'file: {mri_train_real_csv_path}.'
+            f'file: {str(mri_train_real_csv_path)}.'
         )
         real_train.to_csv(mri_train_real_csv_path)
         mri_test_real_csv_path = self._get_mri_test_real_dataset_csv_path()
         logger.info(
             f'Saving mri test real dataset csv to ' +
-            f'file: {mri_test_real_csv_path}.'
+            f'file: {str(mri_test_real_csv_path)}.'
         )
         real_test.to_csv(mri_test_real_csv_path)
 
@@ -160,13 +160,13 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
         mri_train_fake_csv_path = self._get_mri_train_fake_dataset_csv_path()
         logger.info(
             f'Saving mri train fake dataset csv to ' +
-            f'file: {mri_train_fake_csv_path}.'
+            f'file: {str(mri_train_fake_csv_path)}.'
         )
         fake_train.to_csv(mri_train_fake_csv_path)
         mri_test_fake_csv_path = self._get_mri_test_fake_dataset_csv_path()
         logger.info(
             f'Saving mri test fake dataset csv to ' +
-            f'file: {mri_test_fake_csv_path}.'
+            f'file: {str(mri_test_fake_csv_path)}.'
         )
         fake_test.to_csv(mri_test_fake_csv_path)
 
