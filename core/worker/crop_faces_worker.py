@@ -66,15 +66,14 @@ class CropFacesWorker(MRIGANWorker, WorkerWithPool):
                     )
                 )
 
-            if self._message_worker_sig is not None:
-                conf_wgt_msg = Messages.CONFIGURE_WIDGET(
-                    SIGNAL_OWNER.CROPPING_FACES_WORKER,
-                    WIDGET.JOB_PROGRESS,
-                    'setMaximum',
-                    [len(jobs)],
-                    JOB_NAME.CROPPING_FACES,
-                )
-                self.send_message(conf_wgt_msg)
+            conf_wgt_msg = Messages.CONFIGURE_WIDGET(
+                SIGNAL_OWNER.CROPPING_FACES_WORKER,
+                WIDGET.JOB_PROGRESS,
+                'setMaximum',
+                [len(jobs)],
+                JOB_NAME.CROPPING_FACES,
+            )
+            self.send_message(conf_wgt_msg)
 
             self.running.emit()
 
