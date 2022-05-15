@@ -8,6 +8,7 @@ from .train_mri_gan_worker import TrainMRIGANWorker
 from .train_df_detector_worker import TrainDeepfakeDetectorWorker
 from .frames_extraction_worker import FramesExtractionWorker
 from .predict_mri_worker import PredictMRIWorker
+from .generate_frame_labels_csv_worker import GenerateFrameLabelsCSVWorker
 
 __all__ = [
     'CropFacesWorker',
@@ -20,4 +21,5 @@ __all__ = [
     'TrainDeepfakeDetectorWorker',
     'FramesExtractionWorker',
     'PredictMRIWorker',
+    'GenerateFrameLabelsCSVWorker',
 ]

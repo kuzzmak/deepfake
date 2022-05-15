@@ -69,6 +69,7 @@ class WORKER(Enum):
     TRAIN_MRI_GAN_WORKER = 'train_mri_gan_worker'
     FACE_EXTRACTION_WORKER = 'face_extaction_worker'
     PREDICT_MRI_WORKER = 'predict_mri_worker'
+    GENERATE_FRAME_LABELS_CSV_WORKER = 'generate_frame_labels_csv_worker'
 
 
 class SIGNAL_OWNER(Enum):
@@ -104,8 +105,10 @@ class SIGNAL_OWNER(Enum):
     CROPPING_FACES_WORKER = WORKER.CROPPING_FACES_WORKER.value
     GENERATE_MRI_DATASET_WORKER = WORKER.GENERATE_MRI_DATASET_WORKER.value
     TRAIN_MRI_GAN_WORKER = WORKER.TRAIN_MRI_GAN_WORKER.value
-    FACE_EXTRACTION_WORKER = WORKER.FACE_EXTRACTION_WORKER
-    PREDICT_MRI_WORKER = WORKER.PREDICT_MRI_WORKER
+    FACE_EXTRACTION_WORKER = WORKER.FACE_EXTRACTION_WORKER.value
+    PREDICT_MRI_WORKER = WORKER.PREDICT_MRI_WORKER.value
+    GENERATE_FRAME_LABELS_CSV_WORKER = \
+        WORKER.GENERATE_FRAME_LABELS_CSV_WORKER.value
 
     # worker signals next element
     FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = \
@@ -153,6 +156,7 @@ class JOB_TYPE(Enum):
     IMAGE_SCRAPING = 'image_scraping'
     FACE_EXTRACTION = 'face_extraction'
     PREDICT_MRI = 'predict_mri'
+    GENERATE_FRAME_LABELS_CSV = 'generate_frame_labels_csv'
 
 
 class APP_STATUS(Enum):
@@ -282,6 +286,7 @@ class JOB_NAME(Enum):
     IMAGE_SCRAPING = 'scraping images'
     FACE_EXTRACTION = 'extracting faces'
     PREDICT_MRI = 'mri prediction'
+    GENERATE_FRAME_LABELS_CSV = 'generating frame labels CSV'
 
 
 class WORKER_THREAD(Enum):

@@ -11,6 +11,7 @@ from gui.pages.detect_deepfake_page.mri_gan.train_mri_gan_widget import \
     TrainMRIGANWidget
 from core.worker import (
     CropFacesWorker,
+    GenerateFrameLabelsCSVWorker,
     GenerateMRIDatasetWorker,
     LandmarkExtractionWorker,
     PredictMRIWorker,
@@ -39,6 +40,7 @@ class MRIGANWidget(ModelWidget):
     stop_cropping_faces_sig = qtc.pyqtSignal()
     stop_gen_mri_dataset_sig = qtc.pyqtSignal()
     stop_predict_mri_sig = qtc.pyqtSignal()
+    stop_generating_frame_labels_csv = qtc.pyqtSignal()
 
     def __init__(
         self,
@@ -53,6 +55,7 @@ class MRIGANWidget(ModelWidget):
         self._cropping_faces_in_progress = False
         self._gen_mri_dataset_in_progress = False
         self._predict_mri_in_progress = False
+        self._generating_frame_labels_csv_in_progess = False
         self._lock = Lock()
 
     def _init_ui(self) -> None:
@@ -132,6 +135,18 @@ class MRIGANWidget(ModelWidget):
             self._predict_mri
         )
         self.predict_mri_step.add_field('batch_size', str(8))
+
+        ###########################
+        # GENERATE FRAME LABELS CSV
+        ###########################
+        self.generate_frame_labels_csv = Step(
+            'Generate frame labels CSV',
+            'generate',
+        )
+        right_part_data_tab.layout().addWidget(self.generate_frame_labels_csv)
+        self.generate_frame_labels_csv.start_btn.clicked.connect(
+            self._generate_frame_labels_csv
+        )
 
         right_part_data_tab.layout().addItem(VerticalSpacer())
 
@@ -514,6 +529,92 @@ class MRIGANWidget(ModelWidget):
         logger.info('Requested stop of the prediction mri, please wait...')
         self.enable_widget(self.predict_mri_step.start_btn, False)
         self.stop_predict_mri_sig.emit()
+
+    def _generate_frame_labels_csv(self) -> None:
+        """Stops ori initiates process of generating frame labels csv.
+        """
+        if self._generating_frame_labels_csv_in_progess:
+            self._stop_generaing_frame_labels_csv()
+            return
+
+        num_proc = parse_number(
+                self.generate_frame_labels_csv.num_of_instances
+            )
+        if num_proc is None:
+            logger.error(
+                'Unable to parse your input for number of ' +
+                'processes, you should put integer number.'
+            )
+            return
+
+        thread = qtc.QThread()
+        worker = GenerateFrameLabelsCSVWorker(
+            self.generate_frame_labels_csv.selected_data_type,
+            num_proc,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
+        )
+        self.stop_generating_frame_labels_csv.connect(
+            lambda: worker.conn_q.put(CONNECTION.STOP)
+        )
+        worker.moveToThread(thread)
+        self._threads[JOB_TYPE.GENERATE_FRAME_LABELS_CSV] = (thread, worker)
+        thread.started.connect(worker.run)
+        worker.started.connect(
+            self._on_generate_frame_labels_csv_worker_started
+        )
+        worker.running.connect(
+            self._on_generate_frame_labels_csv_worker_running
+        )
+        worker.finished.connect(
+            self._on_generate_frame_labels_csv_worker_finished
+        )
+        thread.start()
+
+    @qtc.pyqtSlot()
+    def _on_generate_frame_labels_csv_worker_finished(self) -> None:
+        """Waits for generate frame labels CSV worker to quit in order to
+        shutdown threads or processes gracefully.
+        """
+        self._lock.acquire()
+        try:
+            val = self._threads.get(JOB_TYPE.GENERATE_FRAME_LABELS_CSV, None)
+            if val is not None:
+                thread, _ = val
+                thread.quit()
+                thread.wait()
+                self._threads.pop(JOB_TYPE.GENERATE_FRAME_LABELS_CSV, None)
+        finally:
+            self._lock.release()
+        self.enable_widget(self.generate_frame_labels_csv.start_btn, True)
+        self.generate_frame_labels_csv.start_btn.setIcon(PlayIcon())
+        self.generate_frame_labels_csv.start_btn.setText('generate')
+        self._generating_frame_labels_csv_in_progess = False
+
+    @qtc.pyqtSlot()
+    def _on_generate_frame_labels_csv_worker_started(self) -> None:
+        """Disables button for starting again process of generating frame
+        labels CSV.
+        """
+        self.enable_widget(self.generate_frame_labels_csv.start_btn, False)
+        self._generating_frame_labels_csv_in_progess = True
+
+    @qtc.pyqtSlot()
+    def _on_generate_frame_labels_csv_worker_running(self) -> None:
+        """Changed text and icon of the button when process of generating
+        frame labels CSV starts running.
+        """
+        self.enable_widget(self.generate_frame_labels_csv.start_btn, True)
+        self.generate_frame_labels_csv.start_btn.setText('stop generating')
+        self.generate_frame_labels_csv.start_btn.setIcon(StopIcon())
+
+    def _stop_generaing_frame_labels_csv(self) -> None:
+        """Sends signal to stop generation of the frame labels csv.
+        """
+        logger.info(
+            'Requested stop of the generating frame labels CSV, please wait...'
+        )
+        self.enable_widget(self.generate_frame_labels_csv.start_btn, False)
+        self.stop_generating_frame_labels_csv.emit()
 
     @qtc.pyqtSlot()
     def _configure_ext_lmrks_paths(self) -> None:
