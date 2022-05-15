@@ -43,6 +43,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  core.worker.predict_mri_worker:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   core.worker.face_extraction_worker:
     level: DEBUG
     handlers: [file, gui, console]
