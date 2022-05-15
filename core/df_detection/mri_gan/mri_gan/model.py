@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from core.df_detection.mri_gan.utils import ConfigParser
+from configs.mri_gan_config import MRIGANConfig
 
 
 def weights_init_normal(m):
@@ -145,8 +145,7 @@ class Discriminator(nn.Module):
 def get_MRI_GAN(pre_trained=True):
     generator = GeneratorUNet()
     if pre_trained:
-        checkpoint_path = ConfigParser.getInstance().get_mri_gan_weight_path()
+        checkpoint_path = MRIGANConfig.get_instance().get_mri_gan_weight_path()
         checkpoint = torch.load(checkpoint_path)
         generator.load_state_dict(checkpoint['generator_state_dict'])
-
     return generator
