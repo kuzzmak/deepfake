@@ -6,7 +6,7 @@ import PyQt6.QtWidgets as qwt
 
 from configs.mri_gan_config import MRIGANConfig
 from core.worker import TrainMRIGANWorker, Worker
-from enums import CONNECTION, JOB_TYPE, NUMBER_TYPE, SIGNAL_OWNER
+from enums import CONNECTION, JOB_TYPE, LAYOUT, NUMBER_TYPE, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     Button,
@@ -35,9 +35,8 @@ class ModelParameter(qwt.QWidget):
         self._init_ui()
 
     def _init_ui(self) -> None:
-        layout = qwt.QHBoxLayout()
+        layout = NoMarginLayout(LAYOUT.HORIZONTAL)
         self.setLayout(layout)
-        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(qwt.QLabel(text=self._label))
         layout.addItem(HorizontalSpacer())
         self._input = qwt.QLineEdit()
