@@ -1,7 +1,49 @@
 import PyQt6.QtWidgets as qwt
 
 from enums import DATA_TYPE, LAYOUT
-from gui.widgets.common import Button, GroupBox, HWidget, PlayIcon, VWidget
+from gui.widgets.common import (
+    Button,
+    GroupBox,
+    HWidget,
+    NoMarginLayout,
+    PlayIcon,
+    VWidget,
+)
+
+
+class CustomInputRow(qwt.QWidget):
+
+    def __init__(self, name: str, default_value: str = '') -> None:
+        """Widget for adding another row in the `Step` widget.
+
+        Parameters
+        ----------
+        name : str
+            name of the property being added
+        default_value : str, optional
+            default value in the input field, by default ''
+        """
+        super().__init__()
+
+        self._name = name
+        self._default_value = default_value
+
+        self._init_ui()
+
+    def _init_ui(self) -> None:
+        layout = NoMarginLayout()
+        self.setLayout(layout)
+        row = HWidget()
+        layout.addWidget(row)
+        row.layout().setContentsMargins(0, 0, 0, 0)
+        row.layout().addWidget(qwt.QLabel(text=self._name))
+        self._input = qwt.QLineEdit()
+        row.layout().addWidget(self._input)
+        self._input.setText(self._default_value)
+
+    @property
+    def input_value(self) -> str:
+        return self._input.text()
 
 
 class NumOfInstancesRow(qwt.QWidget):
@@ -15,9 +57,8 @@ class NumOfInstancesRow(qwt.QWidget):
         self._init_ui()
 
     def _init_ui(self) -> None:
-        layout = qwt.QVBoxLayout()
+        layout = NoMarginLayout()
         self.setLayout(layout)
-        layout.setContentsMargins(0, 0, 0, 0)
         num_of_instances_row = HWidget()
         layout.addWidget(num_of_instances_row)
         num_of_instances_row.layout().setContentsMargins(0, 0, 0, 0)
@@ -133,3 +174,8 @@ class Step(qwt.QWidget):
     @property
     def num_of_instances(self) -> str:
         return self._num_of_instances.num_of_instances_value
+
+    def add_field(self, name: str, default_value: str = '') -> None:
+        attr_name = f'_custom_{name}'
+        setattr(self, attr_name, CustomInputRow(name, default_value))
+        self.left_part.layout().insertWidget(0, getattr(self, attr_name))
