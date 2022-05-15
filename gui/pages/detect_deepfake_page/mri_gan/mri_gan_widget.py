@@ -4,6 +4,7 @@ from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
+
 from gui.pages.detect_deepfake_page.mri_gan.train_df_detector_widget import \
     TrainDeepfakeDetectorWidget
 from gui.pages.detect_deepfake_page.mri_gan.train_mri_gan_widget import \
@@ -12,8 +13,9 @@ from core.worker import (
     CropFacesWorker,
     GenerateMRIDatasetWorker,
     LandmarkExtractionWorker,
+    PredictMRIWorker,
+    Worker,
 )
-from core.worker.worker import Worker
 from enums import CONNECTION, JOB_TYPE, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
 from gui.pages.detect_deepfake_page.mri_gan.common import Step
@@ -36,6 +38,7 @@ class MRIGANWidget(ModelWidget):
     stop_landmark_extraction_sig = qtc.pyqtSignal()
     stop_cropping_faces_sig = qtc.pyqtSignal()
     stop_gen_mri_dataset_sig = qtc.pyqtSignal()
+    stop_predict_mri_sig = qtc.pyqtSignal()
 
     def __init__(
         self,
@@ -49,6 +52,7 @@ class MRIGANWidget(ModelWidget):
         self._lmrks_extraction_in_progress = False
         self._cropping_faces_in_progress = False
         self._gen_mri_dataset_in_progress = False
+        self._predict_mri_in_progress = False
         self._lock = Lock()
 
     def _init_ui(self) -> None:
@@ -74,10 +78,8 @@ class MRIGANWidget(ModelWidget):
         central_wgt_data_tab.layout().addWidget(right_part_data_tab)
 
         right_part_data_tab.layout().addWidget(qwt.QLabel(
-            text='deepkafe detection model'
+            text='deepfake detection model'
         ))
-
-        right_part_data_tab.layout().addItem(VerticalSpacer())
 
         ##########################
         # LANDMARK EXTRACTION STEP
@@ -120,6 +122,18 @@ class MRIGANWidget(ModelWidget):
         )
 
         left_part_data_tab.layout().addItem(VerticalSpacer())
+
+        #############
+        # PREDICT MRI
+        #############
+        self.predict_mri_step = Step('Predict MRI', 'predict MRI')
+        right_part_data_tab.layout().addWidget(self.predict_mri_step)
+        self.predict_mri_step.start_btn.clicked.connect(
+            self._predict_mri
+        )
+        self.predict_mri_step.add_field('batch_size', str(8))
+
+        right_part_data_tab.layout().addItem(VerticalSpacer())
 
         ##########
         # TRAINING
@@ -410,6 +424,96 @@ class MRIGANWidget(ModelWidget):
         self.gen_mri_dataset_step.start_btn.setIcon(PlayIcon())
         self.gen_mri_dataset_step.start_btn.setText('generate dataset')
         self._gen_mri_dataset_in_progress = False
+
+    def _predict_mri(self) -> None:
+        """Initiates or stops mri prediction process.
+        """
+        if self._predict_mri_in_progress:
+            self._stop_predict_mri()
+            return
+
+        num_proc = parse_number(
+            self.predict_mri_step.num_of_instances
+        )
+        if num_proc is None:
+            logger.error(
+                'Unable to parse your input for number of ' +
+                'processes, you should put integer number.'
+            )
+            return
+        batch_size = getattr(
+            getattr(self.predict_mri_step, '_custom_batch_size'),
+            'input_value',
+        )
+        batch_size = parse_number(batch_size)
+        if batch_size is None:
+            logger.error(
+                'Unable to parse your input for batch size' +
+                ', you should put integer number.'
+            )
+            return
+
+        thread = qtc.QThread()
+        worker = PredictMRIWorker(
+            self.predict_mri_step.selected_data_type,
+            batch_size,
+            num_proc,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+        )
+        self.stop_predict_mri_sig.connect(
+            lambda: worker.conn_q.put(CONNECTION.STOP)
+        )
+        worker.moveToThread(thread)
+        self._threads[JOB_TYPE.PREDICT_MRI] = (thread, worker)
+        thread.started.connect(worker.run)
+        worker.started.connect(self._on_predict_mri_worker_started)
+        worker.running.connect(self._on_predict_mri_worker_running)
+        worker.finished.connect(self._on_predict_mri_worker_finished)
+        thread.start()
+
+    @qtc.pyqtSlot()
+    def _on_predict_mri_worker_started(self) -> None:
+        """Disabled button for starting again predictio of mri once process
+        starts.
+        """
+        self.enable_widget(self.predict_mri_step.start_btn, False)
+        self._predict_mri_in_progress = True
+
+    @qtc.pyqtSlot()
+    def _on_predict_mri_worker_running(self) -> None:
+        """Changes text and icon of the button for starting or stopping of the
+        mri prediction process.
+        """
+        self.enable_widget(self.predict_mri_step.start_btn, True)
+        self.predict_mri_step.start_btn.setText('stop predict mri')
+        self.predict_mri_step.start_btn.setIcon(StopIcon())
+
+    @qtc.pyqtSlot()
+    def _on_predict_mri_worker_finished(self) -> None:
+        """Waits for predict mri worker to quit in order to shutdown threads or
+        processes gracefully.
+        """
+        self._lock.acquire()
+        try:
+            val = self._threads.get(JOB_TYPE.PREDICT_MRI, None)
+            if val is not None:
+                thread, _ = val
+                thread.quit()
+                thread.wait()
+                self._threads.pop(JOB_TYPE.PREDICT_MRI, None)
+        finally:
+            self._lock.release()
+        self.enable_widget(self.predict_mri_step.start_btn, True)
+        self.predict_mri_step.start_btn.setIcon(PlayIcon())
+        self.predict_mri_step.start_btn.setText('predict mri')
+        self._predict_mri_in_progress = False
+
+    def _stop_predict_mri(self) -> None:
+        """Sends signal to stop prediction of mri.
+        """
+        logger.info('Requested stop of the prediction mri, please wait...')
+        self.enable_widget(self.predict_mri_step.start_btn, False)
+        self.stop_predict_mri_sig.emit()
 
     @qtc.pyqtSlot()
     def _configure_ext_lmrks_paths(self) -> None:
