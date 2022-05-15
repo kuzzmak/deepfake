@@ -55,7 +55,9 @@ sample entries from metadata.json of DFDC
 """
 
 
-def get_dfdc_training_real_fake_pairs(root_dir: Path) -> List[Tuple[Path, Path]]:
+def get_dfdc_training_real_fake_pairs(
+    root_dir: Path
+) -> List[Tuple[Path, Path]]:
     pairs = []
     json_paths = get_metadata_file_paths(root_dir)
     for json_path in json_paths:
@@ -75,7 +77,7 @@ def match_dfdc_dirs(directory: str) -> Union[Match, None]:
     return re.match(r'dfdc_(train|test|valid)_part_[0-9]+', directory)
 
 
-def filter_dfdc_dirs(dirs) -> List[str]:
+def filter_dfdc_dirs(dirs: List[str]) -> List[str]:
     matches = [match_dfdc_dirs(d) for d in dirs]
     matches = list(filter(lambda x: x is not None, matches))
     return [m.group(0) for m in matches]
