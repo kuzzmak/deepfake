@@ -79,3 +79,13 @@ class MRIGANWorker:
         return Path(MRIGANWorker._get_fun_by_name_from_config(
             f'get_{self._data_type.value}_mrip2p_png_data_path'
         )())
+
+    def _get_dfdc_frame_label_csv_path(self) -> Path:
+        return Path(MRIGANWorker._get_fun_by_name_from_config(
+            f'get_dfdc_{self._data_type.value}_frame_label_csv_path'
+        )())
+
+    def _get_mriframe_label_csv_path(self) -> Path:
+        return Path(MRIGANWorker._get_fun_by_name_from_config(
+            f'get_{self._data_type.value}_mriframe_label_csv_path'
+        )())
