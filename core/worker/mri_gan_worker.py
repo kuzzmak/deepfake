@@ -36,7 +36,7 @@ class MRIGANWorker:
 
     def _get_data_paths(self) -> List[Path]:
         data_path_root = self._get_dfdc_data_path()
-        file_paths = get_dfdc_training_video_filepaths(Path(data_path_root))
+        file_paths = get_dfdc_training_video_filepaths(data_path_root)
         return file_paths
 
     def _get_dfdc_crops_data_path(self) -> Path:
