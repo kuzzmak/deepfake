@@ -2,6 +2,8 @@ import logging
 from multiprocessing import Queue
 from multiprocessing.queues import Empty
 from datetime import timedelta
+import sys
+import traceback
 from typing import Optional, Union
 
 import PyQt6.QtCore as qtc
@@ -93,7 +95,6 @@ class Worker(qtc.QObject):
             return False
         try:
             _ = self._conn_q.get_nowait()
-            self._forced_exit = True
             return True
         except Empty:
             return False
@@ -104,12 +105,14 @@ class Worker(qtc.QObject):
         thread when she starts and not by your explicit call.
         """
         self.started.emit()
-        self.run_job()
-        self.finished.emit()
-        if self._forced_exit:
-            msg = Messages.JOB_EXIT()
-            self.send_message(msg)
-        self._ticks = None
+        try:
+            self.run_job()
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
+        finally:
+            self.finished.emit()
+            self.send_message(Messages.JOB_EXIT())
+            self._ticks = None
 
     def run_job(self) -> None:
         """Function which contains the code this worker should do.
