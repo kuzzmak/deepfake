@@ -1,6 +1,7 @@
 from glob import glob
 import multiprocessing
 import os
+from pathlib import Path
 
 import pandas as pd
 from PIL import Image
@@ -20,22 +21,22 @@ from core.df_detection.mri_gan.utils import ConfigParser
 
 
 def predict_mri_using_MRI_GAN(
-        crops_path,
-        mri_path,
-        vid,
-        imsize,
+        mri_path: Path,
+        v_d: Path,
+        imsize: int,
         overwrite=False,
 ):
-    vid_path = os.path.join(crops_path, vid)
-    vid_mri_path = os.path.join(mri_path, vid)
+    video_id = v_d.parts[-1]
+    part = v_d.parts[-2]
+    vid_path = v_d
+    vid_mri_path = mri_path / part / video_id
     if not overwrite and os.path.isdir(vid_mri_path):
         return
     batch_size = 8
     mri_generator = get_MRI_GAN(pre_trained=True).cuda()
     os.makedirs(vid_mri_path, exist_ok=True)
-    frame_names = glob(vid_path + '/*.png')
-    num_frames_detected = len(frame_names)
-    batches = list()
+    frame_paths = [vid_path / file for file in os.listdir(vid_path)]
+    num_frames_detected = len(frame_paths)
 
     transforms_ = transforms.Compose([
         transforms.Resize((imsize, imsize)),
@@ -43,26 +44,71 @@ def predict_mri_using_MRI_GAN(
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
 
+    batches = list()
+
     for i in range(0, num_frames_detected, batch_size):
         end = i + batch_size
         if end > num_frames_detected:
             end = num_frames_detected
-        batches.append(frame_names[i:end])
+        batches.append(frame_paths[i:end])
 
     for j, frame_names_b in enumerate(batches):
         frames = []
-        for k, fname in enumerate(frame_names_b):
-            frames.append(transforms_(Image.open(frame_names[k])))
+        for k, _ in enumerate(frame_names_b):
+            frames.append(transforms_(Image.open(frame_paths[k])))
 
         frames = torch.stack(frames)
         frames = frames.cuda()
         mri_images = mri_generator(frames)
-        b = mri_images.shape[0]
-        for idx in range(b):
-            save_path = os.path.join(
-                vid_mri_path, os.path.basename(
-                    frame_names_b[idx]))
+
+        for idx in range(mri_images.shape[0]):
+            save_path = vid_mri_path / frame_names_b[idx].parts[-1]
             save_image(mri_images[idx], save_path)
+
+# def predict_mri_using_MRI_GAN(
+#         crops_path,
+#         mri_path,
+#         vid,
+#         imsize,
+#         overwrite=False,
+# ):
+#     vid_path = os.path.join(crops_path, vid)
+#     vid_mri_path = os.path.join(mri_path, vid)
+#     if not overwrite and os.path.isdir(vid_mri_path):
+#         return
+#     batch_size = 8
+#     mri_generator = get_MRI_GAN(pre_trained=True).cuda()
+#     os.makedirs(vid_mri_path, exist_ok=True)
+#     frame_names = glob(vid_path + '/*.png')
+#     num_frames_detected = len(frame_names)
+#     batches = list()
+
+#     transforms_ = transforms.Compose([
+#         transforms.Resize((imsize, imsize)),
+#         transforms.ToTensor(),
+#         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+#     ])
+
+#     for i in range(0, num_frames_detected, batch_size):
+#         end = i + batch_size
+#         if end > num_frames_detected:
+#             end = num_frames_detected
+#         batches.append(frame_names[i:end])
+
+#     for j, frame_names_b in enumerate(batches):
+#         frames = []
+#         for k, fname in enumerate(frame_names_b):
+#             frames.append(transforms_(Image.open(frame_names[k])))
+
+#         frames = torch.stack(frames)
+#         frames = frames.cuda()
+#         mri_images = mri_generator(frames)
+#         b = mri_images.shape[0]
+#         for idx in range(b):
+#             save_path = os.path.join(
+#                 vid_mri_path, os.path.basename(
+#                     frame_names_b[idx]))
+#             save_image(mri_images[idx], save_path)
 
 
 def predict_mri_using_MRI_GAN_batch(crops_path, mri_path):
