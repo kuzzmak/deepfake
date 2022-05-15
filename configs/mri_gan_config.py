@@ -203,10 +203,11 @@ class MRIGANConfig:
             self.get_assets_path(),
             self._config['features']['blank_png'])
 
-    def get_mri_gan_weight_path(self):
+    def get_mri_gan_weight_path(self) -> str:
         return os.path.join(
             self.get_assets_path(),
-            self._config['MRI_GAN']['weights'])
+            self._config['MRI_GAN']['weights'],
+        )
 
     def get_mri_gan_model_params(self):
         return self._config['MRI_GAN']['model_params']
