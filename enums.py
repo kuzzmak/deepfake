@@ -296,3 +296,9 @@ class WORKER_THREAD(Enum):
 class MRI_GAN_DATASET(Enum):
     MRI = 'MRI'
     PLAIN = 'plain'
+
+
+class MODE(Enum):
+    TRAIN = 'train'
+    VALID = 'valid'
+    TEST = 'test'
