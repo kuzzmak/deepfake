@@ -19,7 +19,10 @@ from core.worker import (
 )
 from enums import CONNECTION, JOB_TYPE, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
-from gui.pages.detect_deepfake_page.mri_gan.common import Step
+from gui.pages.detect_deepfake_page.mri_gan.common import (
+    GenerateFrameLabelsCSVStep,
+    Step,
+)
 from gui.widgets.common import (
     HWidget,
     PlayIcon,
@@ -139,7 +142,7 @@ class MRIGANWidget(ModelWidget):
         ###########################
         # GENERATE FRAME LABELS CSV
         ###########################
-        self.generate_frame_labels_csv = Step(
+        self.generate_frame_labels_csv = GenerateFrameLabelsCSVStep(
             'Generate frame labels CSV',
             'generate',
         )
@@ -538,8 +541,8 @@ class MRIGANWidget(ModelWidget):
             return
 
         num_proc = parse_number(
-                self.generate_frame_labels_csv.num_of_instances
-            )
+            self.generate_frame_labels_csv.num_of_instances
+        )
         if num_proc is None:
             logger.error(
                 'Unable to parse your input for number of ' +
@@ -550,6 +553,7 @@ class MRIGANWidget(ModelWidget):
         thread = qtc.QThread()
         worker = GenerateFrameLabelsCSVWorker(
             self.generate_frame_labels_csv.selected_data_type,
+            self.generate_frame_labels_csv.selected_mri_gan_dataset,
             num_proc,
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
         )
