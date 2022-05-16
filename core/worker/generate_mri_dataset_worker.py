@@ -82,22 +82,21 @@ class GenerateMRIDatasetWorker(MRIGANWorker, WorkerWithPool):
                     )
                 )
 
-            if self._message_worker_sig is not None:
-                conf_wgt_msg = Messages.CONFIGURE_WIDGET(
-                    SIGNAL_OWNER.GENERATE_MRI_DATASET_WORKER,
-                    WIDGET.JOB_PROGRESS,
-                    'setMaximum',
-                    [len(jobs)],
-                    JOB_NAME.GENERATE_MRI_DATASET,
-                )
-                self.send_message(conf_wgt_msg)
+            conf_wgt_msg = Messages.CONFIGURE_WIDGET(
+                SIGNAL_OWNER.GENERATE_MRI_DATASET_WORKER,
+                WIDGET.JOB_PROGRESS,
+                'setMaximum',
+                [len(jobs)],
+                JOB_NAME.GENERATE_MRI_DATASET,
+            )
+            self.send_message(conf_wgt_msg)
 
             self.running.emit()
 
             for idx, job in enumerate(jobs):
                 if self.should_exit():
                     self.handle_exit(pool)
-                    return
+                    break
 
                 results.append(job.get())
 
