@@ -2,8 +2,10 @@ from pathlib import Path
 from typing import Callable, List
 from configs.mri_gan_config import MRIGANConfig
 
-from core.df_detection.mri_gan.data_utils.utils import \
-    get_dfdc_training_video_filepaths
+from core.df_detection.mri_gan.data_utils.utils import (
+    get_dfdc_training_video_filepaths,
+    get_dfdc_valid_or_test_video_filepaths,
+)
 from enums import DATA_TYPE
 
 
@@ -36,7 +38,10 @@ class MRIGANWorker:
 
     def _get_data_paths(self) -> List[Path]:
         data_path_root = self._get_dfdc_data_path()
-        file_paths = get_dfdc_training_video_filepaths(data_path_root)
+        if self._data_type == DATA_TYPE.TRAIN:
+            file_paths = get_dfdc_training_video_filepaths(data_path_root)
+        else:
+            file_paths = get_dfdc_valid_or_test_video_filepaths(data_path_root)
         return file_paths
 
     def _get_dfdc_crops_data_path(self) -> Path:
