@@ -3,15 +3,14 @@ from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
-from config import APP_CONFIG
 
 from core.worker import TrainDeepfakeDetectorWorker, Worker
-from enums import DEVICE, JOB_TYPE, SIGNAL_OWNER
+from enums import JOB_TYPE, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     Button,
+    DeviceWidget,
     GroupBox,
-    HWidget,
     PlayIcon,
     StopIcon,
     VerticalSpacer,
@@ -51,15 +50,8 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
         gb = GroupBox('Model parameters')
         layout.addWidget(gb)
 
-        device_row = HWidget()
-        gb.layout().addWidget(device_row)
-        device_row.layout().addWidget(qwt.QLabel(text='device'))
-        self.device_bg = qwt.QButtonGroup(device_row)
-        for device in APP_CONFIG.app.core.devices:
-            btn = qwt.QRadioButton(device.value, device_row)
-            btn.setChecked(True)
-            self.device_bg.addButton(btn)
-            device_row.layout().addWidget(btn)
+        self.devices = DeviceWidget()
+        layout.addWidget(self.devices)
 
         layout.addItem(VerticalSpacer())
 
@@ -67,18 +59,6 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
         layout.addWidget(self.start_training_btn)
         self.start_training_btn.setIcon(PlayIcon())
         self.start_training_btn.clicked.connect(self._train_df_detector)
-
-    @property
-    def device(self) -> DEVICE:
-        """Currently selected device on which df detector process
-        will be executed.
-
-        Returns:
-            DEVICE: cpu or cuda
-        """
-        for but in self.device_bg.buttons():
-            if but.isChecked():
-                return DEVICE[but.text().upper()]
 
     @qtc.pyqtSlot()
     def _train_df_detector(self) -> None:
@@ -89,7 +69,7 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
             return
         thread = qtc.QThread()
         worker = TrainDeepfakeDetectorWorker(
-            self.device,
+            self.devices.device,
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
         worker.moveToThread(thread)
