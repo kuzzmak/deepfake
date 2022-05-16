@@ -1,6 +1,6 @@
 import PyQt6.QtWidgets as qwt
 
-from enums import DATA_TYPE, LAYOUT
+from enums import DATA_TYPE, LAYOUT, MRI_GAN_DATASET
 from gui.widgets.common import (
     Button,
     GroupBox,
@@ -179,3 +179,32 @@ class Step(qwt.QWidget):
         attr_name = f'_custom_{name}'
         setattr(self, attr_name, CustomInputRow(name, default_value))
         self.left_part.layout().insertWidget(0, getattr(self, attr_name))
+
+
+class GenerateFrameLabelsCSVStep(Step):
+    """Step for generating frame labels CSV. Normal `Step` widget with the
+    addition of the selector for MRI GAN dataset.
+    """
+
+    def __init__(self, gb_name: str, start_btn_name: str) -> None:
+        super().__init__(gb_name, start_btn_name)
+
+        self.__init_ui()
+
+    def __init_ui(self) -> None:
+        dataset_type_row = HWidget()
+        dataset_type_row.layout().setContentsMargins(0, 0, 0, 0)
+        self.dataset_btn_bg = qwt.QButtonGroup(dataset_type_row)
+        for idx, dt in enumerate(MRI_GAN_DATASET):
+            btn = qwt.QRadioButton(dt.value)
+            if idx == 0:
+                btn.setChecked(True)
+            self.dataset_btn_bg.addButton(btn)
+            dataset_type_row.layout().addWidget(btn)
+        self.left_part.layout().insertWidget(0, dataset_type_row)
+
+    @property
+    def selected_mri_gan_dataset(self) -> MRI_GAN_DATASET:
+        for but in self.dataset_btn_bg.buttons():
+            if but.isChecked():
+                return MRI_GAN_DATASET[but.text().upper()]
