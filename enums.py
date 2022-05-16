@@ -291,3 +291,8 @@ class JOB_NAME(Enum):
 
 class WORKER_THREAD(Enum):
     MESSAGE_WORKER = 'message_worker_thread'
+
+
+class MRI_GAN_DATASET(Enum):
+    MRI = 'MRI'
+    PLAIN = 'plain'
