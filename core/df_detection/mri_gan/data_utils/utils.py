@@ -7,6 +7,7 @@ from typing import List, Match, Tuple, Union
 
 import cv2 as cv
 import pandas as pd
+from configs.mri_gan_config import MRIGANConfig
 
 from core.df_detection.mri_gan.utils import ConfigParser
 
@@ -48,7 +49,7 @@ def extract_images_from_video(input_video_filename, output_folder, res=None):
 """
 sample entries from metadata.json of DFDC
 
-{"iqqejyggsm.mp4": {"label": "FAKE", "split": "train", "original": 
+{"iqqejyggsm.mp4": {"label": "FAKE", "split": "train", "original":
 "gzesfubacw.mp4"}
 {"ooafcxxfrs.mp4": {"label": "REAL", "split": "train"}
 
@@ -102,6 +103,18 @@ def get_dfdc_training_video_filepaths(root_dir: Path) -> List[Path]:
     return fps
 
 
+def get_dfdc_valid_or_test_video_filepaths(root_dir: Path) -> List[Path]:
+    dirs = os.listdir(root_dir)
+    dirs = filter_dfdc_dirs(dirs)
+    dirs = [root_dir / d for d in dirs]
+    file_paths = []
+    [
+        file_paths.extend(
+            [d / file for file in os.listdir(d)]
+        ) for d in dirs
+    ]
+    return file_paths
+
 # def get_dfdc_training_video_filepaths(root_dir) -> List[str]:
 #     video_filepaths = []
 #     for json_path in glob(os.path.join(root_dir, "metadata.json")):
@@ -114,20 +127,20 @@ def get_dfdc_training_video_filepaths(root_dir: Path) -> List[Path]:
 #     return video_filepaths
 
 
-def get_training_reals_and_fakes():
-    root_dir = ConfigParser.getInstance().get_dfdc_train_data_path()
-    originals = []
-    fakes = []
-    for json_path in glob(os.path.join(root_dir, "metadata.json")):
-        with open(json_path, "r") as f:
-            metadata = json.load(f)
-        for k, v in metadata.items():
-            if v["label"] == "FAKE":
-                fakes.append(k)
-            else:
-                originals.append(k)
+# def get_training_reals_and_fakes():
+#     root_dir = ConfigParser.getInstance().get_dfdc_train_data_path()
+#     originals = []
+#     fakes = []
+#     for json_path in glob(os.path.join(root_dir, "metadata.json")):
+#         with open(json_path, "r") as f:
+#             metadata = json.load(f)
+#         for k, v in metadata.items():
+#             if v["label"] == "FAKE":
+#                 fakes.append(k)
+#             else:
+#                 originals.append(k)
 
-    return originals, fakes
+#     return originals, fakes
 
 
 def get_valid_reals_and_fakes():
