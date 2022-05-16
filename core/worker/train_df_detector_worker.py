@@ -26,7 +26,7 @@ from core.df_detection.mri_gan.deep_fake_detect.utils import (
     save_all_model_results,
 )
 from core.worker import Worker
-from enums import DEVICE
+from enums import DEVICE, MODE, MRI_GAN_DATASET
 
 
 def get_predictions(output):
@@ -110,18 +110,18 @@ class TrainDeepfakeDetectorWorker(Worker):
         ])
         num_workers = multiprocessing.cpu_count() - 2
         # num_workers = 0
-
         train_dataset = DFDCDatasetSimple(
-            mode='train',
+            mode=MODE.TRAIN,
             transform=train_transform,
             data_size=MRIGANConfig.get_instance().get_training_sample_size(),
-            dataset=model_params['dataset'],
+            dataset=MRI_GAN_DATASET[model_params['dataset'].upper()],
             label_smoothing=model_params['label_smoothing'],
         )
         valid_dataset = DFDCDatasetSimple(
-            mode='valid', transform=valid_transform,
+            mode=MODE.VALID,
+            transform=valid_transform,
             data_size=MRIGANConfig.get_instance().get_valid_sample_size(),
-            dataset=model_params['dataset'],
+            dataset=MRI_GAN_DATASET[model_params['dataset'].upper()],
         )
 
         train_loader = DataLoader(
@@ -129,13 +129,15 @@ class TrainDeepfakeDetectorWorker(Worker):
             batch_size=model_params['batch_size'],
             num_workers=num_workers,
             shuffle=True,
-            pin_memory=True)
+            pin_memory=True,
+        )
         valid_loader = DataLoader(
             valid_dataset,
             batch_size=model_params['batch_size'],
             num_workers=num_workers,
             shuffle=True,
-            pin_memory=True)
+            pin_memory=True,
+        )
 
         print(f"Batch_size {model_params['batch_size']}")
         model = DeepFakeDetectModel(
@@ -147,7 +149,7 @@ class TrainDeepfakeDetectorWorker(Worker):
             model.parameters(),
             lr=model_params['learning_rate'],
         )
-
+        return
         # if model_params['fp16']:
         #     model, optimizer = amp.initialize(
         #         model, optimizer,
