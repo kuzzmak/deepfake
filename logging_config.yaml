@@ -51,6 +51,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  core.worker.generate_frame_labels_csv_worker:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   core.dataset.dataset:
     level: DEBUG
     handlers: [file, gui, console]
