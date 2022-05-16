@@ -105,11 +105,12 @@ class GenerateFrameLabelsCSVWorker(MRIGANWorker, WorkerWithPool):
         else:
             raise Exception('Unknown label')
 
-        df = pd.DataFrame(columns=['video_id', 'frame', 'label'])
+        df = pd.DataFrame(columns=['part', 'video_id', 'frame', 'label'])
         for crp_itm in list(c_id_path.glob('*.*')):
             new_row = {
+                'part': c_id_path.parent.name,
                 'video_id': c_id,
-                'frame': crp_itm.stem,
+                'frame': crp_itm.name,
                 'label': crop_label,
             }
             df = df.append(new_row, ignore_index=True)
@@ -183,6 +184,7 @@ class GenerateFrameLabelsCSVWorker(MRIGANWorker, WorkerWithPool):
                         (c_id_path, originals, fakes,),
                     )
                 )
+                break
 
             conf_wgt_msg = Messages.CONFIGURE_WIDGET(
                 SIGNAL_OWNER.GENERATE_FRAME_LABELS_CSV_WORKER,
@@ -210,10 +212,10 @@ class GenerateFrameLabelsCSVWorker(MRIGANWorker, WorkerWithPool):
                     len(jobs),
                 )
 
-        df = pd.DataFrame(columns=['video_id', 'frame', 'label'])
+        df = pd.DataFrame(columns=['part', 'video_id', 'frame', 'label'])
         for r in results:
             df = df.append(r, ignore_index=True)
-        df.set_index('video_id', inplace=True)
+        df.set_index(['part', 'video_id'], inplace=True)
         logger.debug(
             f'Saving frame labels for {self._data_type.value} ' +
             f'dataset to {str(csv_file)}.'
