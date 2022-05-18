@@ -184,7 +184,6 @@ class GenerateFrameLabelsCSVWorker(MRIGANWorker, WorkerWithPool):
                         (c_id_path, originals, fakes,),
                     )
                 )
-                break
 
             conf_wgt_msg = Messages.CONFIGURE_WIDGET(
                 SIGNAL_OWNER.GENERATE_FRAME_LABELS_CSV_WORKER,
