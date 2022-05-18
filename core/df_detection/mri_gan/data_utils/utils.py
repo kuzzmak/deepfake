@@ -10,6 +10,7 @@ import pandas as pd
 from configs.mri_gan_config import MRIGANConfig
 
 from core.df_detection.mri_gan.utils import ConfigParser
+from variables import SUPPORTED_VIDEO_EXTS
 
 
 def create_video_from_images(
@@ -108,11 +109,16 @@ def get_dfdc_valid_or_test_video_filepaths(root_dir: Path) -> List[Path]:
     dirs = filter_dfdc_dirs(dirs)
     dirs = [root_dir / d for d in dirs]
     file_paths = []
-    [
+    for d in dirs:
+        f_p = [d / v_id for v_id in os.listdir(d)]
         file_paths.extend(
-            [d / file for file in os.listdir(d)]
-        ) for d in dirs
-    ]
+            list(
+                filter(
+                    lambda x: x.suffix in SUPPORTED_VIDEO_EXTS,
+                    f_p,
+                )
+            )
+        )
     return file_paths
 
 # def get_dfdc_training_video_filepaths(root_dir) -> List[str]:
