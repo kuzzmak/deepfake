@@ -302,3 +302,7 @@ class MODE(Enum):
     TRAIN = 'train'
     VALID = 'valid'
     TEST = 'test'
+
+
+class VIDEO_FORMAT(Enum):
+    MP4 = 'mp4'
