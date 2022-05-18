@@ -124,7 +124,9 @@ class DFDCDatasetSimple(Dataset):
             try:
                 item = self.data_dict[index].copy()
                 part, video_id, frame_name, label = item.values()
-                frame_path = self.crops_dir / part / video_id / frame_name
+                # cast to str because valid dataset has videos where names
+                # are numbers
+                frame_path = self.crops_dir / part / str(video_id) / frame_name
                 frame = Image.open(frame_path)
                 if self.transform is not None:
                     frame = self.transform(frame)
@@ -139,3 +141,4 @@ class DFDCDatasetSimple(Dataset):
                 return item
             except Exception as e:
                 index = random.randint(0, self.data_len)
+                print(e)
