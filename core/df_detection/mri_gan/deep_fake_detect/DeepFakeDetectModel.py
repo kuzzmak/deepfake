@@ -48,12 +48,15 @@ class DeepFakeDetectModel(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(
                 self.encoder_flat_feature_dim,
-                int(self.encoder_flat_feature_dim * .10)),
+                int(self.encoder_flat_feature_dim * .10),
+            ),
             nn.Dropout(0.50),
             nn.ReLU(),
             nn.Linear(
                 int(self.encoder_flat_feature_dim * .10),
-                self.num_of_classes),)
+                self.num_of_classes,
+            ),
+        )
 
     def forward(self, x):
         # x shape = batch_size x color_channels x image_h x image_w
