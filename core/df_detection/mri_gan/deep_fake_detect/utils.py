@@ -1,22 +1,30 @@
-import multiprocessing
-
-import torch
-import sys
 from functools import partial
-from core.df_detection.mri_gan.utils import print_line
-from timm.models.efficientnet import tf_efficientnet_b0_ns, tf_efficientnet_b7_ns
-import torch.nn as nn
+import multiprocessing
 import os
 import pickle
+import sys
+
 import matplotlib.pyplot as plt
-import sklearn.metrics as metrics
+import numpy as np
 import pandas as pd
 import seaborn as sns
-import numpy as np
+import sklearn.metrics as metrics
+from timm.models.efficientnet import (
+    tf_efficientnet_b0_ns,
+    tf_efficientnet_b7_ns,
+)
 import torch
-import sys
-from sklearn.metrics import roc_curve, auc, roc_auc_score
+import torch.nn as nn
 from tqdm import tqdm
+
+from configs.mri_gan_config import MRIGANConfig
+from core.df_detection.mri_gan.utils import print_line
+from core.df_detection.mri_gan.deep_fake_detect.checkpoint import \
+    save_checkpoint
+
+####################################
+# TODO refactor and format this file
+####################################
 
 ENCODER_PARAMS = {
     "tf_efficientnet_b0_ns": {
@@ -142,7 +150,7 @@ def save_model_results_to_log(
         log_kind=None,
         report_type=None,
         probabilities=None):
-    log_params = ConfigParser.getInstance().get_log_params()
+    log_params = MRIGANConfig.get_instance().get_log_params()
     model_name = model_params['model_name']
     num_of_classes = 2
     # real = 0, fake = 1
@@ -286,7 +294,7 @@ def save_model_results_to_log(
             file.write('-' * log_params['line_len'] + '\n')
             file.write(
                 "roc_auc_score = {}\n".format(
-                    roc_auc_score(
+                    metrics.roc_auc_score(
                         ground_truth,
                         probabilities)))
             file.write('-' * log_params['line_len'] + '\n')
@@ -320,7 +328,6 @@ def save_model_results_to_log(
             log_kind=log_kind,
             model_params=model_params)
 
-        ConfigParser.getInstance().copy_config(dest=model_log_dir)
         sys.stdout.flush()
 
 
@@ -445,8 +452,8 @@ def gen_roc(ground_truth, probability, model_roc_png):
     tpr = dict()
     roc_auc = dict()
     for i in range(2):
-        fpr[i], tpr[i], _ = roc_curve(ground_truth, probability)
-        roc_auc[i] = auc(fpr[i], tpr[i])
+        fpr[i], tpr[i], _ = metrics.roc_curve(ground_truth, probability)
+        roc_auc[i] = metrics.auc(fpr[i], tpr[i])
 
     fig = plt.figure()
     plt.plot(fpr[1], tpr[1])
@@ -503,7 +510,7 @@ def gen_report_for_per_frame_model(
              'fake_prob': fake_prob},
             ignore_index=True)
 
-    log_params = ConfigParser.getInstance().get_log_params()
+    log_params = MRIGANConfig.get_instance().get_log_params()
 
     model_sub_dir = 'video_classi_' + str(prob_threshold_fake) + '_' + \
                     str(prob_threshold_real) + '_' + str(fake_fraction)
@@ -589,7 +596,7 @@ def gen_report_for_per_frame_model(
             file.write('-' * log_params['line_len'] + '\n')
             file.write(
                 "roc_auc_score = {}\n".format(
-                    roc_auc_score(
+                    metrics.roc_auc_score(
                         ground_truth,
                         probability)))
             file.write('-' * log_params['line_len'] + '\n')
@@ -668,7 +675,7 @@ def grid_search_for_per_frame_model(
             'accuracy',
             'report'])
 
-    with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+    with multiprocessing.Pool(multiprocessing.cpu_count() // 2) as pool:
         jobs = []
         results = []
         print('Scheduling jobs')
