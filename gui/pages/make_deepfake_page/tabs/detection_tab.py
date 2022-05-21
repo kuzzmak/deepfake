@@ -427,7 +427,8 @@ class DetectionAlgorithmTab(BaseWidget):
         thread = qtc.QThread()
         worker = FaceExtractionWorker(
             self._input_dir,
-            device=DEVICE.CPU,
+            device=self.device,
+            fda=self.algorithm_selected_value,
             message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
         self.stop_face_extraction_sig.connect(
