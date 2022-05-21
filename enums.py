@@ -306,3 +306,8 @@ class MODE(Enum):
 
 class VIDEO_FORMAT(Enum):
     MP4 = 'mp4'
+
+
+class WIDGET_TYPE(Enum):
+    INPUT = 'input'
+    RADIO_BUTTON = 'radio_button'
