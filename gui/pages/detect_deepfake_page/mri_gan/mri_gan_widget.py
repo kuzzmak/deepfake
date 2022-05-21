@@ -180,8 +180,6 @@ class MRIGANWidget(ModelWidget):
             text='deepkafe detection model'
         ))
 
-        right_part_training_tab.layout().addItem(VerticalSpacer())
-
         ###############
         # TRAIN MRI GAN
         ###############
