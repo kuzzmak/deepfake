@@ -6,7 +6,8 @@ import PyQt6.QtWidgets as qwt
 
 from configs.mri_gan_config import MRIGANConfig
 from core.worker import TrainMRIGANWorker, Worker
-from enums import CONNECTION, JOB_TYPE, LAYOUT, NUMBER_TYPE, SIGNAL_OWNER
+from enums import CONNECTION, JOB_TYPE, NUMBER_TYPE, SIGNAL_OWNER
+from gui.pages.detect_deepfake_page.mri_gan.common import MRIGANParemeter
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     Button,
@@ -22,37 +23,6 @@ from utils import parse_number
 
 
 logger = logging.getLogger(__name__)
-
-
-class ModelParameter(qwt.QWidget):
-
-    def __init__(self, label: str, config_key: str) -> None:
-        super().__init__()
-
-        self._label = label
-        self._config_key = config_key
-
-        self._init_ui()
-
-    def _init_ui(self) -> None:
-        layout = NoMarginLayout(LAYOUT.HORIZONTAL)
-        self.setLayout(layout)
-        layout.addWidget(qwt.QLabel(text=self._label))
-        layout.addItem(HorizontalSpacer())
-        self._input = qwt.QLineEdit()
-        self._input.setMaximumWidth(100)
-        layout.addWidget(self._input)
-        self._input.setText(
-            str(
-                MRIGANConfig
-                .get_instance()
-                .get_mri_gan_model_params()[self._config_key]
-            )
-        )
-
-    @property
-    def input(self) -> str:
-        return self._input.text()
 
 
 class TrainMRIGANWidget(BaseWidget):
@@ -80,29 +50,32 @@ class TrainMRIGANWidget(BaseWidget):
         layout = NoMarginLayout()
         self.setLayout(layout)
 
+        self._devices = DeviceWidget()
+        layout.addWidget(self._devices)
+
         gb_mp = GroupBox('Model parameters')
         layout.addWidget(gb_mp)
 
-        self.batch_size = ModelParameter('batch size', 'batch_size')
+        self.batch_size = MRIGANParemeter('batch size', 'batch_size')
         gb_mp.layout().addWidget(self.batch_size)
 
-        self.image_size = ModelParameter('image size', 'imsize')
+        self.image_size = MRIGANParemeter('image size', 'imsize')
         gb_mp.layout().addWidget(self.image_size)
 
-        self.lr = ModelParameter('lr', 'lr')
+        self.lr = MRIGANParemeter('lr', 'lr')
         gb_mp.layout().addWidget(self.lr)
 
-        self.epochs = ModelParameter('epochs', 'n_epochs')
+        self.epochs = MRIGANParemeter('epochs', 'n_epochs')
         gb_mp.layout().addWidget(self.epochs)
 
-        self.tau = ModelParameter('tau', 'tau')
+        self.tau = MRIGANParemeter('tau', 'tau')
         gb_mp.layout().addWidget(self.tau)
 
-        self.lambda_pixel = ModelParameter('lambda pixel', 'lambda_pixel')
+        self.lambda_pixel = MRIGANParemeter(
+            'lambda pixel',
+            'lambda_pixel',
+        )
         gb_mp.layout().addWidget(self.lambda_pixel)
-
-        self._devices = DeviceWidget()
-        layout.addWidget(self._devices)
 
         layout.addItem(VerticalSpacer())
 
@@ -121,28 +94,28 @@ class TrainMRIGANWidget(BaseWidget):
             self._stop_mri_gan_training()
             return
 
-        image_size = parse_number(self.image_size.input, NUMBER_TYPE.INT)
+        image_size = parse_number(self.image_size.value, NUMBER_TYPE.INT)
         if image_size is None:
             logger.error(
                 'Unable to parse image size input, must be integer.'
             )
             return
 
-        batch_size = parse_number(self.batch_size.input, NUMBER_TYPE.INT)
+        batch_size = parse_number(self.batch_size.value, NUMBER_TYPE.INT)
         if batch_size is None:
             logger.error(
                 'Unable to parse batch size input, must be integer.'
             )
             return
 
-        lr = parse_number(self.lr.input, NUMBER_TYPE.FLOAT)
+        lr = parse_number(self.lr.value, NUMBER_TYPE.FLOAT)
         if lr is None:
             logger.error(
                 'Unable to parse learning rate input, must be float.'
             )
             return
 
-        epochs = parse_number(self.epochs.input, NUMBER_TYPE.INT)
+        epochs = parse_number(self.epochs.value, NUMBER_TYPE.INT)
         if epochs is None:
             logger.error(
                 'Unable to parse epochs input, must be integer.'
