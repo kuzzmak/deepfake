@@ -2,19 +2,27 @@ import logging
 from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
-import PyQt6.QtWidgets as qwt
 
 from core.worker import TrainDeepfakeDetectorWorker, Worker
-from enums import JOB_TYPE, SIGNAL_OWNER
+from enums import (
+    JOB_TYPE,
+    MRI_GAN_DATASET,
+    NUMBER_TYPE,
+    SIGNAL_OWNER,
+    WIDGET_TYPE,
+)
+from gui.pages.detect_deepfake_page.mri_gan.common import DFDetectorParameter
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     Button,
     DeviceWidget,
     GroupBox,
+    NoMarginLayout,
     PlayIcon,
     StopIcon,
     VerticalSpacer,
 )
+from utils import parse_number
 
 logger = logging.getLogger(__name__)
 
@@ -43,15 +51,32 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
         self._init_ui()
 
     def _init_ui(self):
-        layout = qwt.QVBoxLayout()
+        layout = NoMarginLayout()
         self.setLayout(layout)
-        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.devices = DeviceWidget()
+        layout.addWidget(self.devices)
 
         gb = GroupBox('Model parameters')
         layout.addWidget(gb)
 
-        self.devices = DeviceWidget()
-        layout.addWidget(self.devices)
+        self.batch_size = DFDetectorParameter('batch size', 'batch_size')
+        gb.layout().addWidget(self.batch_size)
+
+        self.epochs = DFDetectorParameter('epochs', 'epochs')
+        gb.layout().addWidget(self.epochs)
+
+        self.lr = DFDetectorParameter('lr', 'learning_rate')
+        gb.layout().addWidget(self.lr)
+
+        values = [dt.value for dt in MRI_GAN_DATASET]
+        self.df_datasets = DFDetectorParameter(
+            'dataset',
+            None,
+            values,
+            WIDGET_TYPE.RADIO_BUTTON,
+        )
+        gb.layout().addWidget(self.df_datasets)
 
         layout.addItem(VerticalSpacer())
 
@@ -60,6 +85,8 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
         self.start_training_btn.setIcon(PlayIcon())
         self.start_training_btn.clicked.connect(self._train_df_detector)
 
+        self.setMaximumWidth(250)
+
     @qtc.pyqtSlot()
     def _train_df_detector(self) -> None:
         """Initiates or stops training of the df detector.
@@ -67,8 +94,33 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
         if self._train_df_detector_in_progress:
             self._stop_df_detector_training()
             return
+
+        epochs = parse_number(self.epochs.value)
+        if epochs is None:
+            logger.error(
+                'Unable to parse epochs input, must be integer.'
+            )
+            return
+
+        batch_size = parse_number(self.batch_size.value)
+        if batch_size is None:
+            logger.error(
+                'Unable to parse batch size input, must be integer.'
+            )
+            return
+
+        lr = parse_number(self.lr.value, NUMBER_TYPE.FLOAT)
+        if lr is None:
+            logger.error(
+                'Unable to parse learning rate input, must be float.'
+            )
+            return
+
         thread = qtc.QThread()
         worker = TrainDeepfakeDetectorWorker(
+            epochs,
+            batch_size,
+            lr,
             self.devices.device,
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
