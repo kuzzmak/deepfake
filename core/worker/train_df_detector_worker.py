@@ -41,11 +41,17 @@ class TrainDeepfakeDetectorWorker(Worker):
 
     def __init__(
         self,
+        epochs: int,
+        batch_size: int,
+        lr: float,
         device: DEVICE = DEVICE.CPU,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
         super().__init__(message_worker_sig)
 
+        self._epochs = epochs
+        self._batch_size = batch_size
+        self._lr = lr
         self._device = device
 
     def run_job(self) -> None:
@@ -149,7 +155,7 @@ class TrainDeepfakeDetectorWorker(Worker):
             model.parameters(),
             lr=model_params['learning_rate'],
         )
-        return
+
         # if model_params['fp16']:
         #     model, optimizer = amp.initialize(
         #         model, optimizer,
