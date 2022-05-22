@@ -157,6 +157,7 @@ class JOB_TYPE(Enum):
     FACE_EXTRACTION = 'face_extraction'
     PREDICT_MRI = 'predict_mri'
     GENERATE_FRAME_LABELS_CSV = 'generate_frame_labels_csv'
+    INFER_DF_DETECTOR = 'infer_df_detector'
 
 
 class APP_STATUS(Enum):
@@ -311,3 +312,7 @@ class VIDEO_FORMAT(Enum):
 class WIDGET_TYPE(Enum):
     INPUT = 'input'
     RADIO_BUTTON = 'radio_button'
+
+
+class JOB_DATA_KEY(Enum):
+    IMAGE_PATH = 'image_path'
