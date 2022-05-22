@@ -72,22 +72,22 @@ class ImageLabel(qwt.QLabel):
         ''')
         self.setAcceptDrops(True)
 
-    def setPixmap(self, image):
+    def setPixmap(self, image: qtg.QPixmap):
         super().setPixmap(image)
 
-    def dragEnterEvent(self, event):
+    def dragEnterEvent(self, event: qtc.QEvent):
         if event.mimeData().hasImage:
             event.accept()
         else:
             event.ignore()
 
-    def dragMoveEvent(self, event):
+    def dragMoveEvent(self, event: qtc.QEvent):
         if event.mimeData().hasImage:
             event.accept()
         else:
             event.ignore()
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: qtc.QEvent):
         if event.mimeData().hasImage:
             event.setDropAction(qtc.Qt.DropAction.CopyAction)
             file_path = event.mimeData().urls()[0].toLocalFile()
@@ -172,7 +172,7 @@ class InferDFDetectorWidget(BaseWidget):
             return
         self.image_lbl.image_path_sig.emit(path)
 
-    def eventFilter(self, source, event: qtc.QEvent):
+    def eventFilter(self, source: qtc.QObject, event: qtc.QEvent):
         if event.type() == qtc.QEvent.Type.Enter:
             self.setCursor(qtg.QCursor(qtc.Qt.CursorShape.PointingHandCursor))
         elif event.type() == qtc.QEvent.Type.Leave:
