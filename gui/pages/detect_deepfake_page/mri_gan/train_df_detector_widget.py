@@ -125,6 +125,7 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
         worker.moveToThread(thread)
+        # TODO connect stop signal
         self._threads[JOB_TYPE.TRAIN_DF_DETECTOR] = (thread, worker)
         thread.started.connect(worker.run)
         worker.started.connect(self._on_train_df_detector_worker_started)
