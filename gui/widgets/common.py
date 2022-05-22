@@ -45,12 +45,6 @@ def MinimalSizePolicy() -> qwt.QSizePolicy:
     )
 
 
-def Button(text: str = 'click', width: int = 150) -> qwt.QPushButton:
-    but = qwt.QPushButton(text=text)
-    but.setFixedWidth(width)
-    return but
-
-
 def GroupBox(
     title: str = '',
     layout: LAYOUT = LAYOUT.VERTICAL,
@@ -65,14 +59,41 @@ def GroupBox(
     return gb
 
 
-def InfoButton(tooltip: str = '') -> Button:
-    button = Button('', 20)
-    button.setIcon(qwt.QApplication.style().standardIcon(
+class Button(qwt.QPushButton):
+
+    def __init__(
+        self,
+        text: str = 'click',
+        tooltip: str = '',
+        width: int = 150,
+    ):
+        super().__init__(text)
+
+        self.setToolTip(tooltip)
+        self.setFixedWidth(width)
+
+
+class IconButton(Button):
+
+    def __init__(
+        self,
+        icon: qtg.QIcon,
+        tooltip: str = '',
+    ) -> None:
+        super().__init__('', tooltip, 20)
+
+        self.setIcon(icon)
+        self.setStyleSheet("border-radius: 10")
+
+
+def InfoIcon() -> qtg.QIcon:
+    return qwt.QApplication.style().standardIcon(
         qwt.QStyle.StandardPixmap.SP_MessageBoxInformation
-    ))
-    button.setStyleSheet("border-radius: 10")
-    button.setToolTip(tooltip)
-    return button
+    )
+
+
+def InfoButton(tooltip: str = '') -> IconButton:
+    return IconButton(InfoIcon(), tooltip)
 
 
 def PlayIcon() -> qtg.QIcon:
@@ -87,8 +108,30 @@ def StopIcon() -> qtg.QIcon:
     )
 
 
+def ApplyIcon() -> qtg.QIcon:
+    return qwt.QApplication.style().standardIcon(
+        qwt.QStyle.StandardPixmap.SP_DialogApplyButton
+    )
+
+
+def CancelIcon() -> qtg.QIcon:
+    return qwt.QApplication.style().standardIcon(
+        qwt.QStyle.StandardPixmap.SP_DialogCancelButton
+    )
+
+
+def ApplyIconButton() -> IconButton:
+    return IconButton(ApplyIcon())
+
+
+def CancelIconButton() -> IconButton:
+    return IconButton(CancelIcon())
+
+
 def NoMarginLayout(
     layout: LAYOUT = LAYOUT.VERTICAL,
+
+
 ) -> Union[qwt.QHBoxLayout, qwt.QVBoxLayout]:
     """Used for constructing widget layout based on the type of the layout
     `layout` which has no margins.
@@ -133,7 +176,7 @@ class DeviceWidget(qwt.QWidget):
             self._device_bg.addButton(btn)
             gb.layout().addWidget(btn)
 
-    @property
+    @ property
     def device(self) -> DEVICE:
         """Currently selected device.
 
