@@ -1,7 +1,11 @@
-from typing import Any, List, Optional
-import PyQt6.QtWidgets as qwt
-from configs.mri_gan_config import MRIGANConfig
+from pathlib import Path
+from typing import Any, List, Optional, Union
 
+import PyQt6.QtGui as qtg
+import PyQt6.QtCore as qtc
+import PyQt6.QtWidgets as qwt
+
+from configs.mri_gan_config import MRIGANConfig
 from enums import DATA_TYPE, LAYOUT, MRI_GAN_DATASET, WIDGET_TYPE
 from gui.widgets.common import (
     Button,
@@ -374,3 +378,70 @@ class MRIGANParemeter(Parameter):
                 .get_mri_gan_model_params()[self._config_key]
             )
         )
+
+
+class DragAndDrop(qwt.QLabel):
+    """Widget representing a drag and drop zone for images.
+    """
+
+    image_path_sig = qtc.pyqtSignal(str)
+
+    def __init__(self):
+        super().__init__()
+
+        self._init_ui()
+
+        self._image_path = None
+
+        self.image_path_sig.connect(self._set_image)
+
+    @property
+    def image_path(self) -> Union[Path, None]:
+        if self._image_path is not None:
+            return Path(self._image_path)
+        return None
+
+    def _init_ui(self) -> None:
+        self.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
+        self.setText('\n\n Drop Image Here \n\n')
+        self.setStyleSheet('''
+            QLabel{
+                border: 4px dashed #aaa
+            }
+        ''')
+        self.setAcceptDrops(True)
+
+    def setPixmap(self, image: qtg.QPixmap):
+        super().setPixmap(image)
+
+    def dragEnterEvent(self, event: qtc.QEvent):
+        if event.mimeData().hasImage:
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event: qtc.QEvent):
+        if event.mimeData().hasImage:
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: qtc.QEvent):
+        if event.mimeData().hasImage:
+            event.setDropAction(qtc.Qt.DropAction.CopyAction)
+            file_path = event.mimeData().urls()[0].toLocalFile()
+            self._set_image(file_path)
+            event.accept()
+        else:
+            event.ignore()
+
+    @qtc.pyqtSlot(str)
+    def _set_image(self, file_path: str):
+        pixmap = qtg.QPixmap(file_path)
+        pixmap = pixmap.scaled(
+            128,
+            128,
+            qtc.Qt.AspectRatioMode.KeepAspectRatio,
+            qtc.Qt.TransformationMode.SmoothTransformation,
+        )
+        self.setPixmap(pixmap)
