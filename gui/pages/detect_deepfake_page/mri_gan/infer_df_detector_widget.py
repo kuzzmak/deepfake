@@ -1,12 +1,13 @@
-from pathlib import Path
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
-from core.worker import Worker
-from enums import JOB_TYPE, SIGNAL_OWNER
+from common_structures import Job
+from core.worker import Worker, InferDFDetectorWorker
+from enums import JOB_DATA_KEY, JOB_TYPE, SIGNAL_OWNER
+from gui.pages.detect_deepfake_page.mri_gan.common import DragAndDrop
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     ApplyIcon,
@@ -18,97 +19,12 @@ from gui.widgets.common import (
     NoMarginLayout,
     VerticalSpacer,
 )
-
-
-class EventTypes:
-    """Stores a string name for each event type.
-
-    With PySide2 str() on the event type gives a nice string name,
-    but with PyQt5 it does not. So this method works with both systems.
-    """
-
-    def __init__(self):
-        """Create mapping for all known event types."""
-        self.string_name = {}
-        for name in vars(qtc.QEvent.Type):
-            attribute = getattr(qtc.QEvent.Type, name)
-            if isinstance(attribute, qtc.QEvent.Type):
-                self.string_name[attribute] = name
-
-    def as_string(self, event: qtc.QEvent.Type) -> str:
-        """Return the string name for this event."""
-        try:
-            return self.string_name[event]
-        except KeyError:
-            return f"UnknownEvent:{event}"
-
-
-class ImageLabel(qwt.QLabel):
-
-    image_path_sig = qtc.pyqtSignal(str)
-
-    def __init__(self):
-        super().__init__()
-
-        self._init_ui()
-
-        self._image_path = None
-
-        self.image_path_sig.connect(self._set_image)
-
-    @property
-    def image_path(self) -> Union[Path, None]:
-        if self._image_path is not None:
-            return Path(self._image_path)
-        return None
-
-    def _init_ui(self) -> None:
-        self.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
-        self.setText('\n\n Drop Image Here \n\n')
-        self.setStyleSheet('''
-            QLabel{
-                border: 4px dashed #aaa
-            }
-        ''')
-        self.setAcceptDrops(True)
-
-    def setPixmap(self, image: qtg.QPixmap):
-        super().setPixmap(image)
-
-    def dragEnterEvent(self, event: qtc.QEvent):
-        if event.mimeData().hasImage:
-            event.accept()
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event: qtc.QEvent):
-        if event.mimeData().hasImage:
-            event.accept()
-        else:
-            event.ignore()
-
-    def dropEvent(self, event: qtc.QEvent):
-        if event.mimeData().hasImage:
-            event.setDropAction(qtc.Qt.DropAction.CopyAction)
-            file_path = event.mimeData().urls()[0].toLocalFile()
-            self._set_image(file_path)
-            event.accept()
-        else:
-            event.ignore()
-
-    @qtc.pyqtSlot(str)
-    def _set_image(self, file_path: str):
-        pixmap = qtg.QPixmap(file_path)
-        pixmap = pixmap.scaled(
-            128,
-            128,
-            qtc.Qt.AspectRatioMode.KeepAspectRatio,
-            qtc.Qt.TransformationMode.SmoothTransformation,
-        )
-        self.setPixmap(pixmap)
+from variables import DATA_ROOT
 
 
 class InferDFDetectorWidget(BaseWidget):
+
+    new_job_sig = qtc.pyqtSignal(Job)
 
     def __init__(
         self,
@@ -127,12 +43,13 @@ class InferDFDetectorWidget(BaseWidget):
         self.devices = DeviceWidget()
         layout.addWidget(self.devices)
 
-        self.image_lbl = ImageLabel()
-        layout.addWidget(self.image_lbl)
-        self.image_lbl.installEventFilter(self)
+        self.dad = DragAndDrop()
+        layout.addWidget(self.dad)
+        self.dad.installEventFilter(self)
 
         select_model_row = HWidget()
         layout.addWidget(select_model_row)
+        select_model_row.layout().setContentsMargins(0, 0, 0, 0)
         self._select_model_btn = Button('select')
         select_model_row.layout().addWidget(self._select_model_btn)
         self._select_model_btn.clicked.connect(self._select_model)
@@ -152,11 +69,36 @@ class InferDFDetectorWidget(BaseWidget):
 
     @qtc.pyqtSlot()
     def _start_inference(self) -> None:
-        ...
+        thread = qtc.QThread()
+        worker = InferDFDetectorWorker(
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
+        )
+        self.new_job_sig.connect(
+            lambda job: worker.job_q.put(job)
+        )
+        worker.moveToThread(thread)
+        self._threads[JOB_TYPE.INFER_DF_DETECTOR] = (thread, worker)
+        thread.started.connect(worker.run)
+        worker.finished.connect(self._on_infer_df_detector_worker_finished)
+        thread.start()
+
+    @qtc.pyqtSlot()
+    def _on_infer_df_detector_worker_finished(self) -> None:
+        val = self._threads.get(JOB_TYPE.INFER_DF_DETECTOR, None)
+        if val is not None:
+            thread, _ = val
+            thread.quit()
+            thread.wait()
+            self._threads.pop(JOB_TYPE.INFER_DF_DETECTOR, None)
 
     @qtc.pyqtSlot()
     def _select_model(self) -> None:
-        path = qwt.QFileDialog.getOpenFileName(self, 'Select model')
+        path = qwt.QFileDialog.getOpenFileName(
+            self,
+            'Select model',
+            str(DATA_ROOT),
+            'p(*.p)',
+        )
         if path != ('', ''):
             path = path[0]
         else:
@@ -170,7 +112,13 @@ class InferDFDetectorWidget(BaseWidget):
             path = path[0]
         else:
             return
-        self.image_lbl.image_path_sig.emit(path)
+        self.dad.image_path_sig.emit(path)
+        job = Job(
+            {
+                JOB_DATA_KEY.IMAGE_PATH: path,
+            }
+        )
+        self.new_job_sig.emit(job)
 
     def eventFilter(self, source: qtc.QObject, event: qtc.QEvent):
         if event.type() == qtc.QEvent.Type.Enter:
