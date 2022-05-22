@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from functools import partial
+from typing import Any, Dict
 
 import PyQt6.QtCore as qtc
 
@@ -7,6 +8,7 @@ from enums import (
     DIALOG_MESSAGE_ICON,
     DIALOG_MESSAGE_TYPE,
     IO_OPERATION_TYPE,
+    JOB_DATA_KEY,
 )
 
 
@@ -75,3 +77,8 @@ class TensorCommObject(CommObject):
         CommObject (CommObject): base class for communication object
     """
     data_sig = qtc.pyqtSignal(list)
+
+
+@dataclass
+class Job:
+    data: Dict[JOB_DATA_KEY, Any]
