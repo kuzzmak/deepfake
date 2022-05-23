@@ -420,3 +420,24 @@ def format_timedelta(tdelta: timedelta) -> str:
     if seconds > 0:
         formatted += str(seconds) + 's'
     return formatted
+
+
+def prepare_path(path: Union[Path, str]) -> Union[Path, None]:
+    """Tries to parse argument to the `Path` object.
+
+    Parameters
+    ----------
+    path : Union[Path, str]
+        path to parse
+
+    Returns
+    -------
+    Union[Path, None]
+        `Path` object if the argument was `str` or `Path`, `None` otherwise
+    """
+    if isinstance(path, Path):
+        return path
+    elif isinstance(path, str):
+        return Path(path)
+    else:
+        return None
