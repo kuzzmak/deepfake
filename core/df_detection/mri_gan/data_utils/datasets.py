@@ -1,24 +1,24 @@
-from glob import glob
-import os
+from pathlib import Path
 
 from PIL import Image
 from torch.utils.data import Dataset
 
 
 class SimpleImageFolder(Dataset):
-    def __init__(self, root, transforms_=None):
-        self.root = root
-        all_files = glob(root + "/*")
-        self.data_list = [os.path.abspath(f) for f in all_files]
+
+    def __init__(self, root: Path, transforms=None):
+        super().__init__()
+
+        all_files = list(root.glob('*.*'))
+        self.data_list = [f.absolute() for f in all_files]
         self.data_len = len(self.data_list)
-        self.transforms = transforms_
+        self.transforms = transforms
 
     def __getitem__(self, index):
-        img_name = self.data_list[index]
         img = Image.open(self.data_list[index])
         if self.transforms:
             img = self.transforms(img)
-        return img, img_name
+        return img
 
     def __len__(self) -> int:
         return self.data_len
