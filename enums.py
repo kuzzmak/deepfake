@@ -315,4 +315,4 @@ class WIDGET_TYPE(Enum):
 
 
 class JOB_DATA_KEY(Enum):
-    IMAGE_PATH = 'image_path'
+    FILE_PATH = 'file_path'
