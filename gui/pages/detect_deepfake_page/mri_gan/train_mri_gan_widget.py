@@ -2,9 +2,7 @@ import logging
 from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
-import PyQt6.QtWidgets as qwt
 
-from configs.mri_gan_config import MRIGANConfig
 from core.worker import TrainMRIGANWorker, Worker
 from enums import CONNECTION, JOB_TYPE, NUMBER_TYPE, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.mri_gan.common import MRIGANParemeter
@@ -13,7 +11,6 @@ from gui.widgets.common import (
     Button,
     DeviceWidget,
     GroupBox,
-    HorizontalSpacer,
     NoMarginLayout,
     PlayIcon,
     StopIcon,
