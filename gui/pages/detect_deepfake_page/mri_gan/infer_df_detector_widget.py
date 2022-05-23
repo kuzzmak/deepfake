@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 from typing import Dict, Optional, Tuple
 
 import PyQt6.QtGui as qtg
@@ -7,14 +8,15 @@ import PyQt6.QtWidgets as qwt
 
 from common_structures import Job
 from core.worker import Worker, InferDFDetectorWorker
-from enums import JOB_DATA_KEY, JOB_TYPE, SIGNAL_OWNER
-from gui.pages.detect_deepfake_page.mri_gan.common import DragAndDrop
+from enums import JOB_DATA_KEY, JOB_TYPE, MRI_GAN_DATASET, SIGNAL_OWNER, WIDGET_TYPE
+from gui.pages.detect_deepfake_page.mri_gan.common import DragAndDrop, Parameter
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     ApplyIcon,
     Button,
     CancelIconButton,
     DeviceWidget,
+    GroupBox,
     HWidget,
     HorizontalSpacer,
     NoMarginLayout,
@@ -47,6 +49,34 @@ class InferDFDetectorWidget(BaseWidget):
 
         self.devices = DeviceWidget()
         layout.addWidget(self.devices)
+
+        gb = GroupBox('Parameters')
+        layout.addWidget(gb)
+
+        self.fake_threashold_input = Parameter('fake threshold', [0.5])
+        gb.layout().addWidget(self.fake_threashold_input)
+
+        self.fake_fraction_input = Parameter('fake fraction', [0.5])
+        gb.layout().addWidget(self.fake_fraction_input)
+
+        self.batch_size = Parameter('batch size', [32])
+        gb.layout().addWidget(self.batch_size)
+
+        self.num_workers = Parameter(
+            'num workers',
+            [multiprocessing.cpu_count() // 2],
+        )
+        gb.layout().addWidget(self.num_workers)
+
+        df_detection_model_gb = GroupBox('Deepfake detection model')
+        layout.addWidget(df_detection_model_gb)
+
+        df_detection_model = Parameter(
+            '',
+            [m.value for m in MRI_GAN_DATASET],
+            WIDGET_TYPE.RADIO_BUTTON,
+        )
+        df_detection_model_gb.layout().addWidget(df_detection_model)
 
         self.dad = DragAndDrop()
         layout.addWidget(self.dad)
@@ -130,7 +160,7 @@ class InferDFDetectorWidget(BaseWidget):
         self.dad.image_path_sig.emit(path)
         job = Job(
             {
-                JOB_DATA_KEY.IMAGE_PATH: path,
+                JOB_DATA_KEY.FILE_PATH: path,
             }
         )
         self.new_job_sig.emit(job)
