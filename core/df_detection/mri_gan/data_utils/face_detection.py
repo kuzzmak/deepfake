@@ -75,11 +75,15 @@ def extract_landmarks_from_video(
     batch_size=32,
     detector=None,
     overwrite=False,
+    inference: bool = False
 ):
-    # part of the dataset, e.g. dfdc_train_part_2
-    part = input_videofile.parts[-2]
     # name of the video + .json for landmark file, e.g. aayrffkzxn.json
     name = input_videofile.stem + '.json'
+    if inference:
+        part = ''
+    else:
+        # part of the dataset, e.g. dfdc_train_part_2
+        part = input_videofile.parts[-2]
     os.makedirs(out_dir / part, exist_ok=True)
     out_file = out_dir / part / name
 
@@ -125,7 +129,7 @@ def extract_landmarks_from_video(
         result.update({i: b for i, b in zip(
             frame_indices, zip(batch_boxes, keypoints))})
 
-    with open(out_file, "w") as f:
+    with open(out_file, 'w') as f:
         json.dump(result, f)
 
 
@@ -252,12 +256,18 @@ def crop_faces_from_video(
     frame_hops=10,
     buf=0.10,
     clean_up=True,
+    inference: bool = False,
 ):
-    part = video_path.parts[-2]
     name = video_path.stem
     name_metadata = name + '.json'
+    if inference:
+        part = ''
+    else:
+        part = video_path.parts[-2]
     landmarks_file = landmarks_dir_path / part / name_metadata
+    print('landmarks file', str(landmarks_file))
     out_dir = crop_faces_dir_path / part / name
+    print('out dir', str(out_dir))
 
     if not landmarks_file.is_file():
         return
