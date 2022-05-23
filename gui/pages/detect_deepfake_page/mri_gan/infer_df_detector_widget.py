@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Optional, Tuple
 
 import PyQt6.QtGui as qtg
@@ -19,7 +20,10 @@ from gui.widgets.common import (
     NoMarginLayout,
     VerticalSpacer,
 )
+from utils import prepare_path
 from variables import DATA_ROOT
+
+logger = logging.getLogger(__name__)
 
 
 class InferDFDetectorWidget(BaseWidget):
@@ -33,6 +37,7 @@ class InferDFDetectorWidget(BaseWidget):
         super().__init__(signals)
 
         self._threads: Dict[JOB_TYPE, Tuple[qtc.QThread, Worker]] = dict()
+        self._model_path = None
 
         self._init_ui()
 
@@ -55,8 +60,8 @@ class InferDFDetectorWidget(BaseWidget):
         self._select_model_btn.clicked.connect(self._select_model)
         self._model_loaded_ibtn = CancelIconButton()
         select_model_row.layout().addWidget(self._model_loaded_ibtn)
-        self.model_loaded_lbl = qwt.QLabel(text='model NOT loaded')
-        select_model_row.layout().addWidget(self.model_loaded_lbl)
+        self._model_loaded_lbl = qwt.QLabel(text='model NOT loaded')
+        select_model_row.layout().addWidget(self._model_loaded_lbl)
         select_model_row.layout().addItem(HorizontalSpacer())
 
         self._start_inference_btn = Button('start inference')
@@ -69,9 +74,17 @@ class InferDFDetectorWidget(BaseWidget):
 
     @qtc.pyqtSlot()
     def _start_inference(self) -> None:
+        if self._model_path is None:
+            logger.warning('No model selected. Can\'t make inference yet.')
+            return
+
+        model_path = prepare_path(self._model_path)
+
         thread = qtc.QThread()
         worker = InferDFDetectorWorker(
-            self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
+            model_path,
+            self.devices.device,
+            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
         self.new_job_sig.connect(
             lambda job: worker.job_q.put(job)
@@ -81,6 +94,7 @@ class InferDFDetectorWidget(BaseWidget):
         thread.started.connect(worker.run)
         worker.finished.connect(self._on_infer_df_detector_worker_finished)
         thread.start()
+        self.enable_widget(self._start_inference_btn, False)
 
     @qtc.pyqtSlot()
     def _on_infer_df_detector_worker_finished(self) -> None:
@@ -97,14 +111,15 @@ class InferDFDetectorWidget(BaseWidget):
             self,
             'Select model',
             str(DATA_ROOT),
-            'p(*.p)',
+            'checkpoint(*.chkpt)',
         )
         if path != ('', ''):
             path = path[0]
         else:
             return
         self._model_loaded_ibtn.setIcon(ApplyIcon())
-        self._select_model_btn.setText('model loaded')
+        self._model_loaded_lbl.setText('model loaded')
+        self._model_path = prepare_path(path)
 
     def _select_image(self) -> None:
         path = qwt.QFileDialog.getOpenFileName(self, 'Select an image')
