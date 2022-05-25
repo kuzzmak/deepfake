@@ -20,18 +20,35 @@
                 }
             },
             "df_detection": {
-                "models": [
-                    {
-                        "id": "meso_net",
-                        "name": "meso net",
-                        "parameters": {}
-                    },
-                    {
+                "models": {
+                    "mri_gan": {
+                        "submodels": {
+                            "plain_df_detector": {
+                                "id": "mri_gan_plain_df_detector",
+                                "gd_id": "1SDDZqDlrSRCyFXqkq-Zc87K-gFoyom08",
+                                "name": "MRI GAN plain"
+                            },
+                            "mri_gan_df_detector": {
+                                "id": "mri_gan_mri_df_detector",
+                                "gd_id": "1q9V-_7UX2U4Bujvl-8bhmEPWuHWYiuyl",
+                                "name": "MRI GAN MRI"
+                            },
+                            "mri_gan": {
+                                "id": "mri_gan",
+                                "gd_id": "1kAQaLrBwXCCefbgSnD9Tl7w-C5YIr7mz",
+                                "name": "MRI GAN"
+                            }
+                        },
                         "id": "mri_gan",
-                        "name": "mri gan",
-                        "parameters": {}
+                        "gd_id": "",
+                        "name": "MRI GAN"
+                    },
+                    "meso_net": {
+                        "id": "meso_net",
+                        "gd_id": "",
+                        "name": "meso net"
                     }
-                ]
+                }
             },
             "selected_device": "cpu"
         },

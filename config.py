@@ -52,15 +52,33 @@ class _LandmarkDetection:
 
 
 @dataclass
-class _DFDetectionModel:
+class _Model:
     id: str
+    gd_id: str
     name: str
-    parameters: Dict[str, Any]
+
+
+@dataclass
+class _DFDetectionSubmodels:
+    plain_df_detector: _Model
+    mri_gan_df_detector: _Model
+    mri_gan: _Model
+
+
+@dataclass
+class _MRIGANDFDetectionModel(_Model):
+    submodels: _DFDetectionSubmodels
+
+
+@dataclass
+class _DFDetectionModels:
+    mri_gan: _MRIGANDFDetectionModel
+    meso_net: _Model
 
 
 @dataclass
 class _DFDetection:
-    models: List[_DFDetectionModel]
+    models: _DFDetectionModels
 
 
 @dataclass
@@ -168,9 +186,24 @@ def _load_config():
         _fan = _landmark_detection_algorithms['fan']
         fan_gd_id = _fan['gd_id']
 
+        ##############
+        # DF DETECTION
+        ##############
         _df_detection = _core['df_detection']
 
-        _models = _df_detection['models']
+        _df_detection_models = _df_detection['models']
+
+        _meso_net = _Model(
+            **_df_detection_models['meso_net']
+        )
+
+        _mri_gan = _df_detection_models['mri_gan']
+        _submodels = _mri_gan['submodels']
+        _plain_df_detector_submodel = _Model(**_submodels['plain_df_detector'])
+        _mri_gan_df_detector_submodel = _Model(
+            **_submodels['mri_gan_df_detector']
+        )
+        _mri_gan_submodel = _Model(**_submodels['mri_gan'])
 
         _gui = _app['gui']
 
@@ -228,10 +261,19 @@ def _load_config():
                         _LandmarkDetectionAlgorithms(_FAN(fan_gd_id))
                     ),
                     _DFDetection(
-                        [
-                            _DFDetectionModel(*model.values())
-                            for model in _models
-                        ]
+                        _DFDetectionModels(
+                            _MRIGANDFDetectionModel(
+                                _mri_gan['id'],
+                                _mri_gan['gd_id'],
+                                _mri_gan['name'],
+                                _DFDetectionSubmodels(
+                                    _plain_df_detector_submodel,
+                                    _mri_gan_df_detector_submodel,
+                                    _mri_gan_submodel,
+                                )
+                            ),
+                            _meso_net,
+                        )
                     ),
                     devices,
                     selected_device,
