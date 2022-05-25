@@ -1,6 +1,6 @@
 import logging
 import multiprocessing
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
@@ -8,8 +8,19 @@ import PyQt6.QtWidgets as qwt
 
 from common_structures import Job
 from core.worker import Worker, InferDFDetectorWorker
-from enums import JOB_DATA_KEY, JOB_TYPE, MRI_GAN_DATASET, SIGNAL_OWNER, WIDGET_TYPE
-from gui.pages.detect_deepfake_page.mri_gan.common import DragAndDrop, Parameter
+from enums import (
+    JOB_DATA_KEY,
+    JOB_TYPE,
+    MRI_GAN_DATASET,
+    NUMBER_TYPE,
+    OUTPUT_KEYS,
+    SIGNAL_OWNER,
+    WIDGET_TYPE,
+)
+from gui.pages.detect_deepfake_page.mri_gan.common import (
+    DragAndDrop,
+    Parameter,
+)
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     ApplyIcon,
@@ -22,7 +33,8 @@ from gui.widgets.common import (
     NoMarginLayout,
     VerticalSpacer,
 )
-from utils import prepare_path
+from gui.widgets.dialog import InfoDialog
+from utils import parse_number, prepare_path
 from variables import DATA_ROOT
 
 logger = logging.getLogger(__name__)
@@ -39,7 +51,6 @@ class InferDFDetectorWidget(BaseWidget):
         super().__init__(signals)
 
         self._threads: Dict[JOB_TYPE, Tuple[qtc.QThread, Worker]] = dict()
-        self._model_path = None
 
         self._init_ui()
 
@@ -71,28 +82,33 @@ class InferDFDetectorWidget(BaseWidget):
         df_detection_model_gb = GroupBox('Deepfake detection model')
         layout.addWidget(df_detection_model_gb)
 
-        df_detection_model = Parameter(
+        self.df_detection_model = Parameter(
             '',
             [m.value for m in MRI_GAN_DATASET],
             WIDGET_TYPE.RADIO_BUTTON,
         )
-        df_detection_model_gb.layout().addWidget(df_detection_model)
+        df_detection_model_gb.layout().addWidget(self.df_detection_model)
 
-        self.dad = DragAndDrop()
+        self.dad = DragAndDrop('Drop or select video')
         layout.addWidget(self.dad)
         self.dad.installEventFilter(self)
+        policy = qwt.QSizePolicy(
+            qwt.QSizePolicy.Policy.Expanding,
+            qwt.QSizePolicy.Policy.Expanding,
+        )
+        self.dad.setSizePolicy(policy)
 
-        select_model_row = HWidget()
-        layout.addWidget(select_model_row)
-        select_model_row.layout().setContentsMargins(0, 0, 0, 0)
-        self._select_model_btn = Button('select')
-        select_model_row.layout().addWidget(self._select_model_btn)
-        self._select_model_btn.clicked.connect(self._select_model)
-        self._model_loaded_ibtn = CancelIconButton()
-        select_model_row.layout().addWidget(self._model_loaded_ibtn)
-        self._model_loaded_lbl = qwt.QLabel(text='model NOT loaded')
-        select_model_row.layout().addWidget(self._model_loaded_lbl)
-        select_model_row.layout().addItem(HorizontalSpacer())
+        # select_model_row = HWidget()
+        # layout.addWidget(select_model_row)
+        # select_model_row.layout().setContentsMargins(0, 0, 0, 0)
+        # self._select_model_btn = Button('select')
+        # select_model_row.layout().addWidget(self._select_model_btn)
+        # self._select_model_btn.clicked.connect(self._select_model)
+        # self._model_loaded_ibtn = CancelIconButton()
+        # select_model_row.layout().addWidget(self._model_loaded_ibtn)
+        # self._model_loaded_lbl = qwt.QLabel(text='model NOT loaded')
+        # select_model_row.layout().addWidget(self._model_loaded_lbl)
+        # select_model_row.layout().addItem(HorizontalSpacer())
 
         self._start_inference_btn = Button('start inference')
         layout.addWidget(self._start_inference_btn)
@@ -100,19 +116,55 @@ class InferDFDetectorWidget(BaseWidget):
 
         self.setMaximumWidth(400)
 
-        layout.addItem(VerticalSpacer())
+        # layout.addItem(VerticalSpacer())
 
     @qtc.pyqtSlot()
     def _start_inference(self) -> None:
-        if self._model_path is None:
-            logger.warning('No model selected. Can\'t make inference yet.')
+        fake_threshold = parse_number(
+            self.fake_threashold_input.value,
+            NUMBER_TYPE.FLOAT,
+        )
+        if fake_threshold is None:
+            logger.error(
+                'Unable to parse fake threshold number, ' +
+                'must be float between 0 and 1.'
+            )
             return
 
-        model_path = prepare_path(self._model_path)
+        fake_fraction = parse_number(
+            self.fake_fraction_input.value,
+            NUMBER_TYPE.FLOAT,
+        )
+        if fake_fraction is None:
+            logger.error(
+                'Unable to parse fake fraction number, ' +
+                'must be float between 0 and 1.'
+            )
+            return
+
+        batch_size = parse_number(self.batch_size.value)
+        if batch_size is None:
+            logger.error(
+                'Unable to parse number for batch ' +
+                'size, must be integer.'
+            )
+            return
+
+        num_workers = parse_number(self.num_workers.value)
+        if num_workers is None:
+            logger.error(
+                'Unable to parse input for num of workers, must ' +
+                'be integer and lower than the number of available processors.'
+            )
+            return
 
         thread = qtc.QThread()
         worker = InferDFDetectorWorker(
-            model_path,
+            MRI_GAN_DATASET[self.df_detection_model.value.upper()],
+            fake_threshold,
+            fake_fraction,
+            batch_size,
+            num_workers,
             self.devices.device,
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
@@ -123,6 +175,7 @@ class InferDFDetectorWidget(BaseWidget):
         self._threads[JOB_TYPE.INFER_DF_DETECTOR] = (thread, worker)
         thread.started.connect(worker.run)
         worker.finished.connect(self._on_infer_df_detector_worker_finished)
+        worker.output.connect(self._on_infer_df_detector_worker_output)
         thread.start()
         self.enable_widget(self._start_inference_btn, False)
 
@@ -135,29 +188,23 @@ class InferDFDetectorWidget(BaseWidget):
             thread.wait()
             self._threads.pop(JOB_TYPE.INFER_DF_DETECTOR, None)
 
-    @qtc.pyqtSlot()
-    def _select_model(self) -> None:
-        path = qwt.QFileDialog.getOpenFileName(
-            self,
-            'Select model',
-            str(DATA_ROOT),
-            'checkpoint(*.chkpt)',
-        )
-        if path != ('', ''):
-            path = path[0]
-        else:
-            return
-        self._model_loaded_ibtn.setIcon(ApplyIcon())
-        self._model_loaded_lbl.setText('model loaded')
-        self._model_path = prepare_path(path)
+    @qtc.pyqtSlot(dict)
+    def _on_infer_df_detector_worker_output(self, res: Dict[OUTPUT_KEYS, Any]) -> None:
+        fake_prob = res.get(OUTPUT_KEYS.FAKE_PROB, -1)
+        real_prob = res.get(OUTPUT_KEYS.REAL_PROB, -1)
+        pred = res.get(OUTPUT_KEYS.PREDICTION, -1)
+        msg = f'Fake prob: {fake_prob}, real prob: {real_prob}, pred: {pred}'
+        diag = InfoDialog('Inference result', msg)
+        diag.exec()
 
     def _select_image(self) -> None:
-        path = qwt.QFileDialog.getOpenFileName(self, 'Select an image')
-        if path != ('', ''):
-            path = path[0]
-        else:
-            return
-        self.dad.image_path_sig.emit(path)
+        # path = qwt.QFileDialog.getOpenFileName(self, 'Select an image')
+        # if path != ('', ''):
+        #     path = path[0]
+        # else:
+        #     return
+        # self.dad.image_path_sig.emit(path)
+        path = r'C:\Users\tonkec\Desktop\aaoqanfmgd.mp4'
         job = Job(
             {
                 JOB_DATA_KEY.FILE_PATH: path,
