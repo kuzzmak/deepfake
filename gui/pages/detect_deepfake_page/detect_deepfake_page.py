@@ -43,9 +43,12 @@ class DetectDeepFakePage(Page):
             self._model_selection_changed
         )
         self.model_cb.setMaximumWidth(150)
-        for model in APP_CONFIG.app.core.df_detection.models:
-            self.model_cb.addItem(model.name, model.id)
-        self.model_cb.setCurrentIndex(1)
+
+        mri_gan = APP_CONFIG.app.core.df_detection.models.mri_gan
+        self.model_cb.addItem(mri_gan.name, mri_gan.id)
+        meso_net = APP_CONFIG.app.core.df_detection.models.meso_net
+        self.model_cb.addItem(meso_net.name, meso_net.id)
+        self.model_cb.setCurrentIndex(0)
 
         self.stacked_wgt = qwt.QStackedWidget()
         central_wgt_layout.addWidget(self.stacked_wgt)
