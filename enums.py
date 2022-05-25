@@ -316,3 +316,9 @@ class WIDGET_TYPE(Enum):
 
 class JOB_DATA_KEY(Enum):
     FILE_PATH = 'file_path'
+
+
+class OUTPUT_KEYS(Enum):
+    FAKE_PROB = 'fake_prob'
+    REAL_PROB = 'real_prob'
+    PREDICTION = 'prediction'
