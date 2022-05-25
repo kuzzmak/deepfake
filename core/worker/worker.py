@@ -29,6 +29,8 @@ class Worker(qtc.QObject):
     You can also, right before the main job starts, emit `running` signal.
     `Worker` also contains `conn_q` property which can be used to stop the job
     of the worker. You simply put ˙CONNECTION.STOP˙ enum into the `Queue`.
+    If worker needs to output some data, that can be done by connecting to
+    the `output` signal.
 
     Args:
         message_worker_sig (Optional[qtc.pyqtSignal], optional): signal to the
@@ -38,6 +40,7 @@ class Worker(qtc.QObject):
     started = qtc.pyqtSignal()
     running = qtc.pyqtSignal()
     finished = qtc.pyqtSignal()
+    output = qtc.pyqtSignal(dict)
 
     logger = logging.getLogger(__name__)
 
