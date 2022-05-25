@@ -3,6 +3,7 @@ import PyQt6.QtWidgets as qwt
 import PyQt6.QtSvgWidgets as qts
 
 from common_structures import DialogMessages
+from gui.widgets.common import NoMarginLayout
 
 
 class Dialog(qwt.QDialog):
@@ -39,3 +40,23 @@ class Dialog(qwt.QDialog):
     def rejected(self) -> None:
         self.remove_sig.emit(False)
         self.close()
+
+
+class InfoDialog(qwt.QDialog):
+
+    def __init__(self, title: str = '', message: str = '') -> None:
+        super().__init__()
+
+        self._message = message
+
+        self.setWindowTitle(title)
+
+        self._init_ui()
+
+    def _init_ui(self) -> None:
+        layout = qwt.QVBoxLayout()
+        self.setLayout(layout)
+
+        layout.addStretch()
+        layout.addWidget(qwt.QLabel(text=self._message))
+        layout.addStretch()
