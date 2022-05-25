@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 import tempfile
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 import PyQt6.QtCore as qtc
@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
+from config import APP_CONFIG
 from configs.mri_gan_config import MRIGANConfig
 from core.df_detection.mri_gan.data_utils.datasets import SimpleImageFolder
 from core.df_detection.mri_gan.data_utils.face_detection import (
@@ -24,8 +25,8 @@ from core.df_detection.mri_gan.deep_fake_detect.utils import (
     pred_strategy,
 )
 from core.worker import ContinuousWorker
-from enums import DEVICE, JOB_DATA_KEY
-from utils import prepare_path
+from enums import DEVICE, JOB_DATA_KEY, MRI_GAN_DATASET, OUTPUT_KEYS
+from utils import load_file_from_google_drive, prepare_path
 from variables import IMAGENET_MEAN, IMAGENET_STD
 
 logger = logging.getLogger(__name__)
@@ -45,27 +46,57 @@ class InferDFDetectorWorker(ContinuousWorker):
 
     def __init__(
         self,
-        model_path: Union[Path, str],
+        df_detection_model: MRI_GAN_DATASET,
+        fake_threshold: float,
+        fake_fraction: float,
+        batch_size: int,
+        num_workers: int,
         device: DEVICE = DEVICE.CPU,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
         super().__init__(message_worker_sig)
 
+        self._fake_threshold = fake_threshold
+        self._fake_fraction = fake_fraction
+        self._batch_size = batch_size
+        self._num_workers = num_workers
+        self._df_detection_model = df_detection_model
         self._device = device
-        self._model_path = prepare_path(model_path)
         self._model = None
 
     def _load_model(self) -> None:
-        if self._model_path is None:
-            logger.warning(
-                'Model path is not valid, please check it and ' +
-                f'try again. Current model path: {str(self._model_path)}.'
-            )
+        if self._df_detection_model == MRI_GAN_DATASET.MRI:
+            model_id = APP_CONFIG \
+                .app \
+                .core \
+                .df_detection \
+                .models \
+                .mri_gan \
+                .submodels \
+                .mri_gan_df_detector \
+                .gd_id
+        elif self._df_detection_model == MRI_GAN_DATASET.PLAIN:
+            model_id = APP_CONFIG \
+                .app \
+                .core \
+                .df_detection \
+                .models \
+                .mri_gan \
+                .submodels \
+                .plain_df_detector \
+                .gd_id
+        else:
+            logger.error('Unsupported model for MRI GAN deepfake detector.')
             return
+
+        model_path = load_file_from_google_drive(
+            model_id,
+            f'{self._df_detection_model.value.lower()}.chkpt',
+        )
 
         logger.debug(f'Loading df detector model to: {self._device.value}.')
         model_dict = torch.load(
-            self._model_path,
+            model_path,
             map_location=torch.device(self._device.value),
         )
         model_params = model_dict['model_params']
@@ -128,22 +159,28 @@ class InferDFDetectorWorker(ContinuousWorker):
 
         test_transform = _image_transforms(image_size)
         data_path = plain_faces_data_dir / path.stem
+        logger.debug('Constructing simple dataset.')
         test_dataset = SimpleImageFolder(data_path, test_transform)
         test_loader = DataLoader(
             test_dataset,
-            batch_size=32,
-            num_workers=8,
+            batch_size=self._batch_size,
+            num_workers=self._num_workers,
             pin_memory=True,
         )
+        logger.debug(f'Dataset constructed. Total {len(test_loader)} frames.')
         probabilities = []
-        prob_threshold_fake = 0.5
-        fake_fraction = 0.5
         with torch.no_grad():
             for samples in test_loader:
                 frames = samples.to(self._device.value)
                 output = self._model(frames)
-                predicted = get_predictions(output).to('cpu').detach().numpy()
-                class_probability = get_probability(output).to('cpu').detach().numpy()
+                predicted = get_predictions(output) \
+                    .to('cpu') \
+                    .detach() \
+                    .numpy()
+                class_probability = get_probability(output) \
+                    .to('cpu') \
+                    .detach() \
+                    .numpy()
                 if len(predicted) > 1:
                     probabilities.extend(class_probability.squeeze())
                 else:
@@ -153,7 +190,7 @@ class InferDFDetectorWorker(ContinuousWorker):
             probabilities = np.array(probabilities)
 
             fake_frames_high_prob = probabilities[
-                probabilities >= prob_threshold_fake
+                probabilities >= self._fake_threshold
             ]
             number_fake_frames = len(fake_frames_high_prob)
             if number_fake_frames == 0:
@@ -166,7 +203,7 @@ class InferDFDetectorWorker(ContinuousWorker):
                 )
 
             real_frames_high_prob = probabilities[
-                probabilities < prob_threshold_fake
+                probabilities < self._fake_threshold
             ]
             number_real_frames = len(real_frames_high_prob)
             if number_real_frames == 0:
@@ -181,9 +218,14 @@ class InferDFDetectorWorker(ContinuousWorker):
                 number_fake_frames,
                 number_real_frames,
                 total_number_frames,
-                fake_fraction=fake_fraction,
+                fake_fraction=self._fake_fraction,
             )
 
             print(fake_prob, real_prob, pred)
 
+            self.output.emit({
+                OUTPUT_KEYS.FAKE_PROB: fake_prob,
+                OUTPUT_KEYS.REAL_PROB: real_prob,
+                OUTPUT_KEYS.PREDICTION: pred,
+            })
         root_dir.cleanup()
