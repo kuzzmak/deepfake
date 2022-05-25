@@ -207,6 +207,7 @@ class MRIGANWidget(ModelWidget):
         ###################
         central_wgt_inference_tab = HWidget()
         self.inference_tab.layout().addWidget(central_wgt_inference_tab)
+        central_wgt_inference_tab.layout().setContentsMargins(0, 0, 0, 0)
 
         left_part_inference_tab = VWidget()
         central_wgt_inference_tab.layout().addWidget(left_part_inference_tab)
