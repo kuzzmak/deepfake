@@ -388,13 +388,13 @@ class DragAndDrop(qwt.QLabel):
 
     # image_path_sig = qtc.pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, text: str = ''):
         super().__init__()
 
-        self._init_ui()
-
+        self._text = text
         self._file_path = None
 
+        self._init_ui()
         # self.image_path_sig.connect(self._set_image)
 
     @property
@@ -405,7 +405,7 @@ class DragAndDrop(qwt.QLabel):
 
     def _init_ui(self) -> None:
         self.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter)
-        self.setText('\n\n Drop Image Here \n\n')
+        self.setText(f'\n\n {self._text} \n\n')
         self.setStyleSheet('''
             QLabel{
                 border: 4px dashed #aaa
