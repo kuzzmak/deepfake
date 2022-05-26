@@ -386,7 +386,7 @@ class DragAndDrop(qwt.QLabel):
     """Widget representing a drag and drop zone for images.
     """
 
-    # image_path_sig = qtc.pyqtSignal(str)
+    file_path_sig = qtc.pyqtSignal(str)
 
     def __init__(self, text: str = ''):
         super().__init__()
@@ -395,7 +395,7 @@ class DragAndDrop(qwt.QLabel):
         self._file_path = None
 
         self._init_ui()
-        # self.image_path_sig.connect(self._set_image)
+        self.file_path_sig.connect(self._set_file)
 
     @property
     def file_path(self) -> Union[Path, None]:
@@ -430,8 +430,10 @@ class DragAndDrop(qwt.QLabel):
 
     def dropEvent(self, event: qtc.QEvent):
         if event.mimeData().hasUrls():
-            for url in event.mimeData().urls():
-                self._open_video(url)
+            urls = event.mimeData().urls()
+            self._set_video(urls[0])
+            # for url in event.mimeData().urls():
+            # self._set_video(url)
 
             # event.setDropAction(qtc.Qt.DropAction.CopyAction)
             # file_path = event.mimeData().urls()[0].toLocalFile()
@@ -440,7 +442,13 @@ class DragAndDrop(qwt.QLabel):
         else:
             event.ignore()
 
-    def _open_video(self, filename: qtc.QUrl) -> None:
+    @qtc.pyqtSlot(str)
+    def _set_file(self, path: str) -> None:
+        # TODO make that image and video can be dropped and
+        # handeled accordingly
+        ...
+
+    def _set_video(self, filename: qtc.QUrl) -> None:
         path = filename.toLocalFile()
         self._file_path = path
         cap = cv.VideoCapture(path)
