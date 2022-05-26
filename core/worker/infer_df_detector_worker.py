@@ -110,6 +110,7 @@ class InferDFDetectorWorker(ContinuousWorker):
         logger.debug('Model loaded.')
 
     def run_job(self) -> None:
+        logger.info('Prediction for video started.')
         if self._model is None:
             self._load_model()
             if self._model is None:
@@ -167,7 +168,7 @@ class InferDFDetectorWorker(ContinuousWorker):
             num_workers=self._num_workers,
             pin_memory=True,
         )
-        logger.debug(f'Dataset constructed. Total {len(test_loader)} frames.')
+        logger.debug(f'Dataset constructed. Total {len(test_dataset)} frames.')
         probabilities = []
         with torch.no_grad():
             for samples in test_loader:
@@ -228,4 +229,7 @@ class InferDFDetectorWorker(ContinuousWorker):
                 OUTPUT_KEYS.REAL_PROB: real_prob,
                 OUTPUT_KEYS.PREDICTION: pred,
             })
+
         root_dir.cleanup()
+
+        logger.info('Prediction done.')
