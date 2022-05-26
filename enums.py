@@ -158,6 +158,7 @@ class JOB_TYPE(Enum):
     PREDICT_MRI = 'predict_mri'
     GENERATE_FRAME_LABELS_CSV = 'generate_frame_labels_csv'
     INFER_DF_DETECTOR = 'infer_df_detector'
+    INFER_MRI_GAN = 'infer_mri_gan'
 
 
 class APP_STATUS(Enum):
