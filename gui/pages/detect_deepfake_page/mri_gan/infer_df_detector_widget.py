@@ -110,6 +110,18 @@ class InferDFDetectorWidget(BaseWidget):
         # select_model_row.layout().addWidget(self._model_loaded_lbl)
         # select_model_row.layout().addItem(HorizontalSpacer())
 
+        prediction_row = HWidget()
+        prediction_row.layout().addWidget(qwt.QLabel(text='fake prob:'))
+        self.fake_prob_lbl = qwt.QLabel('-')
+        prediction_row.layout().addWidget(self.fake_prob_lbl)
+        prediction_row.layout().addWidget(qwt.QLabel(text='real prob:'))
+        self.real_prob_lbl = qwt.QLabel('-')
+        prediction_row.layout().addWidget(self.real_prob_lbl)
+        prediction_row.layout().addWidget(qwt.QLabel(text='prediction:'))
+        self.pred_lbl = qwt.QLabel('-')
+        prediction_row.layout().addWidget(self.pred_lbl)
+        layout.addWidget(prediction_row)
+
         self._start_inference_btn = Button('start inference')
         layout.addWidget(self._start_inference_btn)
         self._start_inference_btn.clicked.connect(self._start_inference)
@@ -189,22 +201,25 @@ class InferDFDetectorWidget(BaseWidget):
             self._threads.pop(JOB_TYPE.INFER_DF_DETECTOR, None)
 
     @qtc.pyqtSlot(dict)
-    def _on_infer_df_detector_worker_output(self, res: Dict[OUTPUT_KEYS, Any]) -> None:
-        fake_prob = res.get(OUTPUT_KEYS.FAKE_PROB, -1)
-        real_prob = res.get(OUTPUT_KEYS.REAL_PROB, -1)
-        pred = res.get(OUTPUT_KEYS.PREDICTION, -1)
-        msg = f'Fake prob: {fake_prob}, real prob: {real_prob}, pred: {pred}'
-        diag = InfoDialog('Inference result', msg)
-        diag.exec()
+    def _on_infer_df_detector_worker_output(
+        self,
+        res: Dict[OUTPUT_KEYS, Any],
+    ) -> None:
+        fake_prob = res.get(OUTPUT_KEYS.FAKE_PROB, '-')
+        real_prob = res.get(OUTPUT_KEYS.REAL_PROB, '-')
+        pred = res.get(OUTPUT_KEYS.PREDICTION, '-')
+        self.fake_prob_lbl.setText(str(fake_prob))
+        self.real_prob_lbl.setText(str(real_prob))
+        self.pred_lbl.setText('FAKE' if pred == 1 else 'REAL')
 
-    def _select_image(self) -> None:
+    def _select_file(self) -> None:
         # path = qwt.QFileDialog.getOpenFileName(self, 'Select an image')
         # if path != ('', ''):
         #     path = path[0]
         # else:
         #     return
-        # self.dad.image_path_sig.emit(path)
-        path = r'C:\Users\tonkec\Desktop\aaoqanfmgd.mp4'
+        # self.dad.file_path_sig.emit(path)
+        path = r'C:\Users\tonkec\Desktop\df_datasets\dfdc\train\dfdc_train_part_7\bmugrleytv.mp4'
         job = Job(
             {
                 JOB_DATA_KEY.FILE_PATH: path,
@@ -218,5 +233,5 @@ class InferDFDetectorWidget(BaseWidget):
         elif event.type() == qtc.QEvent.Type.Leave:
             self.setCursor(qtg.QCursor(qtc.Qt.CursorShape.ArrowCursor))
         elif event.type() == qtc.QEvent.Type.MouseButtonPress:
-            self._select_image()
+            self._select_file()
         return super().eventFilter(source, event)
