@@ -210,14 +210,16 @@ def load_file_from_google_drive(model_id: str, filename: str) -> str:
     cached_file = os.path.join(models_dir, filename)
     if not os.path.exists(cached_file):
         logger.info(
-            'Model not found locally, downloading from Google drive...')
+            'Model not found locally, downloading from Google drive...'
+        )
 
         url = f'https://drive.google.com/uc?id={model_id}'
         model_dir = os.path.join(models_dir, filename)
         gdown.download(url, model_dir, quiet=True)
 
         logger.info(
-            f'Model downloading finished. Model location: {model_dir}.')
+            f'Model downloading finished. Model location: {model_dir}.'
+        )
 
     else:
         logger.debug(f'Using local model instance: {cached_file}.')
