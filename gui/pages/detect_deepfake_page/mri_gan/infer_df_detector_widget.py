@@ -23,19 +23,13 @@ from gui.pages.detect_deepfake_page.mri_gan.common import (
 )
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
-    ApplyIcon,
     Button,
-    CancelIconButton,
     DeviceWidget,
     GroupBox,
     HWidget,
-    HorizontalSpacer,
     NoMarginLayout,
-    VerticalSpacer,
 )
-from gui.widgets.dialog import InfoDialog
-from utils import parse_number, prepare_path
-from variables import DATA_ROOT
+from utils import parse_number
 
 logger = logging.getLogger(__name__)
 
@@ -98,18 +92,6 @@ class InferDFDetectorWidget(BaseWidget):
         )
         self.dad.setSizePolicy(policy)
 
-        # select_model_row = HWidget()
-        # layout.addWidget(select_model_row)
-        # select_model_row.layout().setContentsMargins(0, 0, 0, 0)
-        # self._select_model_btn = Button('select')
-        # select_model_row.layout().addWidget(self._select_model_btn)
-        # self._select_model_btn.clicked.connect(self._select_model)
-        # self._model_loaded_ibtn = CancelIconButton()
-        # select_model_row.layout().addWidget(self._model_loaded_ibtn)
-        # self._model_loaded_lbl = qwt.QLabel(text='model NOT loaded')
-        # select_model_row.layout().addWidget(self._model_loaded_lbl)
-        # select_model_row.layout().addItem(HorizontalSpacer())
-
         prediction_row = HWidget()
         prediction_row.layout().addWidget(qwt.QLabel(text='fake prob:'))
         self.fake_prob_lbl = qwt.QLabel('-')
@@ -127,8 +109,6 @@ class InferDFDetectorWidget(BaseWidget):
         self._start_inference_btn.clicked.connect(self._start_inference)
 
         self.setMaximumWidth(400)
-
-        # layout.addItem(VerticalSpacer())
 
     @qtc.pyqtSlot()
     def _start_inference(self) -> None:
