@@ -24,7 +24,7 @@ from core.df_detection.mri_gan.deep_fake_detect.utils import (
     get_probability,
     pred_strategy,
 )
-from core.worker import ContinuousWorker
+from core.worker import ContinuousWorker, PredictMRIWorker
 from enums import DEVICE, JOB_DATA_KEY, MRI_GAN_DATASET, OUTPUT_KEYS
 from utils import load_file_from_google_drive, prepare_path
 from variables import IMAGENET_MEAN, IMAGENET_STD
@@ -152,6 +152,21 @@ class InferDFDetectorWorker(ContinuousWorker):
             inference=True,
         )
         logger.debug('Face cropping finished.')
+
+        if self._df_detection_model == MRI_GAN_DATASET.PLAIN:
+            frames_path = plain_faces_data_dir
+        else:
+            frames_path = root_path / 'mri'
+            frames_path.mkdir(exist_ok=True)
+            logger.debug(f'Predicting MRI for video {str(path)}.')
+            PredictMRIWorker._predict_mri_using_MRI_GAN(
+                frames_path,
+                plain_faces_data_dir / path.stem,
+                8,
+                True,
+                True,
+            )
+            logger.debug('MRI prediction done.')
 
         encoder_name = MRIGANConfig \
             .get_instance() \
