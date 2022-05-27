@@ -28,6 +28,7 @@ from gui.pages.detect_deepfake_page.mri_gan.common import (
 )
 from gui.widgets.common import (
     HWidget,
+    HorizontalSpacer,
     PlayIcon,
     StopIcon,
     VWidget,
@@ -209,7 +210,6 @@ class MRIGANWidget(ModelWidget):
         ###################
         central_wgt_inference_tab = HWidget()
         self.inference_tab.layout().addWidget(central_wgt_inference_tab)
-        central_wgt_inference_tab.layout().setContentsMargins(0, 0, 0, 0)
 
         signals = {
             SIGNAL_OWNER.MESSAGE_WORKER:
@@ -217,6 +217,8 @@ class MRIGANWidget(ModelWidget):
         }
         infer_df_detector = InferDFDetectorWidget(signals)
         central_wgt_inference_tab.layout().addWidget(infer_df_detector)
+
+        central_wgt_inference_tab.layout().addItem(HorizontalSpacer())
 
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:
