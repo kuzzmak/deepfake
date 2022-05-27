@@ -187,3 +187,36 @@ class DeviceWidget(qwt.QWidget):
             if but.isChecked():
                 return DEVICE[but.text().upper()]
         return DEVICE.CPU
+
+
+class DeviceRow(qwt.QWidget):
+    """Simple widget containing available devices in a row.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
+        self._init_ui()
+
+    def _init_ui(self) -> None:
+        layout = NoMarginLayout(LAYOUT.HORIZONTAL)
+        self.setLayout(layout)
+        layout.addWidget(qwt.QLabel(text='device'))
+        self._device_bg = qwt.QButtonGroup(self)
+        for device in APP_CONFIG.app.core.devices:
+            btn = qwt.QRadioButton(device.value)
+            btn.setChecked(True)
+            self._device_bg.addButton(btn)
+            layout.addWidget(btn)
+
+    @property
+    def device(self) -> DEVICE:
+        """Currently selected device.
+
+        Returns:
+            DEVICE: cpu or cuda
+        """
+        for but in self._device_bg.buttons():
+            if but.isChecked():
+                return DEVICE[but.text().upper()]
+        return DEVICE.CPU
