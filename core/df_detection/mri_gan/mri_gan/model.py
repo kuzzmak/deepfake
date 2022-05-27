@@ -1,7 +1,10 @@
 import torch
 import torch.nn as nn
 
+from config import APP_CONFIG
 from configs.mri_gan_config import MRIGANConfig
+from enums import DEVICE
+from utils import load_file_from_google_drive
 
 
 def weights_init_normal(m):
@@ -142,10 +145,35 @@ class Discriminator(nn.Module):
         return self.model(img_input)
 
 
-def get_MRI_GAN(pre_trained=True):
+def get_MRI_GAN(
+    pre_trained=True,
+    load_from_gd=False,
+    device: DEVICE = DEVICE.CPU,
+):
     generator = GeneratorUNet()
     if pre_trained:
-        checkpoint_path = MRIGANConfig.get_instance().get_mri_gan_weight_path()
-        checkpoint = torch.load(checkpoint_path)
+        if load_from_gd:
+            model_id = APP_CONFIG \
+                .app \
+                .core \
+                .df_detection \
+                .models \
+                .mri_gan \
+                .submodels \
+                .mri_gan \
+                .gd_id
+            checkpoint_path = load_file_from_google_drive(
+                model_id,
+                'mri_gan.chkpt',
+            )
+        else:
+            checkpoint_path = MRIGANConfig \
+                .get_instance() \
+                .get_mri_gan_weight_path()
+        checkpoint = torch.load(
+            checkpoint_path,
+            map_location=torch.device(device.value),
+        )
         generator.load_state_dict(checkpoint['generator_state_dict'])
+    generator = generator.to(device.value)
     return generator
