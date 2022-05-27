@@ -4,10 +4,11 @@ from typing import Dict, Optional, Tuple
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
+
 from gui.pages.detect_deepfake_page.mri_gan.infer_df_detector_widget import \
     InferDFDetectorWidget
-from gui.pages.detect_deepfake_page.mri_gan.infer_mri_gan_widget import InferMRIGANWidget
-
+from gui.pages.detect_deepfake_page.mri_gan.infer_mri_gan_widget import \
+    InferMRIGANWidget
 from gui.pages.detect_deepfake_page.mri_gan.train_df_detector_widget import \
     TrainDeepfakeDetectorWidget
 from gui.pages.detect_deepfake_page.mri_gan.train_mri_gan_widget import \
@@ -24,6 +25,7 @@ from enums import CONNECTION, JOB_TYPE, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.model_widget import ModelWidget
 from gui.pages.detect_deepfake_page.mri_gan.common import (
     GenerateFrameLabelsCSVStep,
+    PredictMRIStep,
     Step,
 )
 from gui.widgets.common import (
@@ -38,6 +40,8 @@ from utils import parse_number
 
 
 logger = logging.getLogger(__name__)
+
+# TODO refactor so every step is in it's own file
 
 
 class MRIGANWidget(ModelWidget):
@@ -135,12 +139,11 @@ class MRIGANWidget(ModelWidget):
         #############
         # PREDICT MRI
         #############
-        self.predict_mri_step = Step('Predict MRI', 'predict MRI')
+        self.predict_mri_step = PredictMRIStep()
         right_part_data_tab.layout().addWidget(self.predict_mri_step)
         self.predict_mri_step.start_btn.clicked.connect(
             self._predict_mri
         )
-        self.predict_mri_step.add_field('batch_size', str(8))
 
         ###########################
         # GENERATE FRAME LABELS CSV
@@ -487,10 +490,8 @@ class MRIGANWidget(ModelWidget):
                 'processes, you should put integer number.'
             )
             return
-        batch_size = getattr(
-            getattr(self.predict_mri_step, '_custom_batch_size'),
-            'input_value',
-        )
+
+        batch_size = self.predict_mri_step.batch_size
         batch_size = parse_number(batch_size)
         if batch_size is None:
             logger.error(
@@ -504,6 +505,7 @@ class MRIGANWidget(ModelWidget):
             self.predict_mri_step.selected_data_type,
             batch_size,
             num_proc,
+            self.predict_mri_step.device,
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
         self.stop_predict_mri_sig.connect(
