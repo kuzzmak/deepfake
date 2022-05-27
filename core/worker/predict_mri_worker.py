@@ -14,8 +14,9 @@ from configs.mri_gan_config import MRIGANConfig
 from core.df_detection.mri_gan.data_utils.utils import filter_dfdc_dirs
 from core.df_detection.mri_gan.mri_gan.model import get_MRI_GAN
 from core.worker import MRIGANWorker, WorkerWithPool
-from enums import DATA_TYPE, JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
+from enums import DATA_TYPE, DEVICE, JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
+from utils import batchify
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +43,14 @@ class PredictMRIWorker(MRIGANWorker, WorkerWithPool):
         data_type: DATA_TYPE,
         batch_size: int = 8,
         num_instances: int = 2,
+        device: DEVICE = DEVICE.CPU,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
         MRIGANWorker.__init__(self, data_type)
         WorkerWithPool.__init__(self, num_instances, message_worker_sig)
 
         self._batch_size = batch_size
+        self._device = device
 
     @staticmethod
     def _get_video_paths(crops_path: Path) -> List[Path]:
@@ -82,7 +85,10 @@ class PredictMRIWorker(MRIGANWorker, WorkerWithPool):
         mri_path: Path,
         v_d: Path,
         batch_size: int,
+        device: DEVICE = DEVICE.CPU,
+        load_model_from_gd=False,
         overwrite=False,
+        inference=False,
     ) -> None:
         """Uses trained MRI gan to predict MRI for every cropped face from the
         DFDC dataset in order to create MRI dataset for the deepfake detectio
@@ -101,7 +107,10 @@ class PredictMRIWorker(MRIGANWorker, WorkerWithPool):
         """
         logger.debug(f'Predicting MRI for video {str(v_d)}.')
         video_id = v_d.parts[-1]
-        part = v_d.parts[-2]
+        if inference:
+            part = ''
+        else:
+            part = v_d.parts[-2]
         vid_mri_path = mri_path / part / video_id
         if not overwrite and vid_mri_path.is_dir():
             return
@@ -117,25 +126,18 @@ class PredictMRIWorker(MRIGANWorker, WorkerWithPool):
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
 
-        num_frames_detected = len(frame_paths)
-        batches = []
-        for i in range(0, num_frames_detected, batch_size):
-            end = i + batch_size
-            if end > num_frames_detected:
-                end = num_frames_detected
-            batches.append(frame_paths[i:end])
+        mri_generator = get_MRI_GAN(
+            load_from_gd=load_model_from_gd,
+            device=device,
+        )
 
-        mri_generator = get_MRI_GAN().cuda()
-
-        for frame_names in batches:
-            frames = []
-            for k, _ in enumerate(frame_names):
-                frames.append(transforms_(Image.open(frame_paths[k])))
-
+        for frame_names in batchify(frame_paths, batch_size):
+            frames = list(
+                map(lambda fn: transforms_(Image.open(fn)), frame_names)
+            )
             frames = torch.stack(frames)
-            frames = frames.cuda()
+            frames = frames.to(device.value)
             mri_images = mri_generator(frames)
-
             for idx in range(mri_images.shape[0]):
                 save_path = vid_mri_path / frame_names[idx].parts[-1]
                 save_image(mri_images[idx], save_path)
@@ -154,7 +156,7 @@ class PredictMRIWorker(MRIGANWorker, WorkerWithPool):
                 jobs.append(
                     pool.apply_async(
                         PredictMRIWorker._predict_mri_using_MRI_GAN,
-                        (mri_path, v_d, self._batch_size),
+                        (mri_path, v_d, self._batch_size, self._device),
                     )
                 )
 
