@@ -1,10 +1,11 @@
 import builtins
 from datetime import timedelta
 import errno
+from itertools import islice
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Tuple, Union
 
 import cv2 as cv
 import gdown
@@ -443,3 +444,23 @@ def prepare_path(path: Union[Path, str]) -> Union[Path, None]:
         return Path(path)
     else:
         return None
+
+
+def batchify(it: Iterable, size: int) -> Iterator[Tuple]:
+    """Simple function for splitting some iterable which is passed as an
+    argument into many pieces where one piece contains at most `size` elements.
+
+    Parameters
+    ----------
+    it : Iterable
+        iterable to split
+    size : int
+        maximum size of the element in resulting iterable
+
+    Yields
+    ------
+    Iterator[Tuple]
+        iterable of batches where each batch has at most `size` elements
+    """
+    it = iter(it)
+    return iter(lambda: tuple(islice(it, size)), ())
