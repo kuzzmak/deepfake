@@ -7,8 +7,6 @@ import PyQt6.QtWidgets as qwt
 
 from gui.pages.detect_deepfake_page.mri_gan.infer_df_detector_widget import \
     InferDFDetectorWidget
-from gui.pages.detect_deepfake_page.mri_gan.infer_mri_gan_widget import \
-    InferMRIGANWidget
 from gui.pages.detect_deepfake_page.mri_gan.train_df_detector_widget import \
     TrainDeepfakeDetectorWidget
 from gui.pages.detect_deepfake_page.mri_gan.train_mri_gan_widget import \
@@ -213,25 +211,12 @@ class MRIGANWidget(ModelWidget):
         self.inference_tab.layout().addWidget(central_wgt_inference_tab)
         central_wgt_inference_tab.layout().setContentsMargins(0, 0, 0, 0)
 
-        left_part_inference_tab = VWidget()
-        central_wgt_inference_tab.layout().addWidget(left_part_inference_tab)
-
-        signals = {
-            SIGNAL_OWNER.MESSAGE_WORKER:
-            self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
-        }
-        infer_mri_gan_widget = InferMRIGANWidget(signals)
-        left_part_inference_tab.layout().addWidget(infer_mri_gan_widget)
-
-        right_part_inference_tab = VWidget()
-        central_wgt_inference_tab.layout().addWidget(right_part_inference_tab)
-
         signals = {
             SIGNAL_OWNER.MESSAGE_WORKER:
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
         }
         infer_df_detector = InferDFDetectorWidget(signals)
-        right_part_inference_tab.layout().addWidget(infer_df_detector)
+        central_wgt_inference_tab.layout().addWidget(infer_df_detector)
 
     @qtc.pyqtSlot()
     def _extract_landmarks(self) -> None:
