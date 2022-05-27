@@ -7,9 +7,10 @@ import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from configs.mri_gan_config import MRIGANConfig
-from enums import DATA_TYPE, LAYOUT, MRI_GAN_DATASET, WIDGET_TYPE
+from enums import DATA_TYPE, DEVICE, LAYOUT, MRI_GAN_DATASET, WIDGET_TYPE
 from gui.widgets.common import (
     Button,
+    DeviceRow,
     GroupBox,
     HWidget,
     HorizontalSpacer,
@@ -216,6 +217,31 @@ class GenerateFrameLabelsCSVStep(Step):
         for but in self.dataset_btn_bg.buttons():
             if but.isChecked():
                 return MRI_GAN_DATASET[but.text().upper()]
+
+
+class PredictMRIStep(Step):
+    """Normal `Step` widget with the additional fields for batch size and
+    selection for `DEVICE`.
+    """
+
+    def __init__(self) -> None:
+        super().__init__('Predict MRI', 'predict MRI')
+
+        self.__init_ui()
+
+    def __init_ui(self) -> None:
+        self.batch_size_par = Parameter('batch size', str(8))
+        self.left_part.layout().insertWidget(0, self.batch_size)
+        self.device_row = DeviceRow()
+        self.left_part.layout().insertWidget(0, self.device_row)
+
+    @property
+    def device(self) -> DEVICE:
+        return self.device_row.device
+
+    @property
+    def batch_size(self) -> str:
+        return self.batch_size_par.value
 
 
 class Parameter(qwt.QWidget):
