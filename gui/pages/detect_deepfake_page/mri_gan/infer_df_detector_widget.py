@@ -52,6 +52,8 @@ class InferDFDetectorWidget(BaseWidget):
         layout = NoMarginLayout()
         self.setLayout(layout)
 
+        layout.addWidget(qwt.QLabel(text='deepfake detection model'))
+
         self.devices = DeviceWidget()
         layout.addWidget(self.devices)
 
