@@ -165,6 +165,7 @@ class InferDFDetectorWorker(ContinuousWorker):
                 8,
                 True,
                 True,
+                True,
             )
             logger.debug('MRI prediction done.')
 
