@@ -33,7 +33,6 @@ from gui.widgets.common import (
     HorizontalSpacer,
 )
 from message.message import Body, Message
-# from resources.icons import icons  # noqa: F401
 from utils import get_file_paths_from_dir, parse_number
 
 logger = logging.getLogger(__name__)
