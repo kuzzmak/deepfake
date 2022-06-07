@@ -21,7 +21,7 @@ from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
-from trainer_thread import TrainingWorker
+from core.worker.trainer_thread import TrainingWorker
 from utils import parse_tuple
 
 logger = logging.getLogger(__name__)
