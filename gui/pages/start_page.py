@@ -5,7 +5,7 @@ import PyQt6.QtCore as qtc
 from enums import SIGNAL_OWNER
 from gui.pages.page import Page
 from gui.templates.start_page import Ui_start_page
-from names import (
+from variables import (
     DETECT_DEEPFAKE_PAGE_NAME,
     START_PAGE_NAME,
     MAKE_DEEPFAKE_PAGE_NAME,

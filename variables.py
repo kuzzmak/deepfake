@@ -23,3 +23,14 @@ SUPPORTED_VIDEO_EXTS = set(['.' + vf.value for vf in VIDEO_FORMAT])
 
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
+
+APP_NAME = 'Deepfake tool'
+
+START_PAGE_NAME = 'start_page'
+START_PAGE_TITLE = 'Start page'
+
+MAKE_DEEPFAKE_PAGE_NAME = 'make_deepfake_page'
+MAKE_DEEPFAKE_PAGE_TITLE = 'Make deepfake page'
+
+DETECT_DEEPFAKE_PAGE_NAME = 'detect_deepfake_page'
+DETECT_DEEPFAKE_PAGE_TITLE = 'Detect deepfake page'

@@ -34,10 +34,9 @@ from gui.pages.make_deepfake_page.make_deepfake_page import MakeDeepfakePage
 from gui.pages.page import Page
 from gui.pages.start_page import StartPage
 from gui.templates.main_page import Ui_main_page
-from gui.workers.threads.io_worker_thread import IO_WorkerThread
 from gui.workers.threads.message_worker_thread import MessageWorkerThread
 from message.message import Message
-from names import MAKE_DEEPFAKE_PAGE_NAME, START_PAGE_NAME
+from variables import START_PAGE_NAME
 from variables import ETA_FORMAT, MRI_GAN_CONFIG_PATH
 
 logger = logging.getLogger(__name__)
@@ -55,7 +54,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
     job_progressbar_value_sig = qtc.pyqtSignal(int)
 
     # -- worker signals ---
-    io_worker_sig = qtc.pyqtSignal(Message)
     message_worker_sig = qtc.pyqtSignal(Message)
 
     def __init__(self, *args, **kwargs):
@@ -74,7 +72,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.job_info_window = JobInfoWindow(self)
 
         # -- setup workers --
-        # self.setup_io_worker()
         self.setup_message_worker()
 
         self.m_pages = {}
@@ -83,8 +80,6 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
         self.init_ui()
 
         self.goto(START_PAGE_NAME)
-
-        # self.goto(MAKE_DEEPFAKE_PAGE_NAME)
 
     def init_ui(self):
         self.setupUi(self)
@@ -173,19 +168,8 @@ class MainPage(qwt.QMainWindow, Ui_main_page):
 
         self.show_widget(self.job_progressbar, False)
 
-    def setup_io_worker(self):
-        io_worker_signals = {
-            SIGNAL_OWNER.MESSAGE_WORKER: self.message_worker_sig,
-        }
-        self.io_worker_thread = IO_WorkerThread(
-            self.io_worker_sig,
-            io_worker_signals,
-        )
-        self.io_worker_thread.start()
-
     def setup_message_worker(self):
         message_worker_signals = {
-            SIGNAL_OWNER.IO_WORKER: self.io_worker_sig,
             SIGNAL_OWNER.JOB_PROGRESS: self.job_progress_sig,
             SIGNAL_OWNER.CONFIGURE_WIDGET: self.configure_widget_sig,
         }

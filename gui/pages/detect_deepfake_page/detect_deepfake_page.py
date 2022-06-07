@@ -9,7 +9,7 @@ from gui.pages.detect_deepfake_page.meso_net_widget import MesoNetWidget
 from gui.pages.detect_deepfake_page.mri_gan.mri_gan_widget import MRIGANWidget
 from gui.pages.page import Page
 from gui.widgets.common import HWidget, HorizontalSpacer, NoMarginLayout
-from names import DETECT_DEEPFAKE_PAGE_NAME
+from variables import DETECT_DEEPFAKE_PAGE_NAME
 
 
 class DetectDeepFakePage(Page):
