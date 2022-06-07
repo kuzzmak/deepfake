@@ -98,7 +98,7 @@ class ConfigureDataPathsDialog(qwt.QDialog):
             label_row.layout().addWidget(
                 getattr(self, lbl_name)
             )
-            select_btn = Button('select', 100)
+            select_btn = Button('select', '', 100)
             path_row.layout().addWidget(select_btn)
             select_btn.clicked.connect(self._select_path(key))
 
