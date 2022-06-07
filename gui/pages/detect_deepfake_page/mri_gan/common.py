@@ -412,7 +412,8 @@ class DragAndDrop(qwt.QLabel):
     """Widget representing a drag and drop zone for images.
     """
 
-    file_path_sig = qtc.pyqtSignal(str)
+    dropped_path_sig = qtc.pyqtSignal(str)
+    set_preview_sig = qtc.pyqtSignal(str)
 
     def __init__(self, text: str = ''):
         super().__init__()
@@ -421,7 +422,7 @@ class DragAndDrop(qwt.QLabel):
         self._file_path = None
 
         self._init_ui()
-        self.file_path_sig.connect(self._set_file)
+        self.set_preview_sig.connect(self._set_file_preview)
 
     @property
     def file_path(self) -> Union[Path, None]:
@@ -456,37 +457,24 @@ class DragAndDrop(qwt.QLabel):
 
     def dropEvent(self, event: qtc.QEvent):
         if event.mimeData().hasUrls():
-            urls = event.mimeData().urls()
-            self._set_video(urls[0])
-            # for url in event.mimeData().urls():
-            # self._set_video(url)
-
-            # event.setDropAction(qtc.Qt.DropAction.CopyAction)
-            # file_path = event.mimeData().urls()[0].toLocalFile()
-            # self._set_image(file_path)
+            urls: List[qtc.QUrl] = event.mimeData().urls()
+            self._load_dropped_file(urls[0])
             event.accept()
         else:
             event.ignore()
 
-    @qtc.pyqtSlot(str)
-    def _set_file(self, path: str) -> None:
-        # TODO make that image and video can be dropped and
-        # handeled accordingly
-        ...
-
-    def _set_video(self, filename: qtc.QUrl) -> None:
-        path = filename.toLocalFile()
+    def _set_preview(self, url: qtc.QUrl) -> None:
+        path = url.toDisplayString()
         self._file_path = path
         cap = cv.VideoCapture(path)
         cap.set(cv.CAP_PROP_POS_FRAMES, 0)
-        # width = cap.get(cv.CAP_PROP_FRAME_WIDTH)
-        # height = cap.get(cv.CAP_PROP_FRAME_HEIGHT)
         ret, frame = cap.read()
         if not ret:
             return
         frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         img = qtg.QImage(
-            frame, frame.shape[1],
+            frame,
+            frame.shape[1],
             frame.shape[0],
             qtg.QImage.Format.Format_RGB888,
         )
@@ -497,6 +485,15 @@ class DragAndDrop(qwt.QLabel):
             qtc.Qt.TransformationMode.SmoothTransformation,
         )
         self.setPixmap(pix)
+
+    def _load_dropped_file(self, url: qtc.QUrl) -> None:
+        self._set_preview(url)
+        self.dropped_path_sig.emit(url.toLocalFile())
+
+    @qtc.pyqtSlot(str)
+    def _set_file_preview(self, path: str) -> None:
+        url = qtc.QUrl(path, qtc.QUrl.ParsingMode.StrictMode)
+        self._set_preview(url)
 
     @qtc.pyqtSlot(str)
     def _set_image(self, file_path: str):
