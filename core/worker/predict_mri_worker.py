@@ -114,6 +114,7 @@ class PredictMRIWorker(MRIGANWorker, WorkerWithPool):
         vid_mri_path = mri_path / part / video_id
         if not overwrite and vid_mri_path.is_dir():
             return
+
         vid_mri_path.mkdir(exist_ok=True)
         frame_paths = [v_d / file for file in os.listdir(v_d)]
 
@@ -141,6 +142,8 @@ class PredictMRIWorker(MRIGANWorker, WorkerWithPool):
             for idx in range(mri_images.shape[0]):
                 save_path = vid_mri_path / frame_names[idx].parts[-1]
                 save_image(mri_images[idx], save_path)
+
+        logger.debug(f'MRI prediction done for video {str(v_d)}.')
 
     def run_job(self) -> None:
         logger.info('MRI prediction started.')
