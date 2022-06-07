@@ -265,9 +265,7 @@ def crop_faces_from_video(
     else:
         part = video_path.parts[-2]
     landmarks_file = landmarks_dir_path / part / name_metadata
-    print('landmarks file', str(landmarks_file))
     out_dir = crop_faces_dir_path / part / name
-    print('out dir', str(out_dir))
 
     if not landmarks_file.is_file():
         return
