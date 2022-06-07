@@ -93,14 +93,12 @@ class InferDFDetectorWidget(BaseWidget):
             qwt.QSizePolicy.Policy.Expanding,
         )
         self.dad.setSizePolicy(policy)
+        self.dad.dropped_path_sig.connect(self._emit_new_job)
 
         prediction_row = HWidget()
         prediction_row.layout().addWidget(qwt.QLabel(text='fake prob:'))
         self.fake_prob_lbl = qwt.QLabel('-')
         prediction_row.layout().addWidget(self.fake_prob_lbl)
-        prediction_row.layout().addWidget(qwt.QLabel(text='real prob:'))
-        self.real_prob_lbl = qwt.QLabel('-')
-        prediction_row.layout().addWidget(self.real_prob_lbl)
         prediction_row.layout().addWidget(qwt.QLabel(text='prediction:'))
         self.pred_lbl = qwt.QLabel('-')
         prediction_row.layout().addWidget(self.pred_lbl)
@@ -188,26 +186,38 @@ class InferDFDetectorWidget(BaseWidget):
         res: Dict[OUTPUT_KEYS, Any],
     ) -> None:
         fake_prob = res.get(OUTPUT_KEYS.FAKE_PROB, '-')
-        real_prob = res.get(OUTPUT_KEYS.REAL_PROB, '-')
         pred = res.get(OUTPUT_KEYS.PREDICTION, '-')
         self.fake_prob_lbl.setText(str(fake_prob))
-        self.real_prob_lbl.setText(str(real_prob))
         self.pred_lbl.setText('FAKE' if pred == 1 else 'REAL')
 
-    def _select_file(self) -> None:
-        # path = qwt.QFileDialog.getOpenFileName(self, 'Select an image')
-        # if path != ('', ''):
-        #     path = path[0]
-        # else:
-        #     return
-        # self.dad.file_path_sig.emit(path)
-        path = r'C:\Users\tonkec\Desktop\df_datasets\dfdc\train\dfdc_train_part_7\bmugrleytv.mp4'
+    def _emit_new_job(self, path: str) -> None:
+        """Sends new job to the infer df worker.
+
+        Parameters
+        ----------
+        path : str
+            path of the file
+        """
         job = Job(
             {
                 JOB_DATA_KEY.FILE_PATH: path,
             }
         )
         self.new_job_sig.emit(job)
+        self.fake_prob_lbl.setText('-')
+        self.pred_lbl.setText('-')
+
+    def _select_file(self) -> None:
+        """Prompts user with the dialog for selecting file for deepfake
+        detection.
+        """
+        path = qwt.QFileDialog.getOpenFileName(self, 'Select an image')
+        if path != ('', ''):
+            path = path[0]
+        else:
+            return
+        self.dad.set_preview_sig.emit(path)
+        self._emit_new_job(path)
 
     def eventFilter(self, source: qtc.QObject, event: qtc.QEvent):
         if event.type() == qtc.QEvent.Type.Enter:
