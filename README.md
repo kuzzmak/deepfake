@@ -34,8 +34,6 @@ Simple implementation of the deepfake creation process in Python.
 
 7. python setup.py build_ext --inplace
 
-set PATH=%PATH%;C:\Program Files\Git\bin\
-
 
 ## Resolving errors
 
