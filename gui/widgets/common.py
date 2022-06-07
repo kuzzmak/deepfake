@@ -2,7 +2,7 @@ from typing import Union
 import PyQt6.QtGui as qtg
 import PyQt6.QtWidgets as qwt
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from enums import DEVICE, LAYOUT
 
 

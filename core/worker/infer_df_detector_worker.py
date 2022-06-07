@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from configs.mri_gan_config import MRIGANConfig
 from core.df_detection.mri_gan.data_utils.datasets import SimpleImageFolder
 from core.df_detection.mri_gan.data_utils.face_detection import (

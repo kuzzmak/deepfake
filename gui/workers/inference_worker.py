@@ -6,7 +6,7 @@ import PyQt6.QtCore as qtc
 import torch
 from torchvision import transforms
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from core.face import Face
 from core.face_alignment.face_aligner import FaceAligner
 from core.face_alignment.utils import get_face_mask

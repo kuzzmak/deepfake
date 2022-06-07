@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import PyQt6.QtCore as qtc
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from enums import (
     COLOR,
     LEVEL,

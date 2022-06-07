@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Tuple, Union
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from core.scraper.google_images_scraper import GoogleImagesScraper
 from core.worker import FramesExtractionWorker, Worker
 from enums import CONNECTION, JOB_TYPE, LAYOUT, SIGNAL_OWNER

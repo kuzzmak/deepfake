@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from configs.mri_gan_config import MRIGANConfig
 from enums import DEVICE
 from utils import load_file_from_google_drive

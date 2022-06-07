@@ -3,7 +3,7 @@ from typing import Dict, Optional
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from enums import DF_DETECTION_MODEL, SIGNAL_OWNER
 from gui.pages.detect_deepfake_page.meso_net_widget import MesoNetWidget
 from gui.pages.detect_deepfake_page.mri_gan.mri_gan_widget import MRIGANWidget

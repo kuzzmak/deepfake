@@ -6,7 +6,7 @@ import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from configs.mri_gan_config import (
     MRIGANConfig,
     generate_default_mri_gan_config,

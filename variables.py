@@ -14,6 +14,10 @@ CONFIGS_ROOT_PATH = DEEPFAKE_ROOT / 'configs'
 
 MRI_GAN_CONFIG_PATH = CONFIGS_ROOT_PATH / 'mri_gan_config.yaml'
 
+APP_CONFIG_PATH = CONFIGS_ROOT_PATH / 'app_config.json'
+
+LOGGING_CONFIG_PATH = CONFIGS_ROOT_PATH / 'logging_config.yaml'
+
 LONG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 LONG_DATE_FORMAT_FILE_NAME = '%Y_%m_%d_%H_%M_%S'
 

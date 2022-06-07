@@ -9,7 +9,7 @@ import torch.nn as nn
 from torchvision import transforms
 
 from common_structures import TensorCommObject
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from core import loss
 from core.dataset.configuration import DatasetConfiguration
 from core.image.augmentation import ImageAugmentation

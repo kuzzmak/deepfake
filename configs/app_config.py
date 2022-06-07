@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 import torch
 
 from enums import DEVICE, FACE_DETECTION_ALGORITHM
+from variables import APP_CONFIG_PATH
 
 
 @dataclass
@@ -146,12 +147,12 @@ class _App:
 
 
 @dataclass
-class Config:
+class AppConfig:
     app: _App
 
 
 def _load_config():
-    conf_path = 'config.json'
+    conf_path = APP_CONFIG_PATH
     with open(conf_path) as f:
         conf = f.read()
         conf = json.loads(conf)
@@ -247,7 +248,7 @@ def _load_config():
         if torch.cuda.device_count() > 0:
             devices.append(DEVICE.CUDA)
 
-        return Config(
+        return AppConfig(
             _App(
                 _Core(
                     _FaceDetection(

@@ -1,13 +1,10 @@
 import torch
 import torch.nn as nn
 
-from config import APP_CONFIG
-
+from configs.app_config import APP_CONFIG
 from core.face_detection.algorithms.faceboxes.faceboxes import FaceBoxes
 from core.model_factory import ModelFactory
-
 from enums import DEVICE
-
 from utils import load_file_from_google_drive
 
 

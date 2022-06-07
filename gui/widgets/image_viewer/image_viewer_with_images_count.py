@@ -3,8 +3,8 @@ from typing import Dict, List, Optional
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
-from config import APP_CONFIG
 
+from configs.app_config import APP_CONFIG
 from enums import SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, HorizontalSpacer, MinimalSizePolicy

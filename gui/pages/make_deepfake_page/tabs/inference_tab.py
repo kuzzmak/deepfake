@@ -6,7 +6,7 @@ import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 import torch
 
-from config import APP_CONFIG
+from configs.app_config import APP_CONFIG
 from core.image.image import Image
 from gui.workers.inference_worker import InferenceWorker
 from enums import DEVICE, FACE_DETECTION_ALGORITHM, SIGNAL_OWNER
