@@ -158,16 +158,15 @@ class InferDFDetectorWorker(ContinuousWorker):
         else:
             frames_path = root_path / 'mri'
             frames_path.mkdir(exist_ok=True)
-            logger.debug(f'Predicting MRI for video {str(path)}.')
             PredictMRIWorker._predict_mri_using_MRI_GAN(
                 frames_path,
                 plain_faces_data_dir / path.stem,
                 8,
+                self._device,
                 True,
                 True,
                 True,
             )
-            logger.debug('MRI prediction done.')
 
         encoder_name = MRIGANConfig \
             .get_instance() \
@@ -237,8 +236,6 @@ class InferDFDetectorWorker(ContinuousWorker):
                 total_number_frames,
                 fake_fraction=self._fake_fraction,
             )
-
-            print(fake_prob, real_prob, pred)
 
             self.output.emit({
                 OUTPUT_KEYS.FAKE_PROB: fake_prob,
