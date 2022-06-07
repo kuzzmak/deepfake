@@ -9,6 +9,8 @@ from enums import SIGNAL_OWNER
 
 from message.message import Message
 
+# TODO replace this workers with the new ones
+
 
 class WorkerMeta(PyQt6.sip.wrappertype, abc.ABCMeta):
     ...
