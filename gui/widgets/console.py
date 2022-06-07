@@ -14,6 +14,9 @@ console_message_template = '<span style="font-size:{}pt; ' + \
 
 
 class Console(qtc.QObject):
+    """Class used for printing to console in gui. Messages are formatted based
+    on the type of the `LEVEL`.
+    """
 
     __instance = None
     _int_print_sig = qtc.pyqtSignal(str, str, str, LEVEL, str)
@@ -39,7 +42,8 @@ class Console(qtc.QObject):
             name: str,
             source_type: str,
             level: LEVEL,
-            msg: str) -> None:
+            msg: str,
+    ) -> None:
         Console.get_instance()._int_print_sig.emit(
             date,
             name,

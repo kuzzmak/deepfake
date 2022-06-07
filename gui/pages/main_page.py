@@ -11,7 +11,6 @@ from configs.mri_gan_config import (
     MRIGANConfig,
     generate_default_mri_gan_config,
 )
-from console import Console
 from enums import (
     APP_STATUS,
     BODY_KEY,
@@ -20,6 +19,7 @@ from enums import (
     WORKER_THREAD,
     WIDGET,
 )
+from gui.widgets.console import Console
 from gui.pages.detect_deepfake_page.detect_deepfake_page import \
     DetectDeepFakePage
 from gui.widgets.common import (

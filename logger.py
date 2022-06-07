@@ -5,8 +5,8 @@ from pathlib import Path
 import sys
 from typing import TextIO
 
-from console import Console
 from enums import LEVEL
+from gui.widgets.console import Console
 from variables import LONG_DATE_FORMAT
 
 
