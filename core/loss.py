@@ -93,7 +93,6 @@ class DSSIM(nn.Module):
         self,
         img1: torch.Tensor,
         img2: torch.Tensor,
-        mask: torch.Tensor,
     ):
         (_, channel, _, _) = img1.size()
 
@@ -110,12 +109,21 @@ class DSSIM(nn.Module):
             self.window = window
             self.channel = channel
 
-        masked_img1 = img1 * mask
-        masked_img2 = img2 * mask
+        # masked_img1 = img1 * mask
+        # masked_img2 = img2 * mask
+
+        # return 1 - _ssim(
+        #     masked_img1.float(),
+        #     masked_img2.float(),
+        #     window,
+        #     self.window_size,
+        #     channel,
+        #     self.size_average,
+        # )
 
         return 1 - _ssim(
-            masked_img1.float(),
-            masked_img2.float(),
+            img1,
+            img2,
             window,
             self.window_size,
             channel,
