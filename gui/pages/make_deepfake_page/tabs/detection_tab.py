@@ -8,8 +8,7 @@ import PyQt6.QtWidgets as qwt
 
 from configs.app_config import APP_CONFIG
 from core.dictionary import Dictionary
-from core.worker import Worker
-from core.worker.face_extraction_worker import FaceExtractionWorker
+from core.worker import Worker, FaceExtractionWorker
 from enums import (
     BODY_KEY,
     CONNECTION,
