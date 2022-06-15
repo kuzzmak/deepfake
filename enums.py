@@ -159,6 +159,7 @@ class JOB_TYPE(Enum):
     GENERATE_FRAME_LABELS_CSV = 'generate_frame_labels_csv'
     INFER_DF_DETECTOR = 'infer_df_detector'
     INFER_MRI_GAN = 'infer_mri_gan'
+    INFER_DF_MODEL = 'infer_df_model'
 
 
 class APP_STATUS(Enum):
