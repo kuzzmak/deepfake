@@ -21,6 +21,7 @@ import torch
 from torch.nn.modules.loss import _Loss
 from torch.optim.optimizer import Optimizer
 from torch.utils.data.dataloader import DataLoader
+
 from common_structures import CommObject
 from core.model.model import DeepfakeModel
 from enums import DEVICE
@@ -105,10 +106,13 @@ def _training_step(
         y_pred_A_A, mask_A_A, y_pred_A_B, mask_A_B = model(warped_A)
         y_pred_B_A, mask_B_A, y_pred_B_B, mask_B_B = model(warped_B)
 
-        loss_A_A = loss_fn(y_pred_A_A, target_A, mask_A)
-        loss_B_B = loss_fn(y_pred_B_B, target_B, mask_B)
+        y_pred_A_A = y_pred_A_A * mask_A
+        target_A = target_A * mask_A
+        y_pred_B_B = y_pred_B_B * mask_B
+        target_B = target_B * mask_B
 
-        # TODO other loss (MSE) for mask
+        loss_A_A = loss_fn(y_pred_A_A, target_A)
+        loss_B_B = loss_fn(y_pred_B_B, target_B)
 
         (loss_A_A + loss_B_B).backward()
         optimizer.step()
