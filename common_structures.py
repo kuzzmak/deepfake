@@ -9,6 +9,7 @@ from enums import (
     DIALOG_MESSAGE_TYPE,
     IO_OPERATION_TYPE,
     JOB_DATA_KEY,
+    JOB_TYPE,
 )
 
 
@@ -81,4 +82,5 @@ class TensorCommObject(CommObject):
 
 @dataclass
 class Job:
+    type: JOB_TYPE
     data: Dict[JOB_DATA_KEY, Any]
