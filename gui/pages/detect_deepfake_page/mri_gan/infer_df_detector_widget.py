@@ -36,7 +36,8 @@ logger = logging.getLogger(__name__)
 
 class InferDFDetectorWidget(BaseWidget):
 
-    new_job_sig = qtc.pyqtSignal(Job)
+    file_change_job_sig = qtc.pyqtSignal(Job)
+    df_model_changed_sig = qtc.pyqtSignal(Job)
 
     def __init__(
         self,
@@ -84,6 +85,9 @@ class InferDFDetectorWidget(BaseWidget):
             WIDGET_TYPE.RADIO_BUTTON,
         )
         df_detection_model_gb.layout().addWidget(self.df_detection_model)
+        self.df_detection_model.btn_bg.idReleased.connect(
+            self._df_model_selection_changed
+        )
 
         self.dad = DragAndDrop('Drop or select video')
         layout.addWidget(self.dad)
@@ -93,7 +97,7 @@ class InferDFDetectorWidget(BaseWidget):
             qwt.QSizePolicy.Policy.Expanding,
         )
         self.dad.setSizePolicy(policy)
-        self.dad.dropped_path_sig.connect(self._emit_new_job)
+        self.dad.dropped_path_sig.connect(self._emit_new_file_change_job)
 
         prediction_row = HWidget()
         prediction_row.layout().addWidget(qwt.QLabel(text='fake prob:'))
@@ -109,6 +113,17 @@ class InferDFDetectorWidget(BaseWidget):
         self._start_inference_btn.clicked.connect(self._start_inference)
 
         self.setMaximumWidth(400)
+
+    @qtc.pyqtSlot(int)
+    def _df_model_selection_changed(self, idx: int) -> None:
+        job = Job(
+            JOB_TYPE.MODEL_CHANGE,
+            {
+                JOB_DATA_KEY.MODEL_TYPE:
+                MRI_GAN_DATASET[self.df_detection_model.value.upper()]
+            }
+        )
+        self.df_model_changed_sig.emit(job)
 
     @qtc.pyqtSlot()
     def _start_inference(self) -> None:
@@ -160,7 +175,10 @@ class InferDFDetectorWidget(BaseWidget):
             self.devices.device,
             self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
         )
-        self.new_job_sig.connect(
+        self.file_change_job_sig.connect(
+            lambda job: worker.job_q.put(job)
+        )
+        self.df_model_changed_sig.connect(
             lambda job: worker.job_q.put(job)
         )
         worker.moveToThread(thread)
@@ -190,7 +208,7 @@ class InferDFDetectorWidget(BaseWidget):
         self.fake_prob_lbl.setText(str(fake_prob))
         self.pred_lbl.setText('FAKE' if pred == 1 else 'REAL')
 
-    def _emit_new_job(self, path: str) -> None:
+    def _emit_new_file_change_job(self, path: str) -> None:
         """Sends new job to the infer df worker.
 
         Parameters
@@ -199,11 +217,12 @@ class InferDFDetectorWidget(BaseWidget):
             path of the file
         """
         job = Job(
+            JOB_TYPE.FILE_CHANGE,
             {
                 JOB_DATA_KEY.FILE_PATH: path,
             }
         )
-        self.new_job_sig.emit(job)
+        self.file_change_job_sig.emit(job)
         self.fake_prob_lbl.setText('-')
         self.pred_lbl.setText('-')
 
@@ -217,7 +236,7 @@ class InferDFDetectorWidget(BaseWidget):
         else:
             return
         self.dad.set_preview_sig.emit(path)
-        self._emit_new_job(path)
+        self._emit_new_file_change_job(path)
 
     def eventFilter(self, source: qtc.QObject, event: qtc.QEvent):
         if event.type() == qtc.QEvent.Type.Enter:

@@ -25,7 +25,7 @@ from core.df_detection.mri_gan.deep_fake_detect.utils import (
     pred_strategy,
 )
 from core.worker import ContinuousWorker, PredictMRIWorker
-from enums import DEVICE, JOB_DATA_KEY, MRI_GAN_DATASET, OUTPUT_KEYS
+from enums import DEVICE, JOB_DATA_KEY, JOB_TYPE, MRI_GAN_DATASET, OUTPUT_KEYS
 from utils import load_file_from_google_drive, prepare_path
 from variables import IMAGENET_MEAN, IMAGENET_STD
 
@@ -63,6 +63,26 @@ class InferDFDetectorWorker(ContinuousWorker):
         self._df_detection_model = df_detection_model
         self._device = device
         self._model = None
+
+    def _model_changed(self) -> None:
+        """Triggers when user chose some other model and inference is already
+        running. Automatically loads selected model.
+
+        Parameters
+        ----------
+        model : MRI_GAN_DATASET
+            model type
+        """
+        model = self._current_job.data.get(JOB_DATA_KEY.MODEL_TYPE, None)
+        if model is None:
+            logger.error('Unable to change model, model type not present.')
+            return
+        if model == self._df_detection_model:
+            # if same model is selected again, no need for loading
+            return
+        logger.info(f'Changing df detection model to: {model.value}.')
+        self._df_detection_model = model
+        self._load_model()
 
     def _load_model(self) -> None:
         if self._df_detection_model == MRI_GAN_DATASET.MRI:
@@ -109,7 +129,7 @@ class InferDFDetectorWorker(ContinuousWorker):
         self._model.eval()
         logger.debug('Model loaded.')
 
-    def run_job(self) -> None:
+    def _predict(self) -> None:
         logger.info('Prediction for video started.')
         if self._model is None:
             self._load_model()
@@ -246,3 +266,9 @@ class InferDFDetectorWorker(ContinuousWorker):
         root_dir.cleanup()
 
         logger.info('Prediction done.')
+
+    def run_job(self) -> None:
+        if self._current_job.type == JOB_TYPE.FILE_CHANGE:
+            self._predict()
+        elif self._current_job.type == JOB_TYPE.MODEL_CHANGE:
+            self._model_changed()
