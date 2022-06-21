@@ -71,6 +71,9 @@ class TrainingConfiguration(qwt.QWidget):
         self.possible_augmentations = []
         self._init_ui()
 
+        self._input_A_dir = None
+        self._input_B_dir = None
+
     def _init_ui(self):
         layout = qwt.QVBoxLayout()
         self.setLayout(layout)
@@ -354,6 +357,16 @@ class TrainingConfiguration(qwt.QWidget):
         )
         btn = getattr(self, f'input_{side}_directory_btn')
         btn.setToolTip(directory)
+
+        setattr(self, f'_input_{side}_dir', directory)
+
+    @property
+    def input_A_directory(self) -> Union[str, None]:
+        return getattr(self, '_input_A_dir')
+
+    @property
+    def input_B_directory(self) -> Union[str, None]:
+        return getattr(self, '_input_B_dir')
 
     @property
     def input_shape(self) -> str:
@@ -679,8 +692,8 @@ class TrainingTab(BaseWidget):
 
         data_transforms = transforms.Compose([transforms.ToTensor()])
         dataset_conf = DatasetConfiguration(
-            path_A=r'C:\Users\tonkec\Documents\deepfake\data\cage\metadata',
-            path_B=r'C:\Users\tonkec\Documents\deepfake\data\trump\metadata',
+            path_A=self.training_conf.input_A_directory,
+            path_B=self.training_conf.input_B_directory,
             input_size=input_shape[1],
             output_size=output_shape[1],
             batch_size=int(self.training_conf.batch_size),
