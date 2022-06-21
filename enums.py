@@ -159,6 +159,8 @@ class JOB_TYPE(Enum):
     GENERATE_FRAME_LABELS_CSV = 'generate_frame_labels_csv'
     INFER_DF_DETECTOR = 'infer_df_detector'
     INFER_MRI_GAN = 'infer_mri_gan'
+    MODEL_CHANGE = 'model_change'
+    FILE_CHANGE = 'file_change'
 
 
 class APP_STATUS(Enum):
@@ -317,6 +319,7 @@ class WIDGET_TYPE(Enum):
 
 class JOB_DATA_KEY(Enum):
     FILE_PATH = 'file_path'
+    MODEL_TYPE = 'model_type'
 
 
 class OUTPUT_KEYS(Enum):
