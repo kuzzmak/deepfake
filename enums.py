@@ -225,6 +225,7 @@ class BODY_KEY(Enum):
 
 class MODEL(Enum):
     ORIGINAL = 'original'
+    FS = 'fs'
 
 
 class OPTIMIZER(Enum):
