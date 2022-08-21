@@ -1,11 +1,11 @@
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from configs.app_config import APP_CONFIG
-from enums import DEVICE, LAYOUT
+from enums import DEVICE, LAYOUT, WIDGET_TYPE
 
 
 def VerticalSpacer() -> qwt.QSpacerItem:
@@ -269,3 +269,74 @@ class RadioButtons(qwt.QWidget):
     @qtc.pyqtSlot(int)
     def _id_changed(self, id: int) -> None:
         self.selection_changed_sig.emit([self._options[abs(-2 - id)]])
+
+
+class Parameter(qwt.QWidget):
+    """Widget for showing input or selection for some model parameter.
+
+    Parameters
+    ----------
+    name : str
+        name of the parameter in GUI
+    default_values : Optional[List[Any]], optional
+        put default values in input, by default None
+    widget_type : WIDGET_TYPE, optional
+        is this widget input widget or radio buttons, by default
+            WIDGET_TYPE.INPUT
+    """
+
+    def __init__(
+        self,
+        name: str,
+        default_values: Optional[List[Any]] = None,
+        widget_type: WIDGET_TYPE = WIDGET_TYPE.INPUT,
+    ) -> None:
+        super().__init__()
+
+        self._name = name
+        self._default_values = default_values
+        self._wt = widget_type
+
+        self._init_ui()
+
+    def _init_ui(self) -> None:
+        layout = NoMarginLayout(LAYOUT.HORIZONTAL)
+        self.setLayout(layout)
+        if self._name:
+            layout.addWidget(qwt.QLabel(text=self._name))
+            layout.addItem(HorizontalSpacer())
+
+        if self._wt == WIDGET_TYPE.INPUT:
+            self._input = qwt.QLineEdit()
+            self._input.setMaximumWidth(100)
+            layout.addWidget(self._input)
+            if self._default_values is None:
+                return
+            vals = self._default_values
+            if len(vals) == 0:
+                return
+            self._input.setText(str(vals[0]))
+
+        elif self._wt == WIDGET_TYPE.RADIO_BUTTON:
+            if self._default_values is None:
+                return
+            vals = self._default_values
+            if len(vals) == 0:
+                return
+            self.btn_bg = qwt.QButtonGroup(self)
+            for idx, val in enumerate(vals):
+                btn = qwt.QRadioButton(str(val))
+                if idx == 0:
+                    btn.setChecked(True)
+                self.btn_bg.addButton(btn)
+                layout.addWidget(btn)
+
+    @property
+    def value(self) -> Any:
+        if self._wt == WIDGET_TYPE.INPUT:
+            return self._input.text()
+        elif self._wt == WIDGET_TYPE.RADIO_BUTTON:
+            for but in self.btn_bg.buttons():
+                if but.isChecked():
+                    return but.text()
+        return None
