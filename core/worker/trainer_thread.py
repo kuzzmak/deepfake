@@ -9,7 +9,7 @@ from torch.nn.parameter import Parameter
 from torch.utils.data import DataLoader
 
 from core.aligner import Aligner, AlignerConfiguration
-from core.dataset.dataset import DeepfakeDataset
+from core.dataset.dataset_old import DeepfakeDataset
 from core.model.model import DeepfakeModel
 from core.model.original_ae import OriginalAE
 from core.trainer.configuration import TrainerConfiguration
