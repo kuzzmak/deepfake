@@ -464,3 +464,19 @@ def batchify(it: Iterable, size: int) -> Iterator[Tuple]:
     """
     it = iter(it)
     return iter(lambda: tuple(islice(it, size)), ())
+
+
+def str_to_bool(v: str) -> bool:
+    """Convert string value to boolean.
+
+    Parameters
+    ----------
+    v : str
+        value to convert
+
+    Returns
+    -------
+    bool
+        converted value to bool
+    """
+    return v.lower() in ("yes", "true", "t", "1")
