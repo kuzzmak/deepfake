@@ -1,6 +1,6 @@
 from functools import partial
 import logging
-from typing import Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import cv2 as cv
 import PyQt6.QtCore as qtc
@@ -16,37 +16,37 @@ from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
-from enums import DEVICE, INTERPOLATION, MODEL, OPTIMIZER, SIGNAL_OWNER
+from enums import DEVICE, INTERPOLATION, LAYOUT, MODE, MODEL, OPTIMIZER, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
-from gui.widgets.common import HWidget, VWidget
+from gui.widgets.common import HWidget, NoMarginLayout, RadioButtons, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
 from core.worker.trainer_thread import TrainingWorker
 from utils import parse_tuple
+from gui.pages.make_deepfake_page.tabs.training.fs_model.options import Options
 
 logger = logging.getLogger(__name__)
 
 
 class ModelSelector(qwt.QWidget):
 
+    model_changed_sig = qtc.pyqtSignal(MODEL)
+
     def __init__(self):
         super().__init__()
         self._init_ui()
 
     def _init_ui(self):
-        layout = qwt.QVBoxLayout()
+        layout = NoMarginLayout()
+        self.setLayout(layout)
 
         models_gb = qwt.QGroupBox()
         models_gb.setTitle('Available deepfake models')
         models_gb_layout = qwt.QVBoxLayout(models_gb)
 
-        bg = qwt.QButtonGroup(models_gb)
-        bg.idPressed.connect(self._model_changed)
-
-        original = qwt.QRadioButton('Original', models_gb)
-        original.setChecked(True)
-        models_gb_layout.addWidget(original)
-        bg.addButton(original)
+        model_radio_buttons = RadioButtons(['original', 'fs'])
+        models_gb_layout.addWidget(model_radio_buttons)
+        model_radio_buttons.selection_changed_sig.connect(self._model_changed)
 
         layout.addWidget(models_gb)
         policy = qwt.QSizePolicy(
@@ -54,11 +54,10 @@ class ModelSelector(qwt.QWidget):
             qwt.QSizePolicy.Policy.Fixed,
         )
         self.setSizePolicy(policy)
-        self.setLayout(layout)
 
-    @qtc.pyqtSlot(int)
-    def _model_changed(self, index: int) -> None:
-        print('model index: ', index)
+    @qtc.pyqtSlot(list)
+    def _model_changed(self, model: List[str]) -> None:
+        self.model_changed_sig.emit(MODEL[model[0].upper()])
 
 
 class TrainingConfiguration(qwt.QWidget):
@@ -77,10 +76,6 @@ class TrainingConfiguration(qwt.QWidget):
     def _init_ui(self):
         layout = qwt.QVBoxLayout()
         self.setLayout(layout)
-
-        model_selector = ModelSelector()
-        layout.addWidget(model_selector)
-        model_selector.layout().setContentsMargins(0, 0, 0, 0)
 
         dataset_conf_gb = qwt.QGroupBox()
         layout.addWidget(dataset_conf_gb)
@@ -582,6 +577,7 @@ class TrainingTab(BaseWidget):
         signals: Optional[Dict[SIGNAL_OWNER, qtc.pyqtSignal]] = None,
     ):
         super().__init__(signals)
+
         self._init_ui()
 
     def _init_ui(self):
@@ -592,7 +588,12 @@ class TrainingTab(BaseWidget):
         left_part_layout = qwt.QVBoxLayout()
         left_part.setLayout(left_part_layout)
 
+        model_selector = ModelSelector()
+        model_selector.model_changed_sig.connect(self._change_training_options)
+        left_part_layout.addWidget(model_selector)
+
         scroll = qwt.QScrollArea()
+        left_part_layout.addWidget(scroll)
         scroll.setVerticalScrollBarPolicy(
             qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOn
         )
@@ -600,9 +601,20 @@ class TrainingTab(BaseWidget):
             qtc.Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         scroll.setWidgetResizable(True)
-        self.training_conf = TrainingConfiguration()
-        scroll.setWidget(self.training_conf)
-        left_part_layout.addWidget(scroll)
+
+        self._stacked_wgt = qwt.QStackedWidget()
+        scroll.setWidget(self._stacked_wgt)
+
+        self._training_conf = TrainingConfiguration()
+        self._stacked_wgt.addWidget(self._training_conf)
+
+        self._fs_options = Options()
+        self._stacked_wgt.addWidget(self._fs_options)
+
+        self._model_option_mappings = {
+            MODEL.ORIGINAL: self._training_conf,
+            MODEL.FS: self._fs_options,
+        }
 
         button_row = qwt.QWidget()
         button_row_layout = qwt.QHBoxLayout()
@@ -624,6 +636,9 @@ class TrainingTab(BaseWidget):
         self.preview.layout().setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.preview)
         self.setLayout(layout)
+
+    def _change_training_options(self, model: MODEL) -> None:
+        self._stacked_wgt.setCurrentWidget(self._model_option_mappings[model])
 
     def _optimizer_options(self) -> dict:
         """Constructs optimizer options based on the type of optimizer that's
