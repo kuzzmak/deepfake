@@ -1,5 +1,7 @@
-from typing import Union
+from typing import Any, List, Union
+
 import PyQt6.QtGui as qtg
+import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from configs.app_config import APP_CONFIG
@@ -129,9 +131,7 @@ def CancelIconButton() -> IconButton:
 
 
 def NoMarginLayout(
-    layout: LAYOUT = LAYOUT.VERTICAL,
-
-
+    layout: LAYOUT = LAYOUT.VERTICAL
 ) -> Union[qwt.QHBoxLayout, qwt.QVBoxLayout]:
     """Used for constructing widget layout based on the type of the layout
     `layout` which has no margins.
@@ -220,3 +220,52 @@ class DeviceRow(qwt.QWidget):
             if but.isChecked():
                 return DEVICE[but.text().upper()]
         return DEVICE.CPU
+
+
+class RadioButtons(qwt.QWidget):
+    """Widget which consists of radio buttons.
+
+    Parameters
+    ----------
+    options : List[str]
+        list of names for each radio button
+    layout : LAYOUT, optional
+        how is this widget orientated, by default LAYOUT.HORIZONTAL
+    """
+
+    selection_changed_sig = qtc.pyqtSignal(list)
+
+    def __init__(
+        self,
+        options: List[str],
+        layout: LAYOUT = LAYOUT.HORIZONTAL,
+    ) -> None:
+        super().__init__()
+
+        self._options = options
+        self._layout_type = layout
+
+        self._init_ui()
+
+    def _init_ui(self) -> None:
+        layout = NoMarginLayout(self._layout_type)
+        self.setLayout(layout)
+        self._bg = qwt.QButtonGroup(self)
+        for opt in self._options:
+            btn = qwt.QRadioButton(opt)
+            self._bg.addButton(btn)
+            layout.addWidget(btn)
+        if len(self._options) == 0:
+            raise Exception('At least one options needs to be present.')
+        self._bg.buttons()[0].setChecked(True)
+        self._bg.idPressed.connect(self._id_changed)
+
+    @property
+    def selected(self) -> Any:
+        for but in self._bg.buttons():
+            if but.isChecked():
+                return but.text()
+
+    @qtc.pyqtSlot(int)
+    def _id_changed(self, id: int) -> None:
+        self.selection_changed_sig.emit([self._options[abs(-2 - id)]])
