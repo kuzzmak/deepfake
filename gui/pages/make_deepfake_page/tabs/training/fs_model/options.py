@@ -1,6 +1,7 @@
 import PyQt6.QtWidgets as qwt
-from enums import WIDGET_TYPE
 
+from enums import FREQUENCY_UNIT, WIDGET_TYPE
+from gui.pages.make_deepfake_page.tabs.training.widgets import LoggingConfig
 from gui.widgets.common import GroupBox, Parameter, VerticalSpacer
 
 
@@ -52,5 +53,8 @@ class Options(qwt.QWidget):
             WIDGET_TYPE.RADIO_BUTTON,
         )
         model_gb.layout().addWidget(self._use_cudnn_bench)
+
+        self._log_config_wgt = LoggingConfig(FREQUENCY_UNIT.STEP)
+        layout.addWidget(self._log_config_wgt)
 
         layout.addItem(VerticalSpacer())
