@@ -327,3 +327,8 @@ class OUTPUT_KEYS(Enum):
     FAKE_PROB = 'fake_prob'
     REAL_PROB = 'real_prob'
     PREDICTION = 'prediction'
+
+
+class FREQUENCY_UNIT(Enum):
+    STEP = 'step'
+    EPOCH = 'epoch'
