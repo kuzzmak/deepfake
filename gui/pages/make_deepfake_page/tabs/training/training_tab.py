@@ -1,5 +1,5 @@
-from functools import partial
 import logging
+from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import cv2 as cv
@@ -17,22 +17,22 @@ from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
 from core.worker import FSTrainerWorker, Worker
+from core.worker.trainer_thread import TrainingWorker
 from enums import (
-    CONNECTION, 
-    DEVICE, 
+    CONNECTION,
+    DEVICE,
     INTERPOLATION,
-    JOB_TYPE, 
-    MODEL, 
-    OPTIMIZER, 
+    JOB_TYPE,
+    MODEL,
+    OPTIMIZER,
     SIGNAL_OWNER,
 )
+from gui.pages.make_deepfake_page.tabs.training.fs_model.options import Options
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, NoMarginLayout, RadioButtons, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
-from core.worker.trainer_thread import TrainingWorker
 from utils import parse_tuple
-from gui.pages.make_deepfake_page.tabs.training.fs_model.options import Options
 
 logger = logging.getLogger(__name__)
 
