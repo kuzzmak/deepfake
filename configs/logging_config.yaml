@@ -59,6 +59,10 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  core.worker.fs_trainer_worker:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   core.dataset.dataset:
     level: DEBUG
     handlers: [file, gui, console]
