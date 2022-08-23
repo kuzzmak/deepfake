@@ -161,6 +161,7 @@ class JOB_TYPE(Enum):
     INFER_MRI_GAN = 'infer_mri_gan'
     MODEL_CHANGE = 'model_change'
     FILE_CHANGE = 'file_change'
+    TRAIN_FS_DF_MODEL = 'train_fs_df_model'
 
 
 class APP_STATUS(Enum):
