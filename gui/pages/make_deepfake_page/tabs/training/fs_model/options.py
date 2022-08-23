@@ -3,6 +3,7 @@ import PyQt6.QtWidgets as qwt
 from enums import FREQUENCY_UNIT, WIDGET_TYPE
 from gui.pages.make_deepfake_page.tabs.training.widgets import LoggingConfig
 from gui.widgets.common import GroupBox, Parameter, VerticalSpacer
+from utils import str_to_bool
 
 
 class Options(qwt.QWidget):
@@ -58,3 +59,39 @@ class Options(qwt.QWidget):
         layout.addWidget(self._log_config_wgt)
 
         layout.addItem(VerticalSpacer())
+
+    @property
+    def batch_size(self) -> int:
+        return int(self._bs.value)
+
+    @property
+    def gdeep(self) -> bool:
+        return str_to_bool(self._gdeep.value)
+
+    @property
+    def steps(self) -> int:
+        return int(self._steps.value)
+
+    @property
+    def lr(self) -> float:
+        return float(self._lr.value)
+
+    @property
+    def beta1(self) -> float:
+        return float(self._beta1.value)
+
+    @property
+    def lambda_id(self) -> float:
+        return float(self._lambda_id.value)
+
+    @property
+    def lambda_feat(self) -> float:
+        return float(self._lambda_feat.value)
+
+    @property
+    def lambda_rec(self) -> float:
+        return float(self._lambda_rec.value)
+
+    @property
+    def use_cudnn(self) -> bool:
+        return str_to_bool(self._use_cudnn_bench.value)
