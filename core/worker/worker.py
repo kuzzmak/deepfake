@@ -42,7 +42,6 @@ class Worker(qtc.QObject):
     finished = qtc.pyqtSignal()
     output = qtc.pyqtSignal(dict)
 
-    logger = logging.getLogger(__name__)
 
     def __init__(
         self,
@@ -56,6 +55,7 @@ class Worker(qtc.QObject):
         self._tick_manager = enlighten.get_manager()
         self._ticks = None
         self._forced_exit = False
+        self._logger = logging.getLogger(type(self).__name__)
 
     @property
     def conn_q(self) -> Queue:
