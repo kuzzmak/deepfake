@@ -11,6 +11,7 @@ from .predict_mri_worker import PredictMRIWorker
 from .generate_frame_labels_csv_worker import GenerateFrameLabelsCSVWorker
 from .continuous_worker import ContinuousWorker
 from .infer_df_detector_worker import InferDFDetectorWorker
+from .fs_trainer_worker import FSTrainerWorker
 
 __all__ = [
     'CropFacesWorker',
@@ -26,4 +27,5 @@ __all__ = [
     'GenerateFrameLabelsCSVWorker',
     'InferDFDetectorWorker',
     'ContinuousWorker',
+    'FSTrainerWorker',
 ]
