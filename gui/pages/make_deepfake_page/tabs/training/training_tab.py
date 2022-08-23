@@ -16,7 +16,16 @@ from core.image.augmentation import ImageAugmentation
 from core.model.configuration import ModelConfiguration
 from core.optimizer.configuration import OptimizerConfiguration
 from core.trainer.configuration import TrainerConfiguration
-from enums import DEVICE, INTERPOLATION, LAYOUT, MODE, MODEL, OPTIMIZER, SIGNAL_OWNER
+from core.worker import FSTrainerWorker, Worker
+from enums import (
+    CONNECTION, 
+    DEVICE, 
+    INTERPOLATION,
+    JOB_TYPE, 
+    MODEL, 
+    OPTIMIZER, 
+    SIGNAL_OWNER,
+)
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, NoMarginLayout, RadioButtons, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
@@ -578,6 +587,9 @@ class TrainingTab(BaseWidget):
     ):
         super().__init__(signals)
 
+        self._selected_model = MODEL.ORIGINAL
+        self._threads: Dict[JOB_TYPE, Tuple[qtc.QThread, Worker]] = dict()
+
         self._init_ui()
 
     def _init_ui(self):
@@ -626,7 +638,7 @@ class TrainingTab(BaseWidget):
 
         self.stop_btn = qwt.QPushButton(text='Stop')
         self.stop_btn.clicked.connect(self._stop)
-        self.enable_widget(self.stop_btn, True)
+        self.enable_widget(self.stop_btn, False)
         button_row_layout.addWidget(self.stop_btn)
 
         left_part_layout.addWidget(button_row)
@@ -639,6 +651,7 @@ class TrainingTab(BaseWidget):
 
     def _change_training_options(self, model: MODEL) -> None:
         self._stacked_wgt.setCurrentWidget(self._model_option_mappings[model])
+        self._selected_model = model
 
     def _optimizer_options(self) -> dict:
         """Constructs optimizer options based on the type of optimizer that's
@@ -737,31 +750,65 @@ class TrainingTab(BaseWidget):
     def _start(self):
         """Initiates training process.
         """
-        conf = self._make_trainer_configuration()
-        if conf is None:
-            return
+        if self._selected_model == MODEL.ORIGINAL:
+            conf = self._make_trainer_configuration()
+            if conf is None:
+                return
 
-        self.training_thread = qtc.QThread()
-        self.worker = TrainingWorker(
-            conf,
-            self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
-        )
-        self.stop_training_sig.connect(self.worker.stop_training)
-        self.worker.moveToThread(self.training_thread)
-        self.training_thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.training_thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.training_thread.finished.connect(self.training_thread.deleteLater)
-        self.training_thread.start()
+            self.training_thread = qtc.QThread()
+            self.worker = TrainingWorker(
+                conf,
+                self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+            )
+            self.stop_training_sig.connect(self.worker.stop_training)
+            self.worker.moveToThread(self.training_thread)
+            self.training_thread.started.connect(self.worker.run)
+            self.worker.finished.connect(self.training_thread.quit)
+            self.worker.finished.connect(self.worker.deleteLater)
+            self.training_thread.finished.connect(
+                self.training_thread.deleteLater
+            )
+            self.training_thread.start()
+            self.training_thread.finished.connect(
+                lambda: self.enable_widget(self.start_btn, True)
+            )
+            self.training_thread.finished.connect(
+                lambda: self.enable_widget(self.stop_btn, False)
+            )
+            self.enable_widget(self.start_btn, False)
+            self.enable_widget(self.stop_btn, True)
 
-        self.training_thread.finished.connect(
-            lambda: self.enable_widget(self.start_btn, True)
-        )
-        self.training_thread.finished.connect(
-            lambda: self.enable_widget(self.stop_btn, False)
-        )
-        self.enable_widget(self.start_btn, False)
-        self.enable_widget(self.stop_btn, True)
+        elif self._selected_model == MODEL.FS:
+            thread = qtc.QThread()
+            worker = FSTrainerWorker(
+                batch_size=self._fs_options.batch_size,
+                dataset_root=r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
+                gdeep=self._fs_options.gdeep,
+                message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
+            )
+            self.stop_training_sig.connect(
+                lambda: worker.conn_q.put(CONNECTION.STOP),
+            )
+            worker.moveToThread(thread)
+            self._threads[JOB_TYPE.TRAIN_FS_DF_MODEL] = (thread, worker)
+            thread.started.connect(worker.run)
+            thread.start()
+            worker.finished.connect(self._on_fs_trainer_worker_finished)
+            self.enable_widget(self.start_btn, False)
+            self.enable_widget(self.stop_btn, True)
+
+
+    @qtc.pyqtSlot()
+    def _on_fs_trainer_worker_finished(self) -> None:
+        val = self._threads.get(JOB_TYPE.TRAIN_FS_DF_MODEL, None)
+        if val is not None:
+            thread, _ = val
+            thread.quit()
+            thread.wait()
+            self._threads.pop(JOB_TYPE.TRAIN_FS_DF_MODEL, None)
+        self.enable_widget(self.start_btn, True)
+        self.enable_widget(self.stop_btn, False)
+
 
     def _stop(self):
         """Stops training process.
