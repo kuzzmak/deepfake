@@ -27,8 +27,8 @@ ETA_FORMAT = 'ETA: {}'
 
 SUPPORTED_VIDEO_EXTS = set(['.' + vf.value for vf in VIDEO_FORMAT])
 
-IMAGENET_MEAN = [0.485, 0.456, 0.406]
-IMAGENET_STD = [0.229, 0.224, 0.225]
+IMAGENET_MEAN = (0.485, 0.456, 0.406)
+IMAGENET_STD = (0.229, 0.224, 0.225)
 
 IMAGE_EXTS = set(['png', 'jpg'])
 
