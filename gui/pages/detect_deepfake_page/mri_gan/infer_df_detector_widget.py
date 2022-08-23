@@ -2,12 +2,12 @@ import logging
 import multiprocessing
 from typing import Any, Dict, Optional, Tuple
 
-import PyQt6.QtGui as qtg
 import PyQt6.QtCore as qtc
+import PyQt6.QtGui as qtg
 import PyQt6.QtWidgets as qwt
 
 from common_structures import Job
-from core.worker import Worker, InferDFDetectorWorker
+from core.worker import InferDFDetectorWorker, Worker
 from enums import (
     JOB_DATA_KEY,
     JOB_TYPE,
@@ -17,10 +17,7 @@ from enums import (
     SIGNAL_OWNER,
     WIDGET_TYPE,
 )
-from gui.pages.detect_deepfake_page.mri_gan.common import (
-    DragAndDrop,
-    Parameter,
-)
+from gui.pages.detect_deepfake_page.mri_gan.common import DragAndDrop
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     Button,
@@ -28,6 +25,7 @@ from gui.widgets.common import (
     GroupBox,
     HWidget,
     NoMarginLayout,
+    Parameter,
 )
 from utils import parse_number
 
