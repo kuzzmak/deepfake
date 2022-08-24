@@ -97,3 +97,7 @@ class LoggingConfig:
     @property
     def proj_log_dir(self) -> Path:
         return self._proj_log_dir
+
+    @property
+    def run_name(self) -> str:
+        return self._run_name
