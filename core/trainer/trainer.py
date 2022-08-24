@@ -1,352 +1,337 @@
-import logging
 import time
-from typing import Any, Callable, Mapping, Optional, Sequence, Tuple, Union
+from dataclasses import dataclass, field
+from numbers import Number
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 import enlighten
-from ignite.contrib.handlers.tensorboard_logger import (
-    GradsScalarHandler,
-    TensorboardLogger,
-    WeightsScalarHandler,
-    global_step_from_engine,
-)
-from ignite.engine import (
-    Engine,
-    Events,
-    # create_supervised_evaluator,
-)
-from ignite.engine.events import EventEnum
-from ignite.handlers import ModelCheckpoint
-from ignite.utils import convert_tensor
 import torch
-from torch.nn.modules.loss import _Loss
-from torch.optim.optimizer import Optimizer
-from torch.utils.data.dataloader import DataLoader
-from common_structures import CommObject
-from core.model.model import DeepfakeModel
-from enums import DEVICE
+import wandb
+from torch.backends import cudnn
+from torch.nn import Module
+from torch.utils.data import DataLoader
 
-logger = logging.getLogger(__name__)
+from utils import get_date_uid
 
 
-def _prepare_batch(
-    batch: Sequence[torch.Tensor],
-    device: Optional[Union[str, torch.device]] = None,
-    non_blocking: bool = False,
-) -> Tuple[Union[torch.Tensor, Sequence, Mapping, str, bytes], ...]:
-    """Prepare batch for training: pass to a device with options.
-    """
-    warped_A, mask_A, target_A, warped_B, mask_B, target_B = batch
-    return (
-        convert_tensor(warped_A, device=device, non_blocking=non_blocking),
-        convert_tensor(mask_A, device=device, non_blocking=non_blocking),
-        convert_tensor(target_A, device=device, non_blocking=non_blocking),
-        convert_tensor(warped_B, device=device, non_blocking=non_blocking),
-        convert_tensor(mask_B, device=device, non_blocking=non_blocking),
-        convert_tensor(target_B, device=device, non_blocking=non_blocking),
-    )
+@dataclass
+class ModelConfig:
+    model: Module
+    options: Dict[str, Any] = field(default_factory=dict)
 
 
-def _output_transform(face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A,
-                      face_B, target_B, y_pred_B_B, y_pred_B_A, loss_B):
-    return face_A, target_A, y_pred_A_A, y_pred_A_B, loss_A.item(), \
-        face_B, target_B, y_pred_B_B, y_pred_B_A, loss_B.item()
+@dataclass
+class BaseTrainerConfiguration:
+    train_data_loader: DataLoader
+    batch_size: int
+    model_config: ModelConfig
+    project: str = 'trainer'
+    run_name: Optional[str] = None
+    resume_run: bool = False
+    device: torch.device = torch.device('cpu')
+    logging_dir: Union[str, Path] = 'logs'
+    log_freq: Optional[int] = None
+    use_cudnn_benchmark: bool = False
+    wandb: bool = False
 
 
-def _training_step(
-    model: torch.nn.Module,
-    optimizer: torch.optim.Optimizer,
-    loss_fn: Union[Callable, torch.nn.Module],
-    device: Optional[Union[str, torch.device]] = None,
-    non_blocking: bool = False,
-    prepare_batch: Callable = _prepare_batch,
-    output_transform: Callable = _output_transform
-) -> Callable:
-    """ Function for executing one training step from the `Engine`.
-
-    Parameters
-    ----------
-    model : torch.nn.Module
-        model to train
-    optimizer : torch.optim.Optimizer
-        optimizer to use
-    loss_fn : Union[Callable, torch.nn.Module]
-        loss function to use
-    device : Optional[Union[str, torch.device]], optional
-        device type specification, by default None
-    non_blocking : bool, optional
-        if True and this copy is between CPU and GPU, the copy may occur
-        asynchronously with respect to the host, for other cases, this
-        argument has no effect, by default False
-    prepare_batch : Callable, optional
-        function that receives `batch`, `device`, `non_blocking` and outputs
-        tuple of tensors `(batch_x, batch_y)`, by default _prepare_batch
-    output_transform : Callable, optional
-        function that receives 'x', 'y', 'y_pred', 'loss' and returns value
-        to be assigned to engine's state.output after each iteration. Default
-        is returning `x, y, y_pred, loss.item()`, by default lambdax
-
-    Returns
-    -------
-    Callable
-        update function
-    """
-    def _train_step(
-        engine: Engine,
-        batch: Sequence[torch.Tensor],
-    ) -> Union[Any, Tuple[torch.Tensor]]:
-        model.train()
-        optimizer.zero_grad()
-        warped_A, mask_A, target_A, warped_B, mask_B, target_B = prepare_batch(
-            batch,
-            device=device,
-            non_blocking=non_blocking,
-        )
-        # first letter is the input person, second letter is the decoder
-        y_pred_A_A, mask_A_A, y_pred_A_B, mask_A_B = model(warped_A)
-        y_pred_B_A, mask_B_A, y_pred_B_B, mask_B_B = model(warped_B)
-
-        loss_A_A = loss_fn(y_pred_A_A, target_A, mask_A)
-        loss_B_B = loss_fn(y_pred_B_B, target_B, mask_B)
-
-        # TODO other loss (MSE) for mask
-
-        (loss_A_A + loss_B_B).backward()
-        optimizer.step()
-
-        return output_transform(
-            warped_A,
-            target_A,
-            y_pred_A_A,
-            y_pred_A_B,
-            loss_A_A,
-            warped_B,
-            target_B,
-            y_pred_B_B,
-            y_pred_B_A,
-            loss_B_B,
-        )
-
-    return _train_step
-
-
-def _trainer(
-    model: torch.nn.Module,
-    optimizer: torch.optim.Optimizer,
-    loss_fn: Union[Callable, torch.nn.Module],
-    device: Optional[Union[str, torch.device]] = None,
-    non_blocking: bool = False,
-    prepare_batch: Callable = _prepare_batch,
-    output_transform: Callable = _output_transform
-) -> Engine:
-    trainer = Engine(_training_step(
-        model,
-        optimizer,
-        loss_fn,
-        device,
-        non_blocking,
-        prepare_batch,
-        output_transform,
-    ))
-    return trainer
-
-
-class SaveEvents(EventEnum):
-    MANUAL_SAVE = 'manual_save'
-
-
-class Trainer:
-    """Class that manages everything that has to do with training of the
-    particular model.
-    """
+class EpochIterConfiguration(BaseTrainerConfiguration):
 
     def __init__(
         self,
-        model: DeepfakeModel,
-        data_loader: DataLoader,
-        optimizer: Optimizer,
-        criterion: _Loss,
-        device: DEVICE,
+        train_data_loader: DataLoader,
+        batch_size: int,
         epochs: int,
-        log_dir: str,
-        checkpoints_dir: str,
-        show_preview: bool,
-        show_preview_comm: CommObject,
+        model_config: ModelConfig,
+        project: str = 'trainer',
+        run_name: Optional[str] = None,
+        resume_run: bool = False,
+        device: torch.device = torch.device('cpu'),
+        logging_dir: Union[str, Path] = 'logs',
+        log_freq: Optional[int] = None,
+        use_cudnn_benchmark: bool = False,
+        wandb: bool = False,
     ) -> None:
-        self.model = model
-        self.data_loader = data_loader
-        self.optimizer = optimizer
-        self.criterion = criterion
-        self.device = device
-        self.epochs = epochs
-        self.log_dir = log_dir
-        self.checkpoints_dir = checkpoints_dir
-        self.show_preview = show_preview
-        self.show_preview_comm = show_preview_comm
-        self._stop_training = False
+        super().__init__(
+            train_data_loader,
+            batch_size,
+            model_config,
+            project,
+            run_name,
+            resume_run,
+            device,
+            logging_dir,
+            log_freq,
+            use_cudnn_benchmark,
+            wandb,
+        )
 
-    def _refresh_preview(
+        self._epochs = epochs
+
+    @property
+    def epochs(self) -> int:
+        return self._epochs
+
+
+class StepTrainerConfiguration(BaseTrainerConfiguration):
+
+    def __init__(
         self,
-        warped_A,
-        y_pred_A_A,
-        y_pred_A_B,
-        warped_B,
-        y_pred_B_B,
-        y_pred_B_A,
+        train_data_loader: DataLoader,
+        batch_size: int,
+        steps: int,
+        model_config: ModelConfig,
+        project: str = 'trainer',
+        run_name: Optional[str] = None,
+        resume_run: bool = False,
+        device: torch.device = torch.device('cpu'),
+        logging_dir: Union[str, Path] = 'logs',
+        log_freq: Optional[int] = None,
+        use_cudnn_benchmark: bool = False,
+        wandb: bool = False,
     ) -> None:
-        if self.show_preview:
-            self.show_preview_comm.data_sig.emit(
-                [
-                    warped_A,
-                    y_pred_A_A,
-                    y_pred_A_B,
-                    warped_B,
-                    y_pred_B_B,
-                    y_pred_B_A,
-                ]
-            )
-
-    def run(self) -> None:
-        """Initiates learning process of the model.
-        """
-        n_images = 4
-
-        trainer = _trainer(
-            model=self.model,
-            optimizer=self.optimizer,
-            loss_fn=self.criterion,
-            device=self.device.value,
+        super().__init__(
+            train_data_loader,
+            batch_size,
+            model_config,
+            project,
+            run_name,
+            resume_run,
+            device,
+            logging_dir,
+            log_freq,
+            use_cudnn_benchmark,
+            wandb,
         )
-        event_to_attr = {
-            SaveEvents.MANUAL_SAVE: 'manual_save',
+        self._steps = steps
+
+    @property
+    def steps(self) -> int:
+        return self._steps
+
+
+class BaseTrainer:
+
+    def __init__(
+        self,
+        conf: BaseTrainerConfiguration,
+    ) -> None:
+        self._conf = conf
+        self._device = conf.device
+        self._logging_dir = Path(conf.logging_dir)
+        self._train_data_loader = conf.train_data_loader
+
+        self._meters: Dict[str, Number] = {}
+
+        self._checkpoint_dir = Path(
+            self._conf.model_config.options['checkpoints_dir']
+        )
+        self._checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        self._save_freq = self._conf.model_config.options['model_freq']
+        self._sample_freq = self._conf.model_config.options['sample_freq']
+
+        cudnn.benchmark = conf.use_cudnn_benchmark
+
+        self._enligten_manager = enlighten.get_manager()
+
+        self._run_name = self._conf.run_name
+        if self._run_name is None:
+            self._run_name = get_date_uid()
+
+    def init_model(self) -> None:
+        mc = self._conf.model_config
+        self._model = mc.model()
+        self._model.initialize(mc.options)
+
+    def init_progress_bars(self) -> None:
+        pass
+
+    def post_model_init(self) -> None:
+        pass
+
+    def register_meters(self, meters: List[str]) -> None:
+        for m in meters:
+            self._meters[m] = 0
+
+    def _init_logging(self) -> None:
+        self._sample_path: Path = self._checkpoint_dir / \
+            self._conf.model_config.options['name'] / 'samples'
+        self._sample_path.mkdir(parents=True, exist_ok=True)
+
+        self._proj_log_dir = self._logging_dir / self._conf.project / self._run_name
+        self._proj_log_dir.mkdir(parents=True, exist_ok=True)
+
+        self._init_wandb()
+
+    def _init_wandb(self) -> None:
+        if not self._conf.wandb:
+            return
+
+        wandb_id_path = self._proj_log_dir / 'wandb_id.txt'
+        self._wandb_last_step_path = self._proj_log_dir / 'wandb_last_step.txt'
+        if not (
+            wandb_id_path.exists() and self._wandb_last_step_path.exists()
+        ):
+            wandb_id = wandb.util.generate_id()
+            with open(wandb_id_path, 'w+') as f:
+                f.write(wandb_id)
+            self._wandb_last_step = 0
+            with open(self._wandb_last_step_path, 'w+') as f:
+                f.write(str(self._wandb_last_step))
+        else:
+            with open(wandb_id_path, 'r+') as f:
+                wandb_id = f.read()
+            with open(self._wandb_last_step_path, 'r+') as f:
+                self._wandb_last_step = int(f.read())
+
+        wandb.init(
+            dir=str(self._conf.logging_dir),
+            project=self._conf.project,
+            name=self._run_name,
+            resume='allow',
+            id=wandb_id,
+        )
+        wandb.config = {
+            'learning_rate': self._conf.model_config.options['lr'],
+            'batch_size': self._conf.batch_size,
         }
-        trainer.register_events(*SaveEvents, event_to_attr=event_to_attr)
+        wandb.watch(self._model)
 
-        # progress bars
-        manager = enlighten.get_manager()
-        epoch_desc = 'Epoch: {}, loss_A: {:.6f}, loss_B: {:.6f}'
-        epoch_pbar = manager.counter(
-            total=self.epochs,
-            desc=epoch_desc.format(0, 0, 0),
+    def update_wandb_last_step(self, step: int) -> None:
+        with open(self._wandb_last_step_path, 'w+') as f:
+            f.write(str(step))
+
+    def post_init_logging(self) -> None:
+        pass
+
+    @property
+    def meters(self) -> Dict[str, str]:
+        return self._meters
+
+    def update_meter(self, name: str, value: Number) -> None:
+        if name not in self._meters:
+            raise Exception(f'meter: {name} not registered')
+        self._meters[name] = value
+
+    def get_latest_checkpoints_file_path(self) -> Path:
+        return self._checkpoint_dir / 'latest_checkpoint.txt'
+
+    def save_checkpoint(self) -> None:
+        pass
+
+    def load_checkpoint(self) -> None:
+        pass
+
+    def train(self) -> None:
+        raise NotImplementedError
+
+    def start(self) -> None:
+        self.init_model()
+        self.post_model_init()
+        if self._conf.resume_run:
+            self.load_checkpoint()
+        self.init_progress_bars()
+        self._init_logging()
+        self.post_init_logging()
+        try:
+            self.train()
+        except KeyboardInterrupt:
+            print('received stop signal, exiting...')
+        finally:
+            self._enligten_manager.stop()
+            if self._conf.wandb:
+                wandb.finish()
+
+
+class EpochIterTrainer(BaseTrainer):
+
+    def __init__(self, conf: EpochIterConfiguration) -> None:
+        super().__init__(conf)
+
+        self._iters = len(self._train_data_loader)
+        self._current_iter = 0
+        self._epochs = conf.epochs
+        self._current_epoch = 0
+
+    def init_progress_bars(self) -> None:
+        self._epoch_pbar = self._enligten_manager.counter(
+            total=self._epochs,
+            desc='Epoch',
             unit='ticks',
             leave=False,
         )
-        iteration_desc = '\tIteration: '
-        iteration_pbar = manager.counter(
-            total=len(self.data_loader),
-            desc=iteration_desc,
+        self._iteration_pbar = self._enligten_manager.counter(
+            total=len(self._train_data_loader),
+            desc='',
             unit='ticks',
             leave=False,
         )
 
-        # metrics = {"loss": Loss(self.criterion)}
+    def _train_one_epoch(self) -> None:
+        for batch_idx, data in enumerate(self._train_data_loader):
+            self._current_iter = batch_idx
+            self.train_one_step(data)
 
-        # train_evaluator = create_supervised_evaluator(
-        #     self.model,
-        #     metrics=metrics,
-        #     device=self.device.value,
-        # )
+    def train_one_step(self, data) -> None:
+        raise NotImplementedError
 
-        # @trainer.on(Events.EPOCH_COMPLETED)
-        # def compute_metrics(engine: Engine):
-        #     train_evaluator.run(self.data_loader)
+    def train(self) -> None:
+        for e in range(self._epochs):
+            self._current_epoch = e
+            self._train_one_epoch()
+            self._iteration_pbar.count = 0
+            self._iteration_pbar.start = time.time()
+            self._epoch_pbar.update()
 
-        @trainer.on(Events.EPOCH_COMPLETED)
-        def on_epoch_completed(engine: Engine):
-            warped_A, target_A, y_pred_A_A, y_pred_A_B, loss_A, \
-                warped_B, target_B, y_pred_B_B, y_pred_B_A, loss_B = \
-                engine.state.output
 
-            epoch_pbar.desc = epoch_desc.format(
-                engine.state.epoch,
-                loss_A,
-                loss_B,
-            )
-            epoch_pbar.update()
-            # reset iteration progress bar
-            iteration_pbar.count = 0
-            iteration_pbar.start = time.time()
+class StepTrainer(BaseTrainer):
 
-            logger.info(epoch_desc.format(
-                engine.state.epoch,
-                loss_A,
-                loss_B,
-            ))
-            self._refresh_preview(
-                warped_A[:n_images],
-                y_pred_A_A[:n_images],
-                y_pred_A_B[:n_images],
+    def __init__(self, conf: StepTrainerConfiguration) -> None:
+        self._steps = conf.steps
 
-                warped_B[:n_images],
-                y_pred_B_B[:n_images],
-                y_pred_B_A[:n_images],
-            )
+        super().__init__(conf)
 
-            if self._stop_training:
-                logger.info(
-                    'Terminating training process on epoch ' +
-                    f'{engine.state.epoch}.'
-                )
-                engine.fire_event(SaveEvents.MANUAL_SAVE)
-                engine.terminate()
+        self._starting_step = 0
+        self._current_step = 0
+        self._train_data_iter = iter(self._train_data_loader)
 
-        @trainer.on(Events.ITERATION_COMPLETED)
-        def on_iteration_completed(engine: Engine):
-            iteration_pbar.update()
+    def init_progress_bars(self) -> None:
+        self._step_pbar = self._init_step_progress_bar(self._starting_step)
 
-        tb_logger = TensorboardLogger(log_dir=self.log_dir)
-        tb_logger.attach_output_handler(
-            trainer,
-            event_name=Events.EPOCH_COMPLETED,
-            tag="training",
-            # tuple unpacking is not possible, last element is loss
-            output_transform=lambda out: {"batchloss": out[-1]},
-            metric_names="all",
-        )
-        tb_logger.attach(
-            trainer,
-            log_handler=WeightsScalarHandler(self.model),
-            event_name=Events.EPOCH_COMPLETED,
-        )
-        tb_logger.attach(
-            trainer,
-            log_handler=GradsScalarHandler(self.model),
-            event_name=Events.EPOCH_COMPLETED,
+    def _init_step_progress_bar(self, start: int = 0):
+        return self._enligten_manager.counter(
+            count=start,
+            total=self._steps,
+            unit='ticks',
+            leave=False,
+            desc='step',
         )
 
-        # def score_function(engine: Engine):
-        #     return engine.state.metrics["accuracy"]
+    def get_batch_of_data(self) -> Any:
+        try:
+            data = next(self._train_data_iter)
+        except StopIteration:
+            self._train_data_iter = iter(self._train_data_loader)
+            data = next(self._train_data_iter)
+        return data
 
-        model_checkpoint = ModelCheckpoint(
-            self.checkpoints_dir,
-            n_saved=2,
-            filename_prefix="best",
-            # score_function=score_function,
-            # score_name="validation_accuracy",
-            global_step_transform=global_step_from_engine(trainer),
-            require_empty=False,
-        )
-        trainer.add_event_handler(
-            SaveEvents.MANUAL_SAVE,
-            model_checkpoint,
-            {"model": self.model},
-        )
-        trainer.add_event_handler(
-            Events.EPOCH_COMPLETED(every=10),
-            model_checkpoint,
-            {"model": self.model},
-        )
-        # train_evaluator.add_event_handler(
-        #     Events.EPOCH_COMPLETED,
-        #     model_checkpoint,
-        #     {"model": self.model},
-        # )
+    def train_one_step(self) -> None:
+        raise NotImplementedError
 
-        trainer.run(self.data_loader, max_epochs=self.epochs)
-
-        tb_logger.close()
-        manager.stop()
-
-    def stop(self) -> None:
-        """Terminates training process.
-        """
-        self._stop_training = True
+    def train(self) -> None:
+        for s in range(self._starting_step, self._steps):
+            self._current_step = s
+            self.train_one_step()
+            self._step_pbar.update()
+            if (self._current_step + 1) % self._save_freq == 0 and \
+                    self._current_step > 0:
+                self.save_checkpoint()
+            if (self._current_step + 1) % self._conf.log_freq == 0:
+                if self._conf.wandb:
+                    self.update_wandb_last_step(self._current_step + 1)
+                    if self._current_step + 1 > self._wandb_last_step:
+                        wandb.log(
+                            data=self._meters,
+                            step=self._current_step + 1,
+                        )
+                # TODO log to file
