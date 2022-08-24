@@ -10,6 +10,7 @@ import wandb
 from torch.backends import cudnn
 from torch.nn import Module
 from torch.utils.data import DataLoader
+from df_logging.model_logging import LoggingConfig
 
 from utils import get_date_uid
 
@@ -25,14 +26,10 @@ class BaseTrainerConfiguration:
     train_data_loader: DataLoader
     batch_size: int
     model_config: ModelConfig
-    project: str = 'trainer'
-    run_name: Optional[str] = None
+    logging_config: LoggingConfig
     resume_run: bool = False
-    device: torch.device = torch.device('cpu')
-    logging_dir: Union[str, Path] = 'logs'
-    log_freq: Optional[int] = None
+    device: torch.device = torch.device('cuda')
     use_cudnn_benchmark: bool = False
-    wandb: bool = False
 
 
 class EpochIterConfiguration(BaseTrainerConfiguration):
@@ -43,27 +40,19 @@ class EpochIterConfiguration(BaseTrainerConfiguration):
         batch_size: int,
         epochs: int,
         model_config: ModelConfig,
-        project: str = 'trainer',
-        run_name: Optional[str] = None,
+        logging_config: LoggingConfig,
         resume_run: bool = False,
-        device: torch.device = torch.device('cpu'),
-        logging_dir: Union[str, Path] = 'logs',
-        log_freq: Optional[int] = None,
+        device: torch.device = torch.device('cuda'),
         use_cudnn_benchmark: bool = False,
-        wandb: bool = False,
     ) -> None:
         super().__init__(
             train_data_loader,
             batch_size,
             model_config,
-            project,
-            run_name,
+            logging_config,
             resume_run,
             device,
-            logging_dir,
-            log_freq,
             use_cudnn_benchmark,
-            wandb,
         )
 
         self._epochs = epochs
@@ -81,28 +70,21 @@ class StepTrainerConfiguration(BaseTrainerConfiguration):
         batch_size: int,
         steps: int,
         model_config: ModelConfig,
-        project: str = 'trainer',
-        run_name: Optional[str] = None,
+        logging_config: LoggingConfig,
         resume_run: bool = False,
-        device: torch.device = torch.device('cpu'),
-        logging_dir: Union[str, Path] = 'logs',
-        log_freq: Optional[int] = None,
+        device: torch.device = torch.device('cuda'),
         use_cudnn_benchmark: bool = False,
-        wandb: bool = False,
     ) -> None:
         super().__init__(
             train_data_loader,
             batch_size,
             model_config,
-            project,
-            run_name,
+            logging_config,
             resume_run,
             device,
-            logging_dir,
-            log_freq,
             use_cudnn_benchmark,
-            wandb,
         )
+
         self._steps = steps
 
     @property
@@ -118,25 +100,20 @@ class BaseTrainer:
     ) -> None:
         self._conf = conf
         self._device = conf.device
-        self._logging_dir = Path(conf.logging_dir)
+        self._logging_dir = Path(conf.logging_config.log_dir)
         self._train_data_loader = conf.train_data_loader
 
         self._meters: Dict[str, Number] = {}
 
-        self._checkpoint_dir = Path(
-            self._conf.model_config.options['checkpoints_dir']
-        )
-        self._checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        self._save_freq = self._conf.model_config.options['model_freq']
-        self._sample_freq = self._conf.model_config.options['sample_freq']
+        self._checkpoint_dir = conf.logging_config.checkpoints_dir
+        self._save_freq = conf.logging_config.checkpoint_frequency
+        self._sample_freq = conf.logging_config.sample_frequency
 
         cudnn.benchmark = conf.use_cudnn_benchmark
 
         self._enligten_manager = enlighten.get_manager()
 
-        self._run_name = self._conf.run_name
-        if self._run_name is None:
-            self._run_name = get_date_uid()
+        self._run_name = conf.logging_config.run_name
 
     def init_model(self) -> None:
         mc = self._conf.model_config
@@ -154,6 +131,7 @@ class BaseTrainer:
             self._meters[m] = 0
 
     def _init_logging(self) -> None:
+        # TODO make these dirs in logging config
         self._sample_path: Path = self._checkpoint_dir / \
             self._conf.model_config.options['name'] / 'samples'
         self._sample_path.mkdir(parents=True, exist_ok=True)
