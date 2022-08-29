@@ -2,8 +2,10 @@ import torch
 import torch.nn as nn
 
 from core.model.fs_networks import GeneratorAdainUpsample
+from core.model.pg_modules.blocks import IRBlock
 from core.model.pg_modules.projected_discriminator import \
     ProjectedDiscriminator
+from core.model.resnet import ResNet
 
 
 class FS(nn.Module):
@@ -12,7 +14,7 @@ class FS(nn.Module):
         super().__init__()
 
     def initialize(self, opt):
-        self._is_train = opt['isTrain']
+        self._train = opt['train']
 
         # Generator network
         self.netG = GeneratorAdainUpsample(
@@ -20,7 +22,7 @@ class FS(nn.Module):
             output_nc=3,
             latent_size=512,
             n_blocks=9,
-            deep=opt['Gdeep'],
+            deep=opt['gdeep'],
         )
         self.netG.cuda()
 
@@ -28,12 +30,13 @@ class FS(nn.Module):
             opt['arc_path'],
             map_location=torch.device('cpu'),
         )
-        self.netArc = netArc_checkpoint['model'].module
-        self.netArc = self.netArc.cuda()
+        self.netArc = ResNet(IRBlock, [3, 4, 23, 3])
         self.netArc.eval()
         self.netArc.requires_grad_(False)
+        self.netArc.load_state_dict(netArc_checkpoint['model'])
+        self.netArc = self.netArc.cuda()
         # TODO try this
-        if not self._is_train:
+        if not self._train:
             pretrained_path = opt['checkpoints_dir']
             self.load_network(
                 self.netG,
@@ -44,7 +47,7 @@ class FS(nn.Module):
         self.netD = ProjectedDiscriminator()
         self.netD.cuda()
 
-        if self._is_train:
+        if self._train:
             self.criterionFeat = nn.L1Loss()
             self.criterionRec = nn.L1Loss()
             self.optimizer_G = torch.optim.Adam(
