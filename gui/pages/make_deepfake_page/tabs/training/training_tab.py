@@ -781,10 +781,17 @@ class TrainingTab(BaseWidget):
         elif self._selected_model == MODEL.FS:
             thread = qtc.QThread()
             worker = FSTrainerWorker(
+                steps=self._fs_options.steps,
                 batch_size=self._fs_options.batch_size,
-                dataset_root=r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
+                lr=self._fs_options.lr,
+                dataset_root=self._fs_options.dataset_dir,
                 gdeep=self._fs_options.gdeep,
-                message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER]
+                beta1=self._fs_options.beta1,
+                lambda_id=self._fs_options.lambda_id,
+                lambda_feat=self._fs_options.lambda_feat,
+                lambda_rec=self._fs_options.lambda_rec,
+                use_cudnn_benchmark=self._fs_options.use_cudnn,
+                message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
             )
             self.stop_training_sig.connect(
                 lambda: worker.conn_q.put(CONNECTION.STOP),
@@ -797,7 +804,6 @@ class TrainingTab(BaseWidget):
             self.enable_widget(self.start_btn, False)
             self.enable_widget(self.stop_btn, True)
 
-
     @qtc.pyqtSlot()
     def _on_fs_trainer_worker_finished(self) -> None:
         val = self._threads.get(JOB_TYPE.TRAIN_FS_DF_MODEL, None)
@@ -808,7 +814,6 @@ class TrainingTab(BaseWidget):
             self._threads.pop(JOB_TYPE.TRAIN_FS_DF_MODEL, None)
         self.enable_widget(self.start_btn, True)
         self.enable_widget(self.stop_btn, False)
-
 
     def _stop(self):
         """Stops training process.
