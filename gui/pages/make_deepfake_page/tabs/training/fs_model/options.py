@@ -1,7 +1,12 @@
+from pathlib import Path
+
 import PyQt6.QtWidgets as qwt
 
 from enums import FREQUENCY_UNIT, WIDGET_TYPE
-from gui.pages.make_deepfake_page.tabs.training.widgets import LoggingConfig
+from gui.pages.make_deepfake_page.tabs.training.widgets import (
+    LoggingConfig,
+    SelectDirRow,
+)
 from gui.widgets.common import GroupBox, Parameter, VerticalSpacer
 from utils import str_to_bool
 
@@ -55,6 +60,15 @@ class Options(qwt.QWidget):
         )
         model_gb.layout().addWidget(self._use_cudnn_bench)
 
+        dataset_gb = GroupBox('Dataset options')
+        layout.addWidget(dataset_gb)
+
+        self._dataset_path_row = SelectDirRow(
+            'Dataset',
+            r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
+        )
+        dataset_gb.layout().addWidget(self._dataset_path_row)
+
         self._log_config_wgt = LoggingConfig(FREQUENCY_UNIT.STEP)
         layout.addWidget(self._log_config_wgt)
 
@@ -95,3 +109,7 @@ class Options(qwt.QWidget):
     @property
     def use_cudnn(self) -> bool:
         return str_to_bool(self._use_cudnn_bench.value)
+
+    @property
+    def dataset_dir(self) -> Path:
+        return self._dataset_path_row.selected_dir
