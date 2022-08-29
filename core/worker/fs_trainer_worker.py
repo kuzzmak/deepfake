@@ -12,7 +12,7 @@ from core.trainer.fs_trainer import FSTrainer
 from core.model.fs import FS
 from core.trainer.trainer import StepTrainerConfiguration
 from core.worker import Worker
-from df_logging.model_logging import LoggingConfig
+from df_logging.model_logging import DFLogger
 from variables import IMAGENET_MEAN, IMAGENET_STD
 
 
@@ -65,25 +65,20 @@ class FSTrainerWorker(Worker):
         self._logger.debug('Dataset constructed.')
         model_options = {
             'name': 'fs_model',
-            'isTrain': True,
-            'Gdeep': self._gdeep,
-            'arc_path': r'C:\Users\tonkec\Documents\SimSwap-main\arcface_model\arcface2_checkpoint.tar',
+            'train': True,
+            'gdeep': self._gdeep,
+            'arc_path': r'C:\Users\tonkec\Documents\SimSwap-main\arcface_model\new_arc.tar',
             'lr': self._lr,
             'beta1': self._beta1,
-            'gpu_ids': 0,
-            'checkpoints_dir': 'checkpoints',
             'lambda_id': self._lambda_id,
             'lambda_feat': self._lambda_feat,
             'lambda_rec': self._lambda_rec,
-            'log_freq': 10,
-            'sample_freq': 10,
-            'model_freq': 500,
         }
         model_conf = ModelConfig(
             model=FS,
             options=model_options,
         )
-        logging_config = LoggingConfig(
+        df_logger = DFLogger(
             model_name='FS',
             log_frequency=100,
             sample_frequency=500,
@@ -98,16 +93,12 @@ class FSTrainerWorker(Worker):
             batch_size=self._batch_size,
             steps=self._steps,
             model_config=model_conf,
-            project='fs_trainer',
-            run_name=run,
+            df_logger=df_logger,
             resume_run=True,
             device=self._device,
-            logging_dir=logs_dir.absolute(),
-            log_freq=50,
             use_cudnn_benchmark=self._use_cudnn_bench,
-            wandb=True,
         )
         trainer = FSTrainer(conf)
-        trainer.start()
         self.running.emit()
         self._logger.debug('Started custom job.')
+        trainer.start()
