@@ -10,6 +10,16 @@ from variables import IMAGE_EXTS
 
 
 class BaseDataset(Dataset):
+    """Simple abstact base class for faceswapping datasets.
+
+    Parameters
+    ----------
+    dataset_root : Union[str, Path]
+        path to the directory with data
+    transforms : Optional[T.Compose], optional
+        transformations done on every image before sending to the model,
+            by default None
+    """
 
     def __init__(
         self,
@@ -25,6 +35,18 @@ class BaseDataset(Dataset):
             self._transforms = T.Compose([T.ToTensor()])
 
     def _get_data_paths(self) -> List[Path]:
+        """Implementation of this function should fetch all data paths.
+
+        Returns
+        -------
+        List[Path]
+            list of all data paths
+
+        Raises
+        ------
+        NotImplementedError
+            throws if not implemented
+        """
         raise NotImplementedError
 
     def __getitem__(self, index: int):
@@ -35,6 +57,16 @@ class BaseDataset(Dataset):
 
 
 class FSDataset(BaseDataset):
+    """Simple dataset wrapper for the `FS` model. 
+
+    Parameters
+    ----------
+    dataset_root : Union[str, Path]
+        path to the directory with data
+    transforms : Optional[T.Compose], optional
+        transformations done on every image before sending to the model,
+            by default None
+    """
 
     def __init__(
         self,
