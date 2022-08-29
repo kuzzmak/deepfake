@@ -1,3 +1,4 @@
+import logging
 import time
 from dataclasses import dataclass, field
 from numbers import Number
@@ -10,7 +11,7 @@ import wandb
 from torch.backends import cudnn
 from torch.nn import Module
 from torch.utils.data import DataLoader
-from df_logging.model_logging import LoggingConfig
+from df_logging.model_logging import DFLogger
 
 from utils import get_date_uid
 
@@ -26,7 +27,7 @@ class BaseTrainerConfiguration:
     train_data_loader: DataLoader
     batch_size: int
     model_config: ModelConfig
-    logging_config: LoggingConfig
+    df_logger: DFLogger
     resume_run: bool = False
     device: torch.device = torch.device('cuda')
     use_cudnn_benchmark: bool = False
@@ -40,7 +41,7 @@ class EpochIterConfiguration(BaseTrainerConfiguration):
         batch_size: int,
         epochs: int,
         model_config: ModelConfig,
-        logging_config: LoggingConfig,
+        df_logger: DFLogger,
         resume_run: bool = False,
         device: torch.device = torch.device('cuda'),
         use_cudnn_benchmark: bool = False,
@@ -49,7 +50,7 @@ class EpochIterConfiguration(BaseTrainerConfiguration):
             train_data_loader,
             batch_size,
             model_config,
-            logging_config,
+            df_logger,
             resume_run,
             device,
             use_cudnn_benchmark,
@@ -70,7 +71,7 @@ class StepTrainerConfiguration(BaseTrainerConfiguration):
         batch_size: int,
         steps: int,
         model_config: ModelConfig,
-        logging_config: LoggingConfig,
+        df_logger: DFLogger,
         resume_run: bool = False,
         device: torch.device = torch.device('cuda'),
         use_cudnn_benchmark: bool = False,
@@ -79,7 +80,7 @@ class StepTrainerConfiguration(BaseTrainerConfiguration):
             train_data_loader,
             batch_size,
             model_config,
-            logging_config,
+            df_logger,
             resume_run,
             device,
             use_cudnn_benchmark,
@@ -100,25 +101,31 @@ class BaseTrainer:
     ) -> None:
         self._conf = conf
         self._device = conf.device
-        self._logging_dir = Path(conf.logging_config.log_dir)
         self._train_data_loader = conf.train_data_loader
 
         self._meters: Dict[str, Number] = {}
 
-        self._checkpoint_dir = conf.logging_config.checkpoints_dir
-        self._save_freq = conf.logging_config.checkpoint_frequency
-        self._sample_freq = conf.logging_config.sample_frequency
+        self._log_freq = self._conf.df_logger.log_frequency
+        self._save_freq = conf.df_logger.checkpoint_frequency
+        self._sample_freq = conf.df_logger.sample_frequency
+        self._checkpoint_dir = conf.df_logger.checkpoints_dir
+        self._samples_dir = conf.df_logger.samples_dir
+        self._use_wandb = self._conf.df_logger.use_wandb
 
         cudnn.benchmark = conf.use_cudnn_benchmark
 
         self._enligten_manager = enlighten.get_manager()
 
-        self._run_name = conf.logging_config.run_name
+        self._run_name = conf.df_logger.run_name
+
+        self._logger = logging.getLogger(type(self).__name__)
 
     def init_model(self) -> None:
+        self._logger.info('Loading model.')
         mc = self._conf.model_config
         self._model = mc.model()
         self._model.initialize(mc.options)
+        self._logger.info('Model loaded.')
 
     def init_progress_bars(self) -> None:
         pass
@@ -131,53 +138,14 @@ class BaseTrainer:
             self._meters[m] = 0
 
     def _init_logging(self) -> None:
-        # TODO make these dirs in logging config
-        self._sample_path: Path = self._checkpoint_dir / \
-            self._conf.model_config.options['name'] / 'samples'
-        self._sample_path.mkdir(parents=True, exist_ok=True)
-
-        self._proj_log_dir = self._logging_dir / self._conf.project / self._run_name
-        self._proj_log_dir.mkdir(parents=True, exist_ok=True)
-
         self._init_wandb()
 
     def _init_wandb(self) -> None:
-        if not self._conf.wandb:
-            return
-
-        wandb_id_path = self._proj_log_dir / 'wandb_id.txt'
-        self._wandb_last_step_path = self._proj_log_dir / 'wandb_last_step.txt'
-        if not (
-            wandb_id_path.exists() and self._wandb_last_step_path.exists()
-        ):
-            wandb_id = wandb.util.generate_id()
-            with open(wandb_id_path, 'w+') as f:
-                f.write(wandb_id)
-            self._wandb_last_step = 0
-            with open(self._wandb_last_step_path, 'w+') as f:
-                f.write(str(self._wandb_last_step))
-        else:
-            with open(wandb_id_path, 'r+') as f:
-                wandb_id = f.read()
-            with open(self._wandb_last_step_path, 'r+') as f:
-                self._wandb_last_step = int(f.read())
-
-        wandb.init(
-            dir=str(self._conf.logging_dir),
-            project=self._conf.project,
-            name=self._run_name,
-            resume='allow',
-            id=wandb_id,
-        )
         wandb.config = {
             'learning_rate': self._conf.model_config.options['lr'],
             'batch_size': self._conf.batch_size,
         }
         wandb.watch(self._model)
-
-    def update_wandb_last_step(self, step: int) -> None:
-        with open(self._wandb_last_step_path, 'w+') as f:
-            f.write(str(step))
 
     def post_init_logging(self) -> None:
         pass
@@ -190,9 +158,6 @@ class BaseTrainer:
         if name not in self._meters:
             raise Exception(f'meter: {name} not registered')
         self._meters[name] = value
-
-    def get_latest_checkpoints_file_path(self) -> Path:
-        return self._checkpoint_dir / 'latest_checkpoint.txt'
 
     def save_checkpoint(self) -> None:
         pass
@@ -217,7 +182,8 @@ class BaseTrainer:
             print('received stop signal, exiting...')
         finally:
             self._enligten_manager.stop()
-            if self._conf.wandb:
+            if self._use_wandb:
+                self._logger.debug('Closing wandb.')
                 wandb.finish()
 
 
@@ -304,10 +270,13 @@ class StepTrainer(BaseTrainer):
             if (self._current_step + 1) % self._save_freq == 0 and \
                     self._current_step > 0:
                 self.save_checkpoint()
-            if (self._current_step + 1) % self._conf.log_freq == 0:
-                if self._conf.wandb:
-                    self.update_wandb_last_step(self._current_step + 1)
-                    if self._current_step + 1 > self._wandb_last_step:
+            if (self._current_step + 1) % self._log_freq == 0:
+                if self._use_wandb:
+                    self._conf.df_logger.update_wandb_last_step(
+                        self._current_step + 1
+                    )
+                    if self._current_step + 1 > \
+                            self._conf.df_logger.wandb_last_step:
                         wandb.log(
                             data=self._meters,
                             step=self._current_step + 1,
