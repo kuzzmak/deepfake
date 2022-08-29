@@ -6,7 +6,7 @@ import wandb
 from utils import get_date_uid
 
 
-class LoggingConfig:
+class DFLogger:
 
     def __init__(
         self,
@@ -39,6 +39,7 @@ class LoggingConfig:
         self._proj_log_dir = self._log_dir / self._model_name / self._run_name
         self._proj_log_dir.mkdir(parents=True, exist_ok=True)
 
+        self._wandb_last_step = 0
         if not use_wandb:
             return
         wandb_id_path = self._proj_log_dir / 'wandb_id.txt'
@@ -49,7 +50,6 @@ class LoggingConfig:
             wandb_id = wandb.util.generate_id()
             with open(wandb_id_path, 'w+') as f:
                 f.write(wandb_id)
-            self._wandb_last_step = 0
             with open(self._wandb_last_step_path, 'w+') as f:
                 f.write(str(self._wandb_last_step))
         else:
@@ -79,6 +79,10 @@ class LoggingConfig:
         return self._sample_frequency
 
     @property
+    def samples_dir(self) -> Path:
+        return self._samples_dir
+
+    @property
     def checkpoint_frequency(self) -> int:
         return self._checkpoint_frequency
 
@@ -101,3 +105,15 @@ class LoggingConfig:
     @property
     def run_name(self) -> str:
         return self._run_name
+
+    @property
+    def wandb_last_step(self) -> int:
+        return self._wandb_last_step
+
+    @property
+    def latest_checkpoints_file_path(self) -> Path:
+        return self._checkpoints_dir / 'latest_checkpoint.txt'
+
+    def update_wandb_last_step(self, step: int) -> None:
+        with open(self._wandb_last_step_path, 'w+') as f:
+            f.write(str(step))
