@@ -13,7 +13,7 @@ from core.dataset.dataset_old import DeepfakeDataset
 from core.model.model import DeepfakeModel
 from core.model.original_ae import OriginalAE
 from core.trainer.configuration import TrainerConfiguration
-from core.trainer.trainer import Trainer
+from core.trainer.trainer_old import Trainer
 from enums import MODEL
 from utils import get_aligned_landmarks_filename
 
