@@ -31,6 +31,17 @@ def NormLayer(c, mode='batch'):
         return nn.BatchNorm2d(c)
 
 
+def conv3x3(in_planes, out_planes, stride=1):
+    return nn.Conv2d(
+        in_planes,
+        out_planes,
+        kernel_size=3,
+        stride=stride,
+        padding=1,
+        bias=False,
+    )
+
+
 # Activations
 
 
@@ -154,21 +165,41 @@ class UpBlockBigCond(nn.Module):
         return x
 
 
+# class SEBlock(nn.Module):
+
+#     def __init__(self, ch_in, ch_out):
+#         super().__init__()
+
+#         self.main = nn.Sequential(
+#             nn.AdaptiveAvgPool2d(4),
+#             conv2d(ch_in, ch_out, 4, 1, 0, bias=False),
+#             Swish(),
+#             conv2d(ch_out, ch_out, 1, 1, 0, bias=False),
+#             nn.Sigmoid(),
+#         )
+
+#     def forward(self, feat_small, feat_big):
+#         return feat_big * self.main(feat_small)
+
+
 class SEBlock(nn.Module):
-
-    def __init__(self, ch_in, ch_out):
+    
+    def __init__(self, channel, reduction=16):
         super().__init__()
-
-        self.main = nn.Sequential(
-            nn.AdaptiveAvgPool2d(4),
-            conv2d(ch_in, ch_out, 4, 1, 0, bias=False),
-            Swish(),
-            conv2d(ch_out, ch_out, 1, 1, 0, bias=False),
-            nn.Sigmoid(),
+    
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(channel, channel // reduction),
+            nn.PReLU(),
+            nn.Linear(channel // reduction, channel),
+            nn.Sigmoid()
         )
 
-    def forward(self, feat_small, feat_big):
-        return feat_big * self.main(feat_small)
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        return x * y
 
 
 # Downblocks
@@ -396,3 +427,47 @@ class Interpolate(nn.Module):
             align_corners=self.align_corners,
         )
         return x
+
+
+class IRBlock(nn.Module):
+    expansion = 1
+
+    def __init__(
+            self,
+            inplanes,
+            planes,
+            stride=1,
+            downsample=None,
+            use_se=True):
+        super(IRBlock, self).__init__()
+        self.bn0 = nn.BatchNorm2d(inplanes)
+        self.conv1 = conv3x3(inplanes, inplanes)
+        self.bn1 = nn.BatchNorm2d(inplanes)
+        self.prelu = nn.PReLU()
+        self.conv2 = conv3x3(inplanes, planes, stride)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.downsample = downsample
+        self.stride = stride
+        self.use_se = use_se
+        if self.use_se:
+            self.se = SEBlock(planes)
+
+    def forward(self, x):
+        residual = x
+        out = self.bn0(x)
+        out = self.conv1(out)
+        out = self.bn1(out)
+        out = self.prelu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        if self.use_se:
+            out = self.se(out)
+
+        if self.downsample is not None:
+            residual = self.downsample(x)
+
+        out += residual
+        out = self.prelu(out)
+
+        return out
