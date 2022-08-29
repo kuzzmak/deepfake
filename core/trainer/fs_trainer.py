@@ -47,7 +47,7 @@ class FSTrainer(StepTrainer):
         self._model.netD.feature_network.requires_grad_(False)
 
     def post_init_logging(self) -> None:
-        if self._conf.wandb:
+        if self._conf.df_logger.use_wandb:
             wandb.config.update({'steps': self._conf.steps})
 
     def save_checkpoint(self) -> None:
@@ -63,11 +63,11 @@ class FSTrainer(StepTrainer):
             },
             save_path,
         )
-        with open(self.get_latest_checkpoints_file_path(), 'wt') as f:
+        with open(self._conf.df_logger.latest_checkpoints_file_path, 'wt') as f:
             f.write(f'latest_checkpoint: {str(save_path)}')
 
     def load_checkpoint(self) -> None:
-        chkpt_fp = self.get_latest_checkpoints_file_path()
+        chkpt_fp = self._conf.df_logger.latest_checkpoints_file_path
         if not chkpt_fp.exists():
             print(
                 'file with latest checkpoint does not exist, ' +
@@ -198,7 +198,7 @@ class FSTrainer(StepTrainer):
             nrow=self._conf.batch_size + 1,
             padding=0,
         )
-        path = self._sample_path / f'step_{self._current_step + 1}.jpg'
+        path = self._samples_dir / f'step_{self._current_step + 1}.jpg'
         torchvision.utils.save_image(image_grid, path, nrow=1)
-        if self._conf.wandb:
+        if self._conf.df_logger.use_wandb:
             wandb.log({path.stem: [wandb.Image(str(path))]})
