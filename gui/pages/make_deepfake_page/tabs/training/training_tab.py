@@ -793,9 +793,7 @@ class TrainingTab(BaseWidget):
                 use_cudnn_benchmark=self._fs_options.use_cudnn,
                 message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
             )
-            self.stop_training_sig.connect(
-                lambda: worker.conn_q.put(CONNECTION.STOP),
-            )
+            self.stop_training_sig.connect(lambda: worker.stop())
             worker.moveToThread(thread)
             self._threads[JOB_TYPE.TRAIN_FS_DF_MODEL] = (thread, worker)
             thread.started.connect(worker.run)
