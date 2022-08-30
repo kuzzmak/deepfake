@@ -85,9 +85,6 @@ class FSTrainerWorker(Worker):
             checkpoint_frequency=500,
             run_name=None,
         )
-        logs_dir = Path('logs')
-        logs_dir.mkdir(exist_ok=True)
-        run = None
         conf = StepTrainerConfiguration(
             train_data_loader,
             batch_size=self._batch_size,
@@ -98,7 +95,6 @@ class FSTrainerWorker(Worker):
             device=self._device,
             use_cudnn_benchmark=self._use_cudnn_bench,
         )
-        trainer = FSTrainer(conf)
+        trainer = FSTrainer(conf, self.stop_event)
         self.running.emit()
-        self._logger.debug('Started custom job.')
         trainer.start()
