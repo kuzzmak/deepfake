@@ -1,4 +1,5 @@
 import random
+import threading
 from typing import List
 
 import torch
@@ -17,11 +18,12 @@ class FSTrainer(StepTrainer):
     def __init__(
         self,
         conf: StepTrainerConfiguration,
+        event: threading.Event,
     ) -> None:
         super().__init__(conf)
 
         self._conf = conf
-
+        self._stop_event = event
         meters = [
             'loss_Gmain',
             'loss_G_ID',
@@ -63,19 +65,25 @@ class FSTrainer(StepTrainer):
             },
             save_path,
         )
-        with open(self._conf.df_logger.latest_checkpoints_file_path, 'wt') as f:
+        self._logger.debug(f'Saved model checkpoint: {str(save_path)}.')
+        chkpt_fp = self._conf.df_logger.latest_checkpoints_file_path
+        with open(chkpt_fp, 'wt') as f:
             f.write(f'latest_checkpoint: {str(save_path)}')
+            self._logger.debug(
+                f'Saved latest checkpoint path to the file: {str(chkpt_fp)}.'
+            )
 
     def load_checkpoint(self) -> None:
         chkpt_fp = self._conf.df_logger.latest_checkpoints_file_path
         if not chkpt_fp.exists():
-            print(
-                'file with latest checkpoint does not exist, ' +
+            self._logger.warning(
+                'File with latest checkpoint does not exist, ' +
                 'training from scratch'
             )
             return
         with open(chkpt_fp, 'r') as f:
             latest = f.read().split(':')[1].strip()
+        self._logger.debug('Loading model checkpoint.')
         checkpoint = torch.load(
             latest,
             map_location=lambda storage, loc: storage,
@@ -86,6 +94,7 @@ class FSTrainer(StepTrainer):
         self._optim_d.load_state_dict(checkpoint['optim_d'])
         current_step = checkpoint['current_step']
         self._starting_step = current_step
+        self._logger.debug('Model checkpoint loaded.')
 
     @staticmethod
     def _prepare_for_arcface_112(img: torch.Tensor) -> torch.Tensor:
@@ -199,6 +208,7 @@ class FSTrainer(StepTrainer):
             padding=0,
         )
         path = self._samples_dir / f'step_{self._current_step + 1}.jpg'
+        self._logger.debug(f'Samples plot saved to {str(path)}.')
         torchvision.utils.save_image(image_grid, path, nrow=1)
         if self._conf.df_logger.use_wandb:
             wandb.log({path.stem: [wandb.Image(str(path))]})
