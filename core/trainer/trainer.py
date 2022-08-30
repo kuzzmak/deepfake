@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 from dataclasses import dataclass, field
 from numbers import Number
@@ -11,9 +12,8 @@ import wandb
 from torch.backends import cudnn
 from torch.nn import Module
 from torch.utils.data import DataLoader
-from df_logging.model_logging import DFLogger
 
-from utils import get_date_uid
+from df_logging.model_logging import DFLogger
 
 
 @dataclass
@@ -28,9 +28,9 @@ class BaseTrainerConfiguration:
     batch_size: int
     model_config: ModelConfig
     df_logger: DFLogger
-    resume_run: bool = False
-    device: torch.device = torch.device('cuda')
-    use_cudnn_benchmark: bool = False
+    resume_run: bool
+    device: torch.device
+    use_cudnn_benchmark: bool
 
 
 class EpochIterConfiguration(BaseTrainerConfiguration):
@@ -98,27 +98,32 @@ class BaseTrainer:
     def __init__(
         self,
         conf: BaseTrainerConfiguration,
+        stop_event: Optional[threading.Event],
     ) -> None:
         self._conf = conf
         self._device = conf.device
         self._train_data_loader = conf.train_data_loader
-
         self._meters: Dict[str, Number] = {}
-
         self._log_freq = self._conf.df_logger.log_frequency
         self._save_freq = conf.df_logger.checkpoint_frequency
         self._sample_freq = conf.df_logger.sample_frequency
         self._checkpoint_dir = conf.df_logger.checkpoints_dir
         self._samples_dir = conf.df_logger.samples_dir
         self._use_wandb = self._conf.df_logger.use_wandb
-
         cudnn.benchmark = conf.use_cudnn_benchmark
-
         self._enligten_manager = enlighten.get_manager()
-
         self._run_name = conf.df_logger.run_name
-
         self._logger = logging.getLogger(type(self).__name__)
+        if stop_event is not None:
+            self._stop_event = stop_event
+        else:
+            self._stop_event = threading.Event()
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    def should_stop(self) -> bool:
+        return self._stop_event.is_set()
 
     def init_model(self) -> None:
         self._logger.info('Loading model.')
@@ -168,6 +173,9 @@ class BaseTrainer:
     def train(self) -> None:
         raise NotImplementedError
 
+    def post_training(self) -> None:
+        pass
+
     def start(self) -> None:
         self.init_model()
         self.post_model_init()
@@ -177,20 +185,26 @@ class BaseTrainer:
         self._init_logging()
         self.post_init_logging()
         try:
+            self._logger.info('Training started.')
             self.train()
         except KeyboardInterrupt:
-            print('received stop signal, exiting...')
+            print('Received stop signal, exiting...')
         finally:
             self._enligten_manager.stop()
             if self._use_wandb:
                 self._logger.debug('Closing wandb.')
                 wandb.finish()
-
+            self.post_training()
+            self._logger.info('Training finished.')
 
 class EpochIterTrainer(BaseTrainer):
 
-    def __init__(self, conf: EpochIterConfiguration) -> None:
-        super().__init__(conf)
+    def __init__(
+        self,
+        conf: EpochIterConfiguration,
+        stop_event: Optional[threading.Event] = None,
+    ) -> None:
+        super().__init__(conf, stop_event)
 
         self._iters = len(self._train_data_loader)
         self._current_iter = 0
@@ -230,10 +244,14 @@ class EpochIterTrainer(BaseTrainer):
 
 class StepTrainer(BaseTrainer):
 
-    def __init__(self, conf: StepTrainerConfiguration) -> None:
+    def __init__(
+        self,
+        conf: StepTrainerConfiguration,
+        stop_event: Optional[threading.Event] = None,
+    ) -> None:
         self._steps = conf.steps
 
-        super().__init__(conf)
+        super().__init__(conf, stop_event)
 
         self._starting_step = 0
         self._current_step = 0
