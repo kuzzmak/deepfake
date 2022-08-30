@@ -3,6 +3,7 @@ from multiprocessing import Queue
 from multiprocessing.queues import Empty
 from datetime import timedelta
 import sys
+import threading
 import traceback
 from typing import Optional, Union
 
@@ -56,10 +57,15 @@ class Worker(qtc.QObject):
         self._ticks = None
         self._forced_exit = False
         self._logger = logging.getLogger(type(self).__name__)
+        self._stop_event = threading.Event()
 
     @property
     def conn_q(self) -> Queue:
         return self._conn_q
+
+    @property
+    def stop_event(self) -> threading.Event:
+        return self._stop_event
 
     @property
     def message_worker_sig(self) -> Union[qtc.pyqtSignal, None]:
@@ -195,3 +201,9 @@ class Worker(qtc.QObject):
         eta = round((self.ticks.total - iterations) / rate, 2)
         eta = timedelta(seconds=eta)
         return format_timedelta(eta)
+
+    def stop(self) -> None:
+        self._stop_event.set()
+
+    def should_stop(self) -> bool:
+        return self._stop_event.is_set()
