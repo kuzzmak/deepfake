@@ -101,14 +101,29 @@ class LoggingConfig(qwt.QWidget):
         self._checkpoints_dir = SelectDirRow('Checkpoints', 'checkpoints')
         self._gb.layout().addWidget(self._checkpoints_dir)
 
-        logg_freq_row = FrequencyRow('Logging', 200, self._frequency_unit)
-        self._gb.layout().addWidget(logg_freq_row)
+        self._samples_dir = SelectDirRow('Samples', 'samples')
+        self._gb.layout().addWidget(self._samples_dir)
 
-        chkpt_freq_row = FrequencyRow('Checkpoint', 500, self._frequency_unit)
-        self._gb.layout().addWidget(chkpt_freq_row)
+        self._logg_freq_row = FrequencyRow(
+            'Logging',
+            200,
+            self._frequency_unit,
+        )
+        self._gb.layout().addWidget(self._logg_freq_row)
 
-        sample_freq_row = FrequencyRow('Sample', 500, self._frequency_unit)
-        self._gb.layout().addWidget(sample_freq_row)
+        self._chkpt_freq_row = FrequencyRow(
+            'Checkpoint',
+            500,
+            self._frequency_unit,
+        )
+        self._gb.layout().addWidget(self._chkpt_freq_row)
+
+        self._sample_freq_row = FrequencyRow(
+            'Sample',
+            500,
+            self._frequency_unit,
+        )
+        self._gb.layout().addWidget(self._sample_freq_row)
 
         self._use_wandb = Parameter(
             'use wandb',
@@ -116,3 +131,27 @@ class LoggingConfig(qwt.QWidget):
             WIDGET_TYPE.RADIO_BUTTON,
         )
         self._gb.layout().addWidget(self._use_wandb)
+
+    @property
+    def log_dir(self) -> Path:
+        return self._log_dir.selected_dir
+
+    @property
+    def samples_dir(self) -> Path:
+        return self._samples_dir.selected_dir
+
+    @property
+    def checkpoints_dir(self) -> Path:
+        return self._checkpoints_dir.selected_dir
+
+    @property
+    def log_frequency(self) -> int:
+        return self._logg_freq_row.frequency
+
+    @property
+    def sample_frequency(self) -> int:
+        return self._sample_freq_row.frequency
+
+    @property
+    def checkpoint_frequency(self) -> int:
+        return self._sample_freq_row.frequency
