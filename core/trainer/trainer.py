@@ -282,6 +282,9 @@ class StepTrainer(BaseTrainer):
 
     def train(self) -> None:
         for s in range(self._starting_step, self._steps):
+            if self.should_stop():
+                self._logger.info('Requested stop, please wait...')
+                break
             self._current_step = s
             self.train_one_step()
             self._step_pbar.update()
