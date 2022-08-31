@@ -83,7 +83,7 @@ class InferDFDetectorWidget(BaseWidget):
             WIDGET_TYPE.RADIO_BUTTON,
         )
         df_detection_model_gb.layout().addWidget(self.df_detection_model)
-        self.df_detection_model.btn_bg.idReleased.connect(
+        self.df_detection_model._btn_bg.idReleased.connect(
             self._df_model_selection_changed
         )
 
