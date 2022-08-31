@@ -30,6 +30,11 @@ class FSTrainerWorker(Worker):
         lambda_feat: float,
         lambda_rec: float,
         use_cudnn_benchmark: bool,
+        log_frequency: int,
+        sample_frequency: int,
+        checkpoint_frequency: int,
+        resume: bool,
+        resume_run_name: Optional[str] = None,
         message_worker_sig: Optional[qtc.pyqtSignal] = None,
     ) -> None:
         super().__init__(message_worker_sig)
@@ -44,6 +49,14 @@ class FSTrainerWorker(Worker):
         self._lambda_feat = lambda_feat
         self._lambda_rec = lambda_rec
         self._use_cudnn_bench = use_cudnn_benchmark
+        self._log_freq = log_frequency
+        self._sample_freq = sample_frequency
+        self._checkpoint_freq = checkpoint_frequency
+        self._resume = resume
+        if resume:
+            self._resume_run_name = resume_run_name
+        else:
+            self._resume_run_name = None
         self._device = torch.device('cuda')
 
     def run_job(self) -> None:
@@ -64,7 +77,6 @@ class FSTrainerWorker(Worker):
         )
         self._logger.debug('Dataset constructed.')
         model_options = {
-            'name': 'fs_model',
             'train': True,
             'gdeep': self._gdeep,
             'arc_path': r'C:\Users\tonkec\Documents\SimSwap-main\arcface_model\new_arc.tar',
@@ -79,11 +91,11 @@ class FSTrainerWorker(Worker):
             options=model_options,
         )
         df_logger = DFLogger(
-            model_name='FS',
-            log_frequency=100,
-            sample_frequency=500,
-            checkpoint_frequency=500,
-            run_name=None,
+            model_name=FS.NAME,
+            log_frequency=self._log_freq,
+            sample_frequency=self._sample_freq,
+            checkpoint_frequency=self._checkpoint_freq,
+            run_name=self._resume_run_name,
         )
         conf = StepTrainerConfiguration(
             train_data_loader,
@@ -91,7 +103,7 @@ class FSTrainerWorker(Worker):
             steps=self._steps,
             model_config=model_conf,
             df_logger=df_logger,
-            resume_run=True,
+            resume_run=self._resume,
             device=self._device,
             use_cudnn_benchmark=self._use_cudnn_bench,
         )
