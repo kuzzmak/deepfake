@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import cv2 as cv
 import PyQt6.QtCore as qtc
@@ -19,7 +19,6 @@ from core.trainer.configuration import TrainerConfiguration
 from core.worker import FSTrainerWorker, Worker
 from core.worker.trainer_thread import TrainingWorker
 from enums import (
-    CONNECTION,
     DEVICE,
     INTERPOLATION,
     JOB_TYPE,
@@ -27,7 +26,8 @@ from enums import (
     OPTIMIZER,
     SIGNAL_OWNER,
 )
-from gui.pages.make_deepfake_page.tabs.training.fs_model.options import Options
+from gui.pages.make_deepfake_page.tabs.training.fs_model.options import \
+    Options as FSOptions
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, NoMarginLayout, RadioButtons, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
@@ -620,7 +620,7 @@ class TrainingTab(BaseWidget):
         self._training_conf = TrainingConfiguration()
         self._stacked_wgt.addWidget(self._training_conf)
 
-        self._fs_options = Options()
+        self._fs_options = FSOptions()
         self._stacked_wgt.addWidget(self._fs_options)
 
         self._model_option_mappings = {
@@ -791,6 +791,11 @@ class TrainingTab(BaseWidget):
                 lambda_feat=self._fs_options.lambda_feat,
                 lambda_rec=self._fs_options.lambda_rec,
                 use_cudnn_benchmark=self._fs_options.use_cudnn,
+                log_frequency=self._fs_options.log_frequency,
+                sample_frequency=self._fs_options.sample_frequency,
+                checkpoint_frequency=self._fs_options.checkpoint_frequency,
+                resume=self._fs_options.resume,
+                resume_run_name=self._fs_options.resume_run_name,
                 message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
             )
             self.stop_training_sig.connect(lambda: worker.stop())
