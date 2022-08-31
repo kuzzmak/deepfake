@@ -1,7 +1,9 @@
 from pathlib import Path
+from typing import Optional
 
 import PyQt6.QtWidgets as qwt
 
+from core.model.fs import FS
 from enums import FREQUENCY_UNIT, WIDGET_TYPE
 from gui.pages.make_deepfake_page.tabs.training.widgets import (
     LoggingConfig,
@@ -16,11 +18,26 @@ class Options(qwt.QWidget):
     def __init__(self) -> None:
         super().__init__()
 
+        self._model_name = FS.NAME
+
         self._init_ui()
 
     def _init_ui(self) -> None:
         layout = qwt.QVBoxLayout()
         self.setLayout(layout)
+
+        train_options_gb = GroupBox('Training options')
+        layout.addWidget(train_options_gb)
+
+        self._resume = Parameter(
+            'resume',
+            [True, False],
+            WIDGET_TYPE.RADIO_BUTTON,
+        )
+        train_options_gb.layout().addWidget(self._resume)
+        
+        self._run = Parameter('run', [], WIDGET_TYPE.DROPDOWN)
+        train_options_gb.layout().addWidget(self._run)
 
         model_gb = GroupBox('Model options')
         layout.addWidget(model_gb)
@@ -72,6 +89,8 @@ class Options(qwt.QWidget):
         self._log_config_wgt = LoggingConfig(FREQUENCY_UNIT.STEP)
         layout.addWidget(self._log_config_wgt)
 
+        self._update_runs_selection()
+
         layout.addItem(VerticalSpacer())
 
     @property
@@ -113,3 +132,31 @@ class Options(qwt.QWidget):
     @property
     def dataset_dir(self) -> Path:
         return self._dataset_path_row.selected_dir
+
+    @property
+    def resume(self) -> bool:
+        return self._resume.value
+
+    @property
+    def resume_run_name(self) -> Optional[str]:
+        val = self._run._cb.currentText()
+        if val:
+            return val
+        return None
+
+    @property
+    def log_frequency(self) -> int:
+        return self._log_config_wgt.log_frequency
+
+    @property
+    def sample_frequency(self) -> int:
+        return self._log_config_wgt.sample_frequency
+
+    @property
+    def checkpoint_frequency(self) -> int:
+        return self._log_config_wgt.checkpoint_frequency
+
+    def _update_runs_selection(self) -> None:
+        runs_dir = self._log_config_wgt.log_dir / self._model_name
+        runs_dir = [str(p.stem) for p in list(runs_dir.glob('*'))]
+        self._run._cb.addItems(reversed(runs_dir))
