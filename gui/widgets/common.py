@@ -323,20 +323,28 @@ class Parameter(qwt.QWidget):
             vals = self._default_values
             if len(vals) == 0:
                 return
-            self.btn_bg = qwt.QButtonGroup(self)
+            self._btn_bg = qwt.QButtonGroup(self)
             for idx, val in enumerate(vals):
                 btn = qwt.QRadioButton(str(val))
                 if idx == 0:
                     btn.setChecked(True)
-                self.btn_bg.addButton(btn)
+                self._btn_bg.addButton(btn)
                 layout.addWidget(btn)
+
+        elif self._wt == WIDGET_TYPE.DROPDOWN:
+            vals = self._default_values
+            self._cb = qwt.QComboBox()
+            layout.addWidget(self._cb)
+            self._cb.addItems(vals)
 
     @property
     def value(self) -> Any:
         if self._wt == WIDGET_TYPE.INPUT:
             return self._input.text()
         elif self._wt == WIDGET_TYPE.RADIO_BUTTON:
-            for but in self.btn_bg.buttons():
+            for but in self._btn_bg.buttons():
                 if but.isChecked():
                     return but.text()
+        elif self._wt == WIDGET_TYPE.DROPDOWN:
+            return self._cb.currentText()
         return None
