@@ -42,10 +42,10 @@ class Options(qwt.QWidget):
         model_gb = GroupBox('Model options')
         layout.addWidget(model_gb)
 
-        self._bs = Parameter('batch size', [1])
+        self._bs = Parameter('batch size', [32])
         model_gb.layout().addWidget(self._bs)
 
-        self._steps = Parameter('steps', [100])
+        self._steps = Parameter('steps', [100000])
         model_gb.layout().addWidget(self._steps)
 
         self._lr = Parameter('lr', [0.0004])
