@@ -317,6 +317,7 @@ class VIDEO_FORMAT(Enum):
 class WIDGET_TYPE(Enum):
     INPUT = 'input'
     RADIO_BUTTON = 'radio_button'
+    DROPDOWN = 'dropdown'
 
 
 class JOB_DATA_KEY(Enum):
