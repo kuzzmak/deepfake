@@ -92,6 +92,21 @@ class StepTrainerConfiguration(BaseTrainerConfiguration):
     def steps(self) -> int:
         return self._steps
 
+    def __str__(self) -> str:
+        val = 'STEP TRAINER CONFIGURATION\n'
+        val += '--------------------------\n'
+        val += f'batch size:          {self.batch_size}\n'
+        val += f'steps:               {self.steps}\n'
+        val += f'resume_run:          {self.resume_run}\n'
+        val += f'use_cudnn_benchmark: {self.use_cudnn_benchmark}\n'
+        val += f'device:              {self.device}\n'
+        val += f'model options:\n'
+        longest_key = max([len(k) for k in self.model_config.options.keys()])
+        for k, v in self.model_config.options.items():
+            v = str(v).rjust(longest_key - len(k) + len(str(v)))
+            val += f'{k}: {v}\n'
+        return val
+
 
 class BaseTrainer:
 
