@@ -92,6 +92,7 @@ class FSTrainerWorker(Worker):
         )
         df_logger = DFLogger(
             model_name=FS.NAME,
+            resume_run=self._resume,
             log_frequency=self._log_freq,
             sample_frequency=self._sample_freq,
             checkpoint_frequency=self._checkpoint_freq,
