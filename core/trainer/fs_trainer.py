@@ -68,7 +68,7 @@ class FSTrainer(StepTrainer):
         self._logger.debug(f'Saved model checkpoint: {str(save_path)}.')
         chkpt_fp = self._conf.df_logger.latest_checkpoints_file_path
         with open(chkpt_fp, 'wt') as f:
-            f.write(f'latest_checkpoint: {str(save_path)}')
+            f.write(str(save_path))
             self._logger.debug(
                 f'Saved latest checkpoint path to the file: {str(chkpt_fp)}.'
             )
@@ -78,11 +78,11 @@ class FSTrainer(StepTrainer):
         if not chkpt_fp.exists():
             self._logger.warning(
                 'File with latest checkpoint does not exist, ' +
-                'training from scratch'
+                'training from scratch.'
             )
             return
         with open(chkpt_fp, 'r') as f:
-            latest = f.read().split(':')[1].strip()
+            latest = f.read()
         self._logger.debug('Loading model checkpoint.')
         checkpoint = torch.load(
             latest,
