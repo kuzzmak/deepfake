@@ -39,14 +39,18 @@ class Options(qwt.QWidget):
         self._run = Parameter('run', [], WIDGET_TYPE.DROPDOWN)
         train_options_gb.layout().addWidget(self._run)
 
+        self._steps = Parameter('steps', [100000])
+        train_options_gb.layout().addWidget(self._steps)
+
+        self._use_cudnn_bench = Parameter(
+            'use cudnn benchmark',
+            [True, False],
+            WIDGET_TYPE.RADIO_BUTTON,
+        )
+        train_options_gb.layout().addWidget(self._use_cudnn_bench)
+
         model_gb = GroupBox('Model options')
         layout.addWidget(model_gb)
-
-        self._bs = Parameter('batch size', [32])
-        model_gb.layout().addWidget(self._bs)
-
-        self._steps = Parameter('steps', [100000])
-        model_gb.layout().addWidget(self._steps)
 
         self._lr = Parameter('lr', [0.0004])
         model_gb.layout().addWidget(self._lr)
@@ -70,13 +74,6 @@ class Options(qwt.QWidget):
         self._lambda_rec = Parameter('lambda_rec', [10])
         model_gb.layout().addWidget(self._lambda_rec)
 
-        self._use_cudnn_bench = Parameter(
-            'use cudnn benchmark',
-            [True, False],
-            WIDGET_TYPE.RADIO_BUTTON,
-        )
-        model_gb.layout().addWidget(self._use_cudnn_bench)
-
         dataset_gb = GroupBox('Dataset options')
         layout.addWidget(dataset_gb)
 
@@ -85,6 +82,9 @@ class Options(qwt.QWidget):
             r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
         )
         dataset_gb.layout().addWidget(self._dataset_path_row)
+
+        self._bs = Parameter('batch size', [32])
+        dataset_gb.layout().addWidget(self._bs)
 
         self._log_config_wgt = LoggingConfig(FREQUENCY_UNIT.STEP)
         layout.addWidget(self._log_config_wgt)
@@ -135,7 +135,7 @@ class Options(qwt.QWidget):
 
     @property
     def resume(self) -> bool:
-        return self._resume.value
+        return str_to_bool(self._resume.value)
 
     @property
     def resume_run_name(self) -> Optional[str]:
