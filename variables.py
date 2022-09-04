@@ -42,3 +42,5 @@ MAKE_DEEPFAKE_PAGE_TITLE = 'Make deepfake page'
 
 DETECT_DEEPFAKE_PAGE_NAME = 'detect_deepfake_page'
 DETECT_DEEPFAKE_PAGE_TITLE = 'Detect deepfake page'
+
+APP_LOGGER = 'app'
