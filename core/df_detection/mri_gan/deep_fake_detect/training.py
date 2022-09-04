@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 import random
 
-from apex import amp
 import cv2
 import numpy as np
 import PIL
@@ -129,12 +128,12 @@ def train_model(log_dir=None, train_resume_checkpoint=None):
         lr=model_params['learning_rate'],
     )
 
-    if model_params['fp16']:
-        model, optimizer = amp.initialize(
-            model, optimizer,
-            opt_level=model_params['opt_level'],
-            loss_scale='dynamic',
-        )
+    # if model_params['fp16']:
+    #     model, optimizer = amp.initialize(
+    #         model, optimizer,
+    #         opt_level=model_params['opt_level'],
+    #         loss_scale='dynamic',
+    #     )
     print(f'model params {model_params}')
     start_epoch = 0
     lowest_v_epoch_loss = float('inf')
@@ -150,8 +149,8 @@ def train_model(log_dir=None, train_resume_checkpoint=None):
             optimizer,
             train_resume_checkpoint,
         )
-        if model_params['fp16']:
-            amp.load_state_dict(amp_dict)
+        # if model_params['fp16']:
+        #     amp.load_state_dict(amp_dict)
         start_epoch = saved_epoch + 1
         print(f'Resuming Training from epoch {start_epoch}')
         if os.path.basename(log_dir) == 'highest_acc' or os.path.basename(
@@ -299,7 +298,8 @@ def train_model(log_dir=None, train_resume_checkpoint=None):
         print_green(tqdm_descr)
         print(f'Saving model results at {log_dir}/latest_epoch for epoch {e}')
         if model_params['fp16']:
-            amp_dict = amp.state_dict()
+            # amp_dict = amp.state_dict()
+            amp_dict = None
         else:
             amp_dict = None
         save_all_model_results(
@@ -326,7 +326,8 @@ def train_model(log_dir=None, train_resume_checkpoint=None):
             print_green(
                 f'Saving best model (low loss) results at {log_dir}/lowest_loss for epoch {e}')
             if model_params['fp16']:
-                amp_dict = amp.state_dict()
+                amp_dict = None
+                # amp_dict = amp.state_dict()
             else:
                 amp_dict = None
             save_all_model_results(
@@ -352,7 +353,8 @@ def train_model(log_dir=None, train_resume_checkpoint=None):
             print_green(
                 f'Saving best model (high acc) results at {log_dir}/highest_acc for epoch {e}')
             if model_params['fp16']:
-                amp_dict = amp.state_dict()
+                amp_dict = None
+                # mp_dict = amp.state_dict()
             else:
                 amp_dict = None
             save_all_model_results(
@@ -433,11 +435,11 @@ def train_epoch(
         real_loss_val = 0 if real_loss == 0 else real_loss.item()
         fake_loss_val = 0 if fake_loss == 0 else fake_loss.item()
 
-        if model_params['fp16']:
-            with amp.scale_loss(batch_loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            batch_loss.backward()
+        # if model_params['fp16']:
+        #     with amp.scale_loss(batch_loss, optimizer) as scaled_loss:
+        #         scaled_loss.backward()
+        # else:
+        batch_loss.backward()
 
         optimizer.step()
 
