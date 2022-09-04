@@ -14,6 +14,7 @@ class DFLogger:
         log_frequency: int,
         sample_frequency: int,
         checkpoint_frequency: int,
+        resume_run: bool = False,
         run_name: Optional[str] = None,
         use_wandb: bool = True,
         log_dir: Union[str, Path] = 'logs',
@@ -25,6 +26,7 @@ class DFLogger:
         self._log_freq = log_frequency
         self._sample_frequency = sample_frequency
         self._checkpoint_frequency = checkpoint_frequency
+        self._resume_run = resume_run
         self._use_wandb = use_wandb
         self._log_dir = Path(log_dir)
         self._log_dir.mkdir(parents=True, exist_ok=True)
@@ -33,7 +35,7 @@ class DFLogger:
         self._samples_dir = Path(samples_dir)
         self._samples_dir.mkdir(parents=True, exist_ok=True)
 
-        if self._run_name is None:
+        if self._run_name is None or not self._resume_run:
             self._run_name = get_date_uid()
 
         self._proj_log_dir = self._log_dir / self._model_name / self._run_name
