@@ -1,5 +1,7 @@
+import logging
 from pathlib import Path
 
+import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from enums import FREQUENCY_UNIT, LAYOUT, WIDGET_TYPE
@@ -11,6 +13,10 @@ from gui.widgets.common import (
     NoMarginLayout,
     Parameter,
 )
+from variables import APP_LOGGER
+
+
+logger = logging.getLogger(APP_LOGGER)
 
 
 class SelectDirRow(qwt.QWidget):
@@ -35,6 +41,7 @@ class SelectDirRow(qwt.QWidget):
         first_row.layout().addItem(HorizontalSpacer())
         self._select_dir_btn = Button('select', width=100)
         first_row.layout().addWidget(self._select_dir_btn)
+        self._select_dir_btn.clicked.connect(self._select_dir)
 
         second_row = HWidget()
         layout.addWidget(second_row)
@@ -50,11 +57,26 @@ class SelectDirRow(qwt.QWidget):
     def selected_dir(self) -> Path:
         return Path(self._selected_dir_lbl.text())
 
+    @qtc.pyqtSlot()
+    def _select_dir(self) -> None:
+        file = str(
+            qwt.QFileDialog.getExistingDirectory(self, 'Select data directory')
+        )
+        if not file:
+            logger.warning('No directory selected.')
+            return
+        self._selected_dir_lbl.setText(file)
+        self._selected_dir_lbl.setToolTip(file)
+
 
 class FrequencyRow(qwt.QWidget):
 
-    def __init__(self, name: str, default_value: int,
-                 frequency_unit: FREQUENCY_UNIT) -> None:
+    def __init__(
+        self, 
+        name: str, 
+        default_value: int,
+        frequency_unit: FREQUENCY_UNIT,
+    ) -> None:
         super().__init__()
 
         self._name = name
