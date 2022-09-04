@@ -1,5 +1,4 @@
 env
-.vscode
 __pycache__
 data
 *.c
@@ -10,3 +9,6 @@ data
 tensorboard_log
 logs
 *.pt
+samples
+checkpoints
+configs/mri_gan_config.yaml
