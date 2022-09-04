@@ -83,7 +83,7 @@ class FSDataset(BaseDataset):
                 filter(lambda ip: ip.suffix[1:] in IMAGE_EXTS, im_paths)
             )
             paths.append(im_paths)
-        return paths[:128]
+        return paths
 
     def __getitem__(self, index: int):
         paths = self._data_paths[index]
