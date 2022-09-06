@@ -75,6 +75,9 @@ class FSDataset(BaseDataset):
     ) -> None:
         super().__init__(dataset_root, transforms)
 
+    def __len__(self) -> int:
+        return sum([len(d) for d in self._data_paths])
+
     def _get_data_paths(self) -> List[Path]:
         paths = []
         for p in list(self._dataset_root.glob('*')):
@@ -86,7 +89,7 @@ class FSDataset(BaseDataset):
         return paths
 
     def __getitem__(self, index: int):
-        paths = self._data_paths[index]
+        paths = self._data_paths[index % len(self._data_paths)]
         p1 = random.choice(paths)
         p2 = random.choice(paths)
         im1 = self._transforms(Image.open(p1))
