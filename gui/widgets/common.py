@@ -288,13 +288,15 @@ class Parameter(qwt.QWidget):
     def __init__(
         self,
         name: str,
-        default_values: Optional[List[Any]] = None,
+        values: Optional[List[Any]] = None,
+        default_value: Optional[Any] = None,
         widget_type: WIDGET_TYPE = WIDGET_TYPE.INPUT,
     ) -> None:
         super().__init__()
 
         self._name = name
-        self._default_values = default_values
+        self._values = values
+        self._default_value = default_value
         self._wt = widget_type
 
         self._init_ui()
@@ -310,17 +312,17 @@ class Parameter(qwt.QWidget):
             self._input = qwt.QLineEdit()
             self._input.setMaximumWidth(100)
             layout.addWidget(self._input)
-            if self._default_values is None:
-                return
-            vals = self._default_values
-            if len(vals) == 0:
-                return
-            self._input.setText(str(vals[0]))
+            if self._default_value is not None:
+                self._input.setText(str(self._default_value))
+            else:
+                if self._values is None:
+                    return
+                self._input.setText(str(self._values[0]))
 
         elif self._wt == WIDGET_TYPE.RADIO_BUTTON:
-            if self._default_values is None:
+            if self._values is None:
                 return
-            vals = self._default_values
+            vals = self._values
             if len(vals) == 0:
                 return
             self._btn_bg = qwt.QButtonGroup(self)
@@ -328,14 +330,16 @@ class Parameter(qwt.QWidget):
                 btn = qwt.QRadioButton(str(val))
                 if idx == 0:
                     btn.setChecked(True)
+                if self._default_value is not None and \
+                        val == self._default_value:
+                    btn.setChecked(True)
                 self._btn_bg.addButton(btn)
                 layout.addWidget(btn)
 
         elif self._wt == WIDGET_TYPE.DROPDOWN:
-            vals = self._default_values
             self._cb = qwt.QComboBox()
             layout.addWidget(self._cb)
-            self._cb.addItems(vals)
+            self._cb.addItems(self._values)
 
     @property
     def value(self) -> Any:
@@ -347,4 +351,3 @@ class Parameter(qwt.QWidget):
                     return but.text()
         elif self._wt == WIDGET_TYPE.DROPDOWN:
             return self._cb.currentText()
-        return None

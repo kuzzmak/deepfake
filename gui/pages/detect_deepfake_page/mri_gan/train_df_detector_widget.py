@@ -74,6 +74,7 @@ class TrainDeepfakeDetectorWidget(BaseWidget):
             'dataset',
             None,
             values,
+            MRI_GAN_DATASET.MRI,
             WIDGET_TYPE.RADIO_BUTTON,
         )
         gb.layout().addWidget(self.df_datasets)

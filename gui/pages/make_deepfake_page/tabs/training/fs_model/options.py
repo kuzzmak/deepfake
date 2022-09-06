@@ -32,11 +32,12 @@ class Options(qwt.QWidget):
         self._resume = Parameter(
             'resume',
             [True, False],
+            False,
             WIDGET_TYPE.RADIO_BUTTON,
         )
         train_options_gb.layout().addWidget(self._resume)
         
-        self._run = Parameter('run', [], WIDGET_TYPE.DROPDOWN)
+        self._run = Parameter('run', [], None, WIDGET_TYPE.DROPDOWN)
         train_options_gb.layout().addWidget(self._run)
 
         self._steps = Parameter('steps', [100000])
@@ -45,6 +46,7 @@ class Options(qwt.QWidget):
         self._use_cudnn_bench = Parameter(
             'use cudnn benchmark',
             [True, False],
+            True,
             WIDGET_TYPE.RADIO_BUTTON,
         )
         train_options_gb.layout().addWidget(self._use_cudnn_bench)
@@ -58,6 +60,7 @@ class Options(qwt.QWidget):
         self._gdeep = Parameter(
             'gdeep',
             [True, False],
+            True,
             WIDGET_TYPE.RADIO_BUTTON,
         )
         model_gb.layout().addWidget(self._gdeep)
@@ -79,7 +82,8 @@ class Options(qwt.QWidget):
 
         self._dataset_path_row = SelectDirRow(
             'Dataset',
-            r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
+            # r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
+            r'C:\Users\tonkec\Desktop\trump_cage_dataset',
         )
         dataset_gb.layout().addWidget(self._dataset_path_row)
 

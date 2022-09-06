@@ -150,6 +150,7 @@ class LoggingConfig(qwt.QWidget):
         self._use_wandb = Parameter(
             'use wandb',
             [True, False],
+            True,
             WIDGET_TYPE.RADIO_BUTTON,
         )
         self._gb.layout().addWidget(self._use_wandb)

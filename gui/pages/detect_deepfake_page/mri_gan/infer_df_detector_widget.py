@@ -80,6 +80,7 @@ class InferDFDetectorWidget(BaseWidget):
         self.df_detection_model = Parameter(
             '',
             [m.value for m in MRI_GAN_DATASET],
+            MRI_GAN_DATASET.MRI,
             WIDGET_TYPE.RADIO_BUTTON,
         )
         df_detection_model_gb.layout().addWidget(self.df_detection_model)

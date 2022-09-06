@@ -267,10 +267,11 @@ class DFDetectorParameter(Parameter):
         self,
         name: str,
         config_key: Optional[str] = None,
-        default_values: Optional[List[Any]] = None,
+        values: Optional[List[Any]] = None,
+        default_value: Optional[Any] = None,
         widget_type: WIDGET_TYPE = WIDGET_TYPE.INPUT,
     ) -> None:
-        super().__init__(name, default_values, widget_type)
+        super().__init__(name, values, default_value, widget_type)
 
         self._config_key = config_key
 
@@ -313,10 +314,11 @@ class MRIGANParemeter(Parameter):
         self,
         name: str,
         config_key: Optional[str] = None,
-        default_values: Optional[List[Any]] = None,
+        values: Optional[List[Any]] = None,
+        default_value: Optional[Any] = None,
         widget_type: WIDGET_TYPE = WIDGET_TYPE.INPUT,
     ) -> None:
-        super().__init__(name, default_values, widget_type)
+        super().__init__(name, values, default_value, widget_type)
 
         self._config_key = config_key
 
