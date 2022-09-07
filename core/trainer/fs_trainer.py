@@ -207,8 +207,7 @@ class FSTrainer(StepTrainer):
             nrow=self._conf.batch_size + 1,
             padding=0,
         )
-        path = self._samples_dir / f'step_{self._current_step + 1}.jpg'
-        self._logger.debug(f'Samples plot saved to {str(path)}.')
-        torchvision.utils.save_image(image_grid, path, nrow=1)
-        if self._conf.df_logger.use_wandb:
-            wandb.log({path.stem: [wandb.Image(str(path))]})
+        self._conf.df_logger.save_sample(
+            image_grid,
+            f'step_{self._current_step + 1}.jpg',
+        )
