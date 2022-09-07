@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import Optional, Union
 
+from PIL import Image
+import torch
 import wandb
 
 from utils import get_date_uid
@@ -30,22 +32,27 @@ class DFLogger:
         self._use_wandb = use_wandb
         self._log_dir = Path(log_dir)
         self._log_dir.mkdir(parents=True, exist_ok=True)
-        self._checkpoints_dir = Path(checkpoints_dir)
-        self._checkpoints_dir.mkdir(parents=True, exist_ok=True)
-        self._samples_dir = Path(samples_dir)
-        self._samples_dir.mkdir(parents=True, exist_ok=True)
-
         if self._run_name is None or not self._resume_run:
             self._run_name = get_date_uid()
 
-        self._proj_log_dir = self._log_dir / self._model_name / self._run_name
-        self._proj_log_dir.mkdir(parents=True, exist_ok=True)
+        self._checkpoints_dir = Path(
+            checkpoints_dir
+        ) / self._model_name / self._run_name
+        self._checkpoints_dir.mkdir(parents=True, exist_ok=True)
+
+        self._samples_dir = Path(
+            samples_dir
+        ) / self._model_name / self._run_name
+        self._samples_dir.mkdir(parents=True, exist_ok=True)
+
+        self._run_log_dir = self._log_dir / self._model_name / self._run_name
+        self._run_log_dir.mkdir(parents=True, exist_ok=True)
 
         self._wandb_last_step = 0
         if not use_wandb:
             return
-        wandb_id_path = self._proj_log_dir / 'wandb_id.txt'
-        self._wandb_last_step_path = self._proj_log_dir / 'wandb_last_step.txt'
+        wandb_id_path = self._run_log_dir / 'wandb_id.txt'
+        self._wandb_last_step_path = self._run_log_dir / 'wandb_last_step.txt'
         if not (
             wandb_id_path.exists() and self._wandb_last_step_path.exists()
         ):
@@ -101,8 +108,8 @@ class DFLogger:
         return self._checkpoints_dir.absolute()
 
     @property
-    def proj_log_dir(self) -> Path:
-        return self._proj_log_dir
+    def run_log_dir(self) -> Path:
+        return self._run_log_dir
 
     @property
     def run_name(self) -> str:
@@ -119,3 +126,21 @@ class DFLogger:
     def update_wandb_last_step(self, step: int) -> None:
         with open(self._wandb_last_step_path, 'w+') as f:
             f.write(str(step))
+
+    def save_sample(
+        self,
+        sample: torch.Tensor,
+        sample_name: str,
+    ) -> None:
+        sp = self._samples_dir / sample_name
+        ndarr = sample \
+            .mul(255) \
+            .add_(0.5) \
+            .clamp_(0, 255) \
+            .permute(1, 2, 0) \
+            .to('cpu', torch.uint8) \
+            .numpy()
+        im = Image.fromarray(ndarr)
+        im.save(sp)
+        if self._use_wandb:
+            wandb.log({sp.stem: [wandb.Image(str(sp))]})
