@@ -36,6 +36,7 @@ class BaseTrainerConfiguration:
         val = f'{self.name} TRAINER CONFIGURATION\n'
         val += '--------------------------\n'
         val += f'batch size:          {self.batch_size}\n'
+        val += f'steps:               {self.steps}\n'
         val += f'resume_run:          {self.resume_run}\n'
         val += f'use_cudnn_benchmark: {self.use_cudnn_benchmark}\n'
         val += f'device:              {self.device}\n'
