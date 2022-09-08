@@ -16,7 +16,7 @@ from gui.pages.page import Page
 from gui.pages.make_deepfake_page.tabs.data_tab import DataTab
 from gui.pages.make_deepfake_page.tabs.detection_tab \
     import DetectionAlgorithmTab
-from gui.pages.make_deepfake_page.tabs.training_tab import TrainingTab
+from gui.pages.make_deepfake_page.tabs.training.training_tab import TrainingTab
 from message.message import Body, Message
 from variables import MAKE_DEEPFAKE_PAGE_NAME, MAKE_DEEPFAKE_PAGE_TITLE
 
