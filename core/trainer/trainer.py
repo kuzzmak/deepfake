@@ -1,4 +1,5 @@
 import logging
+from queue import Queue
 import threading
 import time
 from dataclasses import dataclass, field
@@ -25,6 +26,7 @@ class ModelConfig:
 class BaseTrainerConfiguration:
     train_data_loader: DataLoader
     batch_size: int
+    steps: int
     model_config: ModelConfig
     df_logger: DFLogger
     resume_run: bool
@@ -95,6 +97,7 @@ class StepTrainerConfiguration(BaseTrainerConfiguration):
         super().__init__(
             train_data_loader,
             batch_size,
+            steps,
             model_config,
             df_logger,
             resume_run,
@@ -102,12 +105,6 @@ class StepTrainerConfiguration(BaseTrainerConfiguration):
             use_cudnn_benchmark,
             'STEP',
         )
-
-        self._steps = steps
-
-    @property
-    def steps(self) -> int:
-        return self._steps
 
 
 class BaseTrainer:
@@ -117,6 +114,9 @@ class BaseTrainer:
         conf: BaseTrainerConfiguration,
         stop_event: Optional[threading.Event],
     ) -> None:
+        self._starting_step = 0
+        self._current_step = 0
+        self._steps = conf.steps
         self._conf = conf
         self._device = conf.device
         self._train_data_loader = conf.train_data_loader
@@ -135,6 +135,7 @@ class BaseTrainer:
             self._stop_event = stop_event
         else:
             self._stop_event = threading.Event()
+        self._progress_q = Queue()
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -192,6 +193,22 @@ class BaseTrainer:
 
     def post_training(self) -> None:
         pass
+
+    def report_progress(self) -> None:
+        self._progress_q.put({})
+
+    def log(self) -> None:
+        if (self._current_step + 1) % self._log_freq == 0 and self._use_wandb:
+            self._conf.df_logger.update_wandb_last_step(
+                self._current_step + 1
+            )
+            if self._current_step + 1 > \
+                    self._conf.df_logger.wandb_last_step:
+                wandb.log(
+                    data=self._meters,
+                    step=self._current_step + 1,
+                )
+            # TODO log to file
 
     def start(self) -> None:
         self.init_model()
@@ -267,12 +284,8 @@ class StepTrainer(BaseTrainer):
         conf: StepTrainerConfiguration,
         stop_event: Optional[threading.Event] = None,
     ) -> None:
-        self._steps = conf.steps
-
         super().__init__(conf, stop_event)
-
-        self._starting_step = 0
-        self._current_step = 0
+        
         self._train_data_iter = iter(self._train_data_loader)
 
     def init_progress_bars(self) -> None:
@@ -309,15 +322,4 @@ class StepTrainer(BaseTrainer):
             if (self._current_step + 1) % self._save_freq == 0 and \
                     self._current_step > 0:
                 self.save_checkpoint()
-            if (self._current_step + 1) % self._log_freq == 0:
-                if self._use_wandb:
-                    self._conf.df_logger.update_wandb_last_step(
-                        self._current_step + 1
-                    )
-                    if self._current_step + 1 > \
-                            self._conf.df_logger.wandb_last_step:
-                        wandb.log(
-                            data=self._meters,
-                            step=self._current_step + 1,
-                        )
-                # TODO log to file
+            self.log()
