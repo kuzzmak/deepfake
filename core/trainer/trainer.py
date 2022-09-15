@@ -164,10 +164,12 @@ class BaseTrainer:
         self._init_wandb()
 
     def _init_wandb(self) -> None:
-        wandb.config = {
-            'learning_rate': self._conf.model_config.options['lr'],
-            'batch_size': self._conf.batch_size,
-        }
+        wandb.config.update(
+            {
+                'learning_rate': self._conf.model_config.options['lr'],
+                'batch_size': self._conf.batch_size,
+            }
+        )
         wandb.watch(self._model)
 
     def post_init_logging(self) -> None:
