@@ -817,6 +817,7 @@ class TrainingTab(BaseWidget):
             self._threads.pop(JOB_TYPE.TRAIN_FS_DF_MODEL, None)
         self.enable_widget(self.start_btn, True)
         self.enable_widget(self.stop_btn, False)
+        self._fs_options.refresh_runs_sig.emit()
 
     def _stop(self):
         """Stops training process.
