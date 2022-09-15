@@ -11,9 +11,11 @@ from gui.pages.make_deepfake_page.tabs.training.widgets import (
     LoggingConfig,
     SelectDirRow,
 )
+from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import (
     GroupBox,
     HWidget,
+    InfoIconButton,
     Parameter,
     RefreshIconButton,
     VerticalSpacer,
@@ -24,7 +26,7 @@ from variables import APP_LOGGER
 logger = logging.getLogger(APP_LOGGER)
 
 
-class Options(qwt.QWidget):
+class Options(BaseWidget):
 
     refresh_runs_sig = qtc.pyqtSignal()
 
@@ -57,6 +59,9 @@ class Options(qwt.QWidget):
         run_row.layout().setContentsMargins(0, 0, 0, 0)
         self._run = Parameter('run', [], None, WIDGET_TYPE.DROPDOWN)
         run_row.layout().addWidget(self._run)
+        self._run_info_btn = InfoIconButton()
+        run_row.layout().addWidget(self._run_info_btn)
+        self._run_info_btn.clicked.connect(self._run_info)
         self._refresh_runs_btn = RefreshIconButton()
         run_row.layout().addWidget(self._refresh_runs_btn)
         self._refresh_runs_btn.clicked.connect(self._refresh_runs)
@@ -113,6 +118,12 @@ class Options(qwt.QWidget):
 
         self._log_config_wgt = LoggingConfig(FREQUENCY_UNIT.STEP)
         layout.addWidget(self._log_config_wgt)
+
+        desc_gb = GroupBox('Description')
+        layout.addWidget(desc_gb)
+
+        self._desc_input = qwt.QTextEdit()
+        desc_gb.layout().addWidget(self._desc_input)
 
         self._update_runs_selection()
 
@@ -181,10 +192,18 @@ class Options(qwt.QWidget):
     def checkpoint_frequency(self) -> int:
         return self._log_config_wgt.checkpoint_frequency
 
+    @property
+    def run_description(self) -> str:
+        return self._desc_input.toPlainText()
+
     def _update_runs_selection(self) -> None:
         runs_dir = self._log_config_wgt.log_dir / self._model_name
         runs = [str(p.stem) for p in list(runs_dir.glob('*'))]
         self._run._cb.addItems(reversed(runs))
+        if len(runs):
+            self.enable_widget(self._run_info_btn, True)
+        else:
+            self.enable_widget(self._run_info_btn, False)
         logger.debug(
             f'Refreshed list of runs. Found total of {len(runs)} runs.'
         )
@@ -193,3 +212,7 @@ class Options(qwt.QWidget):
     def _refresh_runs(self) -> None:
         self._run._cb.clear()
         self._update_runs_selection()
+
+    @qtc.pyqtSlot()
+    def _run_info(self) -> None:
+        print('inf')
