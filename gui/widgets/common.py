@@ -122,12 +122,22 @@ def CancelIcon() -> qtg.QIcon:
     )
 
 
+def RefreshIcon() -> qtg.QIcon:
+    return qwt.QApplication.style().standardIcon(
+        qwt.QStyle.StandardPixmap.SP_BrowserReload
+    )
+
+
 def ApplyIconButton() -> IconButton:
     return IconButton(ApplyIcon())
 
 
 def CancelIconButton() -> IconButton:
     return IconButton(CancelIcon())
+
+
+def RefreshIconButton() -> IconButton:
+    return IconButton(RefreshIcon())
 
 
 def NoMarginLayout(
