@@ -1,6 +1,8 @@
+import logging
 from pathlib import Path
 from typing import Optional
 
+import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from core.model.fs import FS
@@ -9,11 +11,22 @@ from gui.pages.make_deepfake_page.tabs.training.widgets import (
     LoggingConfig,
     SelectDirRow,
 )
-from gui.widgets.common import GroupBox, Parameter, VerticalSpacer
+from gui.widgets.common import (
+    GroupBox,
+    HWidget,
+    Parameter,
+    RefreshIconButton,
+    VerticalSpacer,
+)
 from utils import str_to_bool
+from variables import APP_LOGGER
+
+logger = logging.getLogger(APP_LOGGER)
 
 
 class Options(qwt.QWidget):
+
+    refresh_runs_sig = qtc.pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -21,6 +34,8 @@ class Options(qwt.QWidget):
         self._model_name = FS.NAME
 
         self._init_ui()
+
+        self.refresh_runs_sig.connect(self._refresh_runs)
 
     def _init_ui(self) -> None:
         layout = qwt.QVBoxLayout()
@@ -36,9 +51,15 @@ class Options(qwt.QWidget):
             WIDGET_TYPE.RADIO_BUTTON,
         )
         train_options_gb.layout().addWidget(self._resume)
-        
+
+        run_row = HWidget()
+        train_options_gb.layout().addWidget(run_row)
+        run_row.layout().setContentsMargins(0, 0, 0, 0)
         self._run = Parameter('run', [], None, WIDGET_TYPE.DROPDOWN)
-        train_options_gb.layout().addWidget(self._run)
+        run_row.layout().addWidget(self._run)
+        self._refresh_runs_btn = RefreshIconButton()
+        run_row.layout().addWidget(self._refresh_runs_btn)
+        self._refresh_runs_btn.clicked.connect(self._refresh_runs)
 
         self._steps = Parameter('steps', [100000])
         train_options_gb.layout().addWidget(self._steps)
@@ -162,5 +183,13 @@ class Options(qwt.QWidget):
 
     def _update_runs_selection(self) -> None:
         runs_dir = self._log_config_wgt.log_dir / self._model_name
-        runs_dir = [str(p.stem) for p in list(runs_dir.glob('*'))]
-        self._run._cb.addItems(reversed(runs_dir))
+        runs = [str(p.stem) for p in list(runs_dir.glob('*'))]
+        self._run._cb.addItems(reversed(runs))
+        logger.debug(
+            f'Refreshed list of runs. Found total of {len(runs)} runs.'
+        )
+
+    @qtc.pyqtSlot()
+    def _refresh_runs(self) -> None:
+        self._run._cb.clear()
+        self._update_runs_selection()
