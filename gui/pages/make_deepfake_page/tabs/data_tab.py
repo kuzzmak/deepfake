@@ -14,7 +14,7 @@ from gui.widgets.common import (
     Button,
     GroupBox,
     HWidget,
-    InfoButton,
+    InfoIconButton,
     PlayIcon,
     StopIcon,
     VWidget,
@@ -195,7 +195,7 @@ class DataTab(BaseWidget):
         self.suggested_depth_input.setText(
             str(APP_CONFIG.app.google_images_scraper.suggested_search_depth)
         )
-        gi_depth_gb.layout().addWidget(InfoButton(
+        gi_depth_gb.layout().addWidget(InfoIconButton(
             'Number of first images on the google search results for which ' +
             'suggested images will also be downloaded.'
         ))
@@ -210,7 +210,7 @@ class DataTab(BaseWidget):
         self.recent_images_num_input.setText(
             str(APP_CONFIG.app.google_images_scraper.default_page_limit)
         )
-        gi_recent_images_num.layout().addWidget(InfoButton(
+        gi_recent_images_num.layout().addWidget(InfoIconButton(
             'How many recent images will be shown in ' +
             'the image viewer to the right.'
         ))

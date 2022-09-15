@@ -94,7 +94,7 @@ def InfoIcon() -> qtg.QIcon:
     )
 
 
-def InfoButton(tooltip: str = '') -> IconButton:
+def InfoIconButton(tooltip: str = '') -> IconButton:
     return IconButton(InfoIcon(), tooltip)
 
 
