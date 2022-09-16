@@ -201,6 +201,8 @@ class FSTrainer(StepTrainer):
 
                 self.plot_samples(imgs)
 
+        self.report_progress(self._current_step)
+
     def plot_samples(self, samples: List[torch.Tensor]) -> None:
         image_grid = torchvision.utils.make_grid(
             samples,
