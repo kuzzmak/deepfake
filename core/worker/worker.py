@@ -108,6 +108,9 @@ class Worker(qtc.QObject):
         except Empty:
             return False
 
+    def post_run(self) -> None:
+        pass
+
     @qtc.pyqtSlot()
     def run(self) -> None:
         """Starts the execution of the worker's job, should be called by the
@@ -122,6 +125,7 @@ class Worker(qtc.QObject):
             self.finished.emit()
             self.send_message(Messages.JOB_EXIT())
             self._ticks = None
+            self.post_run()
 
     def run_job(self) -> None:
         """Function which contains the code this worker should do.
