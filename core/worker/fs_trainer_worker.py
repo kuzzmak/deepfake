@@ -1,4 +1,6 @@
 from pathlib import Path
+from queue import Empty
+from threading import Thread
 from typing import Optional, Union
 
 import PyQt6.QtCore as qtc
@@ -13,6 +15,8 @@ from core.model.fs import FS
 from core.trainer.trainer import StepTrainerConfiguration
 from core.worker import Worker
 from df_logging.model_logging import DFLogger
+from enums import JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
+from message.message import Messages
 from variables import IMAGENET_MEAN, IMAGENET_STD
 
 
@@ -109,5 +113,35 @@ class FSTrainerWorker(Worker):
             use_cudnn_benchmark=self._use_cudnn_bench,
         )
         trainer = FSTrainer(conf, self.stop_event)
+
+        conf_wgt_msg = Messages.CONFIGURE_WIDGET(
+            SIGNAL_OWNER.FS_TRAINER_WORKER,
+            WIDGET.JOB_PROGRESS,
+            'setMaximum',
+            [self._steps],
+            JOB_NAME.TRAIN_FS_MODEL,
+        )
+        self.send_message(conf_wgt_msg)
+
+        def pf():
+            # TODO: break the loop when trainer finishes
+            while True:
+                try:
+                    current_step = trainer.progress_q.get()
+                    self.report_progress(
+                        SIGNAL_OWNER.FS_TRAINER_WORKER,
+                        JOB_TYPE.TRAIN_FS_DF_MODEL,
+                        current_step,
+                        self._steps,
+                    )
+                except Empty:
+                    ...
+        
+        self._pt = Thread(target=pf, daemon=True)
+        self._pt.start()
+
         self.running.emit()
         trainer.start()
+
+    def post_run(self) -> None:
+        self._pt.join()
