@@ -70,6 +70,7 @@ class WORKER(Enum):
     FACE_EXTRACTION_WORKER = 'face_extaction_worker'
     PREDICT_MRI_WORKER = 'predict_mri_worker'
     GENERATE_FRAME_LABELS_CSV_WORKER = 'generate_frame_labels_csv_worker'
+    FS_TRAINER_WORKER = 'fs_trainer_worker'
 
 
 class SIGNAL_OWNER(Enum):
@@ -109,6 +110,7 @@ class SIGNAL_OWNER(Enum):
     PREDICT_MRI_WORKER = WORKER.PREDICT_MRI_WORKER.value
     GENERATE_FRAME_LABELS_CSV_WORKER = \
         WORKER.GENERATE_FRAME_LABELS_CSV_WORKER.value
+    FS_TRAINER_WORKER = WORKER.FS_TRAINER_WORKER.value
 
     # worker signals next element
     FRAMES_EXTRACTION_WORKER_NEXT_ELEMENT = \
@@ -293,6 +295,7 @@ class JOB_NAME(Enum):
     FACE_EXTRACTION = 'extracting faces'
     PREDICT_MRI = 'mri prediction'
     GENERATE_FRAME_LABELS_CSV = 'generating frame labels CSV'
+    TRAIN_FS_MODEL = 'training FS model'
 
 
 class WORKER_THREAD(Enum):
