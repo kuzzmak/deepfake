@@ -338,7 +338,7 @@ class DataTab(BaseWidget):
                     import sys
                     import importlib
                     try:
-                        # TODO: this blocks, make an simple wrapper like
+                        # TODO: this blocks, make a simple wrapper like
                         # Worker for this kind of tasks
                         subprocess.check_call(
                             [
