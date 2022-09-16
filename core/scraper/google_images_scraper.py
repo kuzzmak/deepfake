@@ -2,21 +2,29 @@ import base64
 import io
 import logging
 import os
-from pathlib import Path
 import random
 import time
+from pathlib import Path
 from typing import List, Optional, Union
 
 import numpy as np
-from PIL import Image, TiffImagePlugin
 import PyQt6.QtCore as qtc
 import requests
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.remote.webelement import WebElement
-from webdriver_manager.chrome import ChromeDriverManager
+from PIL import Image, TiffImagePlugin
+
+try:
+    from selenium import webdriver
+    from selenium.common.exceptions import NoSuchElementException
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.remote.webelement import WebElement
+    from webdriver_manager.chrome import ChromeDriverManager
+    SELENIUM_INSTALLED = True
+except ImportError:
+    WebElement = None
+    SELENIUM_INSTALLED = False
+
+from core.exception import SeleniumNotFoundError
 
 TiffImagePlugin.DEBUG = False
 
@@ -29,6 +37,9 @@ class GoogleImagesScraper(qtc.QObject):
 
     def __init__(self) -> None:
         super().__init__()
+
+        if not SELENIUM_INSTALLED:
+            raise SeleniumNotFoundError()
 
         self.stop_sig.connect(self._stop)
         self._alive = True
@@ -46,12 +57,7 @@ class GoogleImagesScraper(qtc.QObject):
         options.add_argument('--incognito')
         options.add_argument('--headless')
         options.add_argument('--log-level=3')
-        service = Service(
-            ChromeDriverManager(
-                log_level=logging.ERROR,
-                print_first_line=False,
-            ).install()
-        )
+        service = Service(ChromeDriverManager().install())
         self._driver = webdriver.Chrome(
             service=service,
             options=options,
