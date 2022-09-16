@@ -179,6 +179,10 @@ class BaseTrainer:
     def meters(self) -> Dict[str, str]:
         return self._meters
 
+    @property
+    def progress_q(self) -> Queue:
+        return self._progress_q
+
     def update_meter(self, name: str, value: Number) -> None:
         if name not in self._meters:
             raise Exception(f'meter: {name} not registered')
@@ -196,8 +200,8 @@ class BaseTrainer:
     def post_training(self) -> None:
         pass
 
-    def report_progress(self) -> None:
-        self._progress_q.put({})
+    def report_progress(self, step: int) -> None:
+        self._progress_q.put(step)
 
     def log(self) -> None:
         if (self._current_step + 1) % self._log_freq == 0 and self._use_wandb:
