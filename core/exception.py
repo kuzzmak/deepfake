@@ -59,3 +59,11 @@ class NotDirectoryError(DeepfakeError):
 
     def __init__(self, path: str):
         super().__init__(f'Provided path: {path} is not a directory.')
+
+
+class SeleniumNotFoundError(DeepfakeError):
+    """Trued to run Google Images scraping with no Selenium installed.
+    """
+
+    def __init__(self):
+        super().__init__('Selenium was not installed on the system.')
