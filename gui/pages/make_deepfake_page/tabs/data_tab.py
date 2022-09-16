@@ -1,12 +1,14 @@
 import logging
 from pathlib import Path
+from subprocess import CalledProcessError
 from typing import List, Optional, Dict, Tuple, Union
 
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from configs.app_config import APP_CONFIG
-from core.scraper.google_images_scraper import GoogleImagesScraper
+from core.exception import SeleniumNotFoundError
+import core.scraper.google_images_scraper as gis
 from core.worker import FramesExtractionWorker, Worker
 from enums import CONNECTION, JOB_TYPE, LAYOUT, SIGNAL_OWNER
 from gui.widgets.base_widget import BaseWidget
@@ -46,7 +48,7 @@ class GoogleImagesScraperWorker(qtc.QObject):
             save_directory = Path(save_directory)
         self._save_directory = save_directory
 
-        self._sc = GoogleImagesScraper()
+        self._sc = gis.GoogleImagesScraper()
         self._stop_sig.connect(self._sc.stop_sig)
 
     def stop(self) -> None:
@@ -285,6 +287,25 @@ class DataTab(BaseWidget):
     def _scraping_op(self) -> None:
         """pyqtSlot for starting or stopping google images scraper worker.
         """
+        # TODO fix:
+        # Traceback(most recent call last):
+        # File "C:\Users\tonkec\Documents\deepfake\gui\pages\make_deepfake_page\tabs\data_tab.py", line 63, in run
+        #     new_image_sig=self.new_image_sig,
+        # File "C:\Users\tonkec\Documents\deepfake\core\scraper\google_images_scraper.py", line 248, in run
+        #     images = self._find_all_images(skip_main_images)
+        # File "C:\Users\tonkec\Documents\deepfake\core\scraper\google_images_scraper.py", line 155, in _find_all_images
+        #     if self._exists_more():
+        # File "C:\Users\tonkec\Documents\deepfake\core\scraper\google_images_scraper.py", line 111, in _exists_more
+        #     'div.YstHxe > input',
+        # File "C:\Users\tonkec\Documents\deepfake\env\lib\site-packages\selenium\webdriver\remote\webdriver.py", line 857, in find_element
+        #     'value': value})['value']
+        # File "C:\Users\tonkec\Documents\deepfake\env\lib\site-packages\selenium\webdriver\remote\webdriver.py", line 428, in execute
+        #     self.error_handler.check_response(response)
+        # File "C:\Users\tonkec\Documents\deepfake\env\lib\site-packages\selenium\webdriver\remote\errorhandler.py", line 243, in check_response
+        #     raise exception_class(message, screen, stacktrace)
+        # selenium.common.exceptions.NoSuchElementException: Message: no such
+        # element: Unable to locate element: {"method":"css
+        # selector","selector":"div.YstHxe > input"}
         if not self._scraping_running:
             text = self.searach_term_input.text()
             text = text.strip()
@@ -295,9 +316,64 @@ class DataTab(BaseWidget):
                 )
                 return
 
-            thread = qtc.QThread()
+            try:
+                worker = GoogleImagesScraperWorker(terms, self._gi_dir)
+            except SeleniumNotFoundError:
+                logger.warning(
+                    'Selenium was not found on system but is neccessary'
+                    ' to run scraping, would you like to install it?'
+                )
+
+                qmb = qwt.QMessageBox
+                res = qmb.question(
+                    self,
+                    'Warning',
+                    'Would you like to install neccesary packages to\n'
+                    'run Google Images scraping?',
+                    buttons=qmb.StandardButton.Yes | qmb.StandardButton.No,
+                )
+                if res == qmb.StandardButton.Yes:
+                    self.enable_widget(self.scraping_btn, False)
+                    import subprocess
+                    import sys
+                    import importlib
+                    try:
+                        # TODO: this blocks, make an simple wrapper like
+                        # Worker for this kind of tasks
+                        subprocess.check_call(
+                            [
+                                sys.executable,
+                                '-m',
+                                'pip',
+                                'install',
+                                'selenium',
+                                'webdriver-manager',
+                            ]
+                        )
+                        importlib.reload(gis)
+                    except CalledProcessError:
+                        self.enable_widget(self.scraping_btn, True)
+                        logger.error(
+                            'Error happened while installing required packages'
+                            ' for Google Images scraping. Check pip package'
+                            ' manager.'
+                        )
+                        return
+                else:
+                    logger.warning(
+                        'Not possible to run web scraping without installing'
+                        'required packages.'
+                    )
+                    self.enable_widget(self.scraping_btn, True)
+                    return
+
+            self.enable_widget(self.scraping_btn, True)
+
+            # if execution comes to here, everything should be installed and
+            # package with google images scraper reimported
             worker = GoogleImagesScraperWorker(terms, self._gi_dir)
             self.stop_google_images_scraper_worker_sig.connect(worker.stop)
+            thread = qtc.QThread()
             worker.moveToThread(thread)
             self._threads[JOB_TYPE.IMAGE_SCRAPING] = (thread, worker)
             thread.started.connect(worker.run)
