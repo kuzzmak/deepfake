@@ -124,10 +124,11 @@ class FSTrainerWorker(Worker):
         self.send_message(conf_wgt_msg)
 
         def pf():
-            # TODO: break the loop when trainer finishes
             while True:
                 try:
                     current_step = trainer.progress_q.get()
+                    if current_step == -1:
+                        break
                     self.report_progress(
                         SIGNAL_OWNER.FS_TRAINER_WORKER,
                         JOB_TYPE.TRAIN_FS_DF_MODEL,
@@ -136,7 +137,7 @@ class FSTrainerWorker(Worker):
                     )
                 except Empty:
                     ...
-        
+
         self._pt = Thread(target=pf, daemon=True)
         self._pt.start()
 
