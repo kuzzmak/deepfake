@@ -213,3 +213,6 @@ class FSTrainer(StepTrainer):
             image_grid,
             f'step_{self._current_step + 1}.jpg',
         )
+
+    def post_training(self) -> None:
+        self.report_progress(-1)
