@@ -67,6 +67,11 @@ loggers:
     level: DEBUG
     handlers: [file, gui, console]
     propagate: no
+  # replace all loggers like this so no "folder" structure is shown
+  FSTrainer:
+    level: DEBUG
+    handlers: [file, gui, console]
+    propagate: no
   core.trainer.fs_trainer:
     level: DEBUG
     handlers: [file, gui, console]
