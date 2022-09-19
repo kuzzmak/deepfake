@@ -28,13 +28,19 @@ from enums import (
 )
 from gui.pages.make_deepfake_page.tabs.training.fs_model.options import \
     Options as FSOptions
+from gui.pages.make_deepfake_page.tabs.training.fs_model.training_preview import (
+    ModelRun,
+)
+from gui.pages.make_deepfake_page.tabs.training.fs_model.training_preview import \
+    TrainingPreview as FSTrainingPreview
 from gui.widgets.base_widget import BaseWidget
 from gui.widgets.common import HWidget, NoMarginLayout, RadioButtons, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
 from utils import parse_tuple
+from variables import APP_LOGGER
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(APP_LOGGER)
 
 
 class ModelSelector(qwt.QWidget):
@@ -594,6 +600,7 @@ class TrainingTab(BaseWidget):
 
     def _init_ui(self):
         layout = qwt.QHBoxLayout()
+        self.setLayout(layout)
 
         left_part = qwt.QWidget()
         left_part.setMaximumWidth(400)
@@ -622,6 +629,7 @@ class TrainingTab(BaseWidget):
 
         self._fs_options = FSOptions()
         self._stacked_wgt.addWidget(self._fs_options)
+        self._fs_options.run_changed_sig.connect(self._selected_run_changed)
 
         self._model_option_mappings = {
             MODEL.ORIGINAL: self._training_conf,
@@ -644,14 +652,33 @@ class TrainingTab(BaseWidget):
         left_part_layout.addWidget(button_row)
         layout.addWidget(left_part)
 
+        self._training_preview = qwt.QStackedWidget()
+        layout.addWidget(self._training_preview)
+
         self.preview = Preview(4)
         self.preview.layout().setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.preview)
-        self.setLayout(layout)
+        self._training_preview.addWidget(self.preview)
+
+        self._fs_training_preview = FSTrainingPreview()
+        self._training_preview.addWidget(self._fs_training_preview)
+
+        self._model_preview_mappings = {
+            MODEL.ORIGINAL: self.preview,
+            MODEL.FS: self._fs_training_preview,
+        }
 
     def _change_training_options(self, model: MODEL) -> None:
         self._stacked_wgt.setCurrentWidget(self._model_option_mappings[model])
+        self._training_preview.setCurrentWidget(
+            self._model_preview_mappings[model]
+        )
         self._selected_model = model
+        self._selected_run_changed()
+
+    def _selected_run_changed(self) -> None:
+        if self._selected_model == MODEL.FS:
+            run = ModelRun(MODEL.FS, self._fs_options.resume_run_name)
+            self._fs_training_preview.selected_run_sig.emit(run)
 
     def _optimizer_options(self) -> dict:
         """Constructs optimizer options based on the type of optimizer that's
