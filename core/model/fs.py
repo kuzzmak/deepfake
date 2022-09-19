@@ -10,7 +10,7 @@ from core.model.resnet import ResNet
 
 class FS(nn.Module):
 
-    NAME = 'FS'
+    NAME = 'fs'
 
     def __init__(self) -> None:
         super().__init__()
