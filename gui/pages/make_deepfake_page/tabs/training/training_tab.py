@@ -659,7 +659,9 @@ class TrainingTab(BaseWidget):
         self.preview.layout().setContentsMargins(0, 0, 0, 0)
         self._training_preview.addWidget(self.preview)
 
-        self._fs_training_preview = FSTrainingPreview()
+        self._fs_training_preview = FSTrainingPreview(
+            self._fs_options._log_config_wgt.samples_dir
+        )
         self._training_preview.addWidget(self._fs_training_preview)
 
         self._model_preview_mappings = {
