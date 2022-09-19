@@ -29,6 +29,7 @@ logger = logging.getLogger(APP_LOGGER)
 class Options(BaseWidget):
 
     refresh_runs_sig = qtc.pyqtSignal()
+    run_changed_sig = qtc.pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -59,6 +60,7 @@ class Options(BaseWidget):
         run_row.layout().setContentsMargins(0, 0, 0, 0)
         self._run = Parameter('run', [], None, WIDGET_TYPE.DROPDOWN)
         run_row.layout().addWidget(self._run)
+        self._run._cb.currentIndexChanged.connect(self._run_selection_changed)
         self._run_info_btn = InfoIconButton()
         run_row.layout().addWidget(self._run_info_btn)
         self._run_info_btn.clicked.connect(self._run_info)
@@ -195,6 +197,10 @@ class Options(BaseWidget):
     @property
     def run_description(self) -> str:
         return self._desc_input.toPlainText()
+
+    @qtc.pyqtSlot(int)
+    def _run_selection_changed(self, index: int) -> None:
+        self.run_changed_sig.emit()
 
     def _update_runs_selection(self) -> None:
         runs_dir = self._log_config_wgt.log_dir / self._model_name
