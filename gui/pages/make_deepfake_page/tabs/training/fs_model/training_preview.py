@@ -152,6 +152,8 @@ class TrainingPreview(BaseWidget):
 
     @qtc.pyqtSlot(ModelRun)
     def _selected_run_changed(self, run: ModelRun) -> None:
+        if run.run_id is None:
+            return
         samples_path = self._samples_dir / run.model_name.value / run.run_id
         samples = list(samples_path.glob('*.jpg'))
         # sort by modification date, first file is the newest
