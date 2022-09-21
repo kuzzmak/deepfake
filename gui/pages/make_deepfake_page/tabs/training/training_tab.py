@@ -835,6 +835,9 @@ class TrainingTab(BaseWidget):
             worker.finished.connect(self._on_fs_trainer_worker_finished)
             self.enable_widget(self.start_btn, False)
             self.enable_widget(self.stop_btn, True)
+            worker.running.connect(
+                lambda: self._fs_options.refresh_runs_sig.emit()
+            )
 
     @qtc.pyqtSlot()
     def _on_fs_trainer_worker_finished(self) -> None:
@@ -846,7 +849,6 @@ class TrainingTab(BaseWidget):
             self._threads.pop(JOB_TYPE.TRAIN_FS_DF_MODEL, None)
         self.enable_widget(self.start_btn, True)
         self.enable_widget(self.stop_btn, False)
-        self._fs_options.refresh_runs_sig.emit()
 
     def _stop(self):
         """Stops training process.
