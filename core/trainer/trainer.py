@@ -12,8 +12,10 @@ import wandb
 from torch.backends import cudnn
 from torch.nn import Module
 from torch.utils.data import DataLoader
+from common_structures import Event
 
 from df_logging.model_logging import DFLogger
+from enums import EVENT_DATA_KEY, EVENT_TYPE
 
 
 @dataclass
@@ -135,7 +137,7 @@ class BaseTrainer:
             self._stop_event = stop_event
         else:
             self._stop_event = threading.Event()
-        self._progress_q = Queue()
+        self._event_q: Queue[Event] = Queue()
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -176,12 +178,12 @@ class BaseTrainer:
         pass
 
     @property
-    def meters(self) -> Dict[str, str]:
+    def meters(self) -> Dict[str, Number]:
         return self._meters
 
     @property
-    def progress_q(self) -> Queue:
-        return self._progress_q
+    def event_q(self) -> 'Queue[Event]':
+        return self._event_q
 
     def update_meter(self, name: str, value: Number) -> None:
         if name not in self._meters:
@@ -201,7 +203,9 @@ class BaseTrainer:
         pass
 
     def report_progress(self, step: int) -> None:
-        self._progress_q.put(step)
+        self._event_q.put(
+            Event(EVENT_TYPE.PROGRESS, {EVENT_DATA_KEY.PROGRESS_VALUE: step})
+        )
 
     def log(self) -> None:
         if (self._current_step + 1) % self._log_freq == 0 and self._use_wandb:
@@ -291,7 +295,7 @@ class StepTrainer(BaseTrainer):
         stop_event: Optional[threading.Event] = None,
     ) -> None:
         super().__init__(conf, stop_event)
-        
+
         self._train_data_iter = iter(self._train_data_loader)
 
     def init_progress_bars(self) -> None:
