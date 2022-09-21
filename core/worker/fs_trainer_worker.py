@@ -15,7 +15,7 @@ from core.model.fs import FS
 from core.trainer.trainer import StepTrainerConfiguration
 from core.worker import Worker
 from df_logging.model_logging import DFLogger
-from enums import JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
+from enums import EVENT_DATA_KEY, EVENT_TYPE, JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
 from message.message import Messages
 from variables import IMAGENET_MEAN, IMAGENET_STD
 
@@ -126,15 +126,20 @@ class FSTrainerWorker(Worker):
         def pf():
             while True:
                 try:
-                    current_step = trainer.progress_q.get()
-                    if current_step == -1:
-                        break
-                    self.report_progress(
-                        SIGNAL_OWNER.FS_TRAINER_WORKER,
-                        JOB_TYPE.TRAIN_FS_DF_MODEL,
-                        current_step,
-                        self._steps,
-                    )
+                    event = trainer.event_q.get()
+                    if event.event_type == EVENT_TYPE.PROGRESS:
+                        step = event.data[EVENT_DATA_KEY.PROGRESS_VALUE]
+                        if step == -1:
+                            break
+                        self.report_progress(
+                            SIGNAL_OWNER.FS_TRAINER_WORKER,
+                            JOB_TYPE.TRAIN_FS_DF_MODEL,
+                            step,
+                            self._steps,
+                        )
+                    elif event.event_type == EVENT_TYPE.NEW_SAMPLE:
+                        sample = event.data[EVENT_DATA_KEY.SAMPLE_PATH]
+                        
                 except Empty:
                     ...
 
