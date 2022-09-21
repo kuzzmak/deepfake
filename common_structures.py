@@ -7,6 +7,8 @@ import PyQt6.QtCore as qtc
 from enums import (
     DIALOG_MESSAGE_ICON,
     DIALOG_MESSAGE_TYPE,
+    EVENT_DATA_KEY,
+    EVENT_TYPE,
     IO_OPERATION_TYPE,
     JOB_DATA_KEY,
     JOB_TYPE,
@@ -84,3 +86,9 @@ class TensorCommObject(CommObject):
 class Job:
     type: JOB_TYPE
     data: Dict[JOB_DATA_KEY, Any]
+
+
+@dataclass
+class Event:
+    event_type: EVENT_TYPE
+    data: Dict[EVENT_DATA_KEY, Any]
