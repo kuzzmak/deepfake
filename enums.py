@@ -337,3 +337,13 @@ class OUTPUT_KEYS(Enum):
 class FREQUENCY_UNIT(Enum):
     STEP = 'step'
     EPOCH = 'epoch'
+
+
+class EVENT_TYPE(Enum):
+    PROGRESS = 'progress'
+    NEW_SAMPLE = 'new_sample'
+
+
+class EVENT_DATA_KEY(Enum):
+    PROGRESS_VALUE = 'progress_value'
+    SAMPLE_PATH = 'sample_path'
