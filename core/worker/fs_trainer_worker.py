@@ -22,6 +22,8 @@ from variables import IMAGENET_MEAN, IMAGENET_STD
 
 class FSTrainerWorker(Worker):
 
+    new_sample_path_sig = qtc.pyqtSignal(Path)
+
     def __init__(
         self,
         steps: int,
@@ -138,8 +140,9 @@ class FSTrainerWorker(Worker):
                             self._steps,
                         )
                     elif event.event_type == EVENT_TYPE.NEW_SAMPLE:
-                        sample = event.data[EVENT_DATA_KEY.SAMPLE_PATH]
-                        
+                        sample_path = event.data[EVENT_DATA_KEY.SAMPLE_PATH]
+                        self.new_sample_path_sig.emit(sample_path)
+
                 except Empty:
                     ...
 
