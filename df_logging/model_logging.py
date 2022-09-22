@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional, Union
 
@@ -6,6 +7,10 @@ import torch
 import wandb
 
 from utils import get_date_uid
+from variables import APP_LOGGER
+
+
+logger = logging.getLogger(APP_LOGGER)
 
 
 class DFLogger:
@@ -126,6 +131,10 @@ class DFLogger:
     def update_wandb_last_step(self, step: int) -> None:
         with open(self._wandb_last_step_path, 'w+') as f:
             f.write(str(step))
+        logger.debug(
+            f'Updated last wand step ({step}) in file '
+            f'{str(self._wandb_last_step_path)}.'
+        )
 
     def save_sample(
         self,
@@ -142,5 +151,7 @@ class DFLogger:
             .numpy()
         im = Image.fromarray(ndarr)
         im.save(sp)
+        logger.debug(f'Saved new sample from the model on path: {str(sp)}')
         if self._use_wandb:
             wandb.log({sp.stem: [wandb.Image(str(sp))]})
+            logger.debug('Logged new sample to wandb.')
