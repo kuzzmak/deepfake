@@ -27,6 +27,7 @@ logger = logging.getLogger(APP_LOGGER)
 class TrainingPreview(BaseWidget):
 
     selected_run_sig = qtc.pyqtSignal(ModelRun)
+    new_sample_sig = qtc.pyqtSignal(Path)
 
     def __init__(
         self,
@@ -38,6 +39,7 @@ class TrainingPreview(BaseWidget):
         self._samples_dir = Path(samples_dir)
 
         self.selected_run_sig.connect(self._selected_run_changed)
+        self.new_sample_sig.connect(self._new_sample)
 
         self._current_img_path = None
         self._current_img_idx = 0
@@ -117,7 +119,15 @@ class TrainingPreview(BaseWidget):
         self._img_lbl.setPixmap(qtg.QPixmap.fromImage(self._qt_img))
         logger.debug(f'Previewing image on path: {self._current_img_path}.')
 
+    @qtc.pyqtSlot(Path)
+    def _new_sample(self, sample_path: Path) -> None:
+        self._samples.insert(0, sample_path)
+        self._current_img_idx = 0
+        self._refresh_preview_image()
+        self._refresh_samples_dropdown()
+
     def _refresh_preview_image(self) -> None:
+        # TODO refresh correct run image when resuming run
         if not len(self._samples):
             self._set_preview_image(None)
             return
@@ -150,6 +160,12 @@ class TrainingPreview(BaseWidget):
         self._refresh_preview_image()
         self._run_samples_cb.setCurrentIndex(self._current_img_idx)
 
+    def _refresh_samples_dropdown(self) -> None:
+        self._run_samples_cb.clear()
+        self._run_samples_cb.addItems(
+            list(map(lambda p: p.name, self._samples))
+        )
+
     @qtc.pyqtSlot(ModelRun)
     def _selected_run_changed(self, run: ModelRun) -> None:
         if run.run_id is None:
@@ -160,10 +176,7 @@ class TrainingPreview(BaseWidget):
         self._samples = sorted(samples, key=os.path.getmtime, reverse=True)
         self._current_img_idx = 0
         self._refresh_preview_image()
-        self._run_samples_cb.clear()
-        self._run_samples_cb.addItems(
-            list(map(lambda p: p.name, self._samples))
-        )
+        self._refresh_samples_dropdown()
 
     @qtc.pyqtSlot()
     def _view_in_photo_viewer(self) -> None:
