@@ -838,6 +838,9 @@ class TrainingTab(BaseWidget):
             worker.running.connect(
                 lambda: self._fs_options.refresh_runs_sig.emit()
             )
+            worker.new_sample_path_sig.connect(
+                self._fs_training_preview.new_sample_sig
+            )
 
     @qtc.pyqtSlot()
     def _on_fs_trainer_worker_finished(self) -> None:
