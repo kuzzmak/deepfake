@@ -177,4 +177,4 @@ class LoggingConfig(qwt.QWidget):
 
     @property
     def checkpoint_frequency(self) -> int:
-        return self._sample_freq_row.frequency
+        return self._chkpt_freq_row.frequency
