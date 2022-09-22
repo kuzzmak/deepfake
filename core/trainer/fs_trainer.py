@@ -7,7 +7,9 @@ import torch.nn.functional as F
 import torchvision
 import wandb
 
+from common_structures import Event
 from core.trainer.trainer import StepTrainer, StepTrainerConfiguration
+from enums import EVENT_DATA_KEY, EVENT_TYPE
 from variables import IMAGENET_MEAN, IMAGENET_STD
 
 
@@ -209,9 +211,16 @@ class FSTrainer(StepTrainer):
             nrow=self._conf.batch_size + 1,
             padding=0,
         )
-        self._conf.df_logger.save_sample(
-            image_grid,
-            f'step_{self._current_step + 1}.jpg',
+        sample_name = f'step_{self._current_step + 1}.jpg'
+        self._conf.df_logger.save_sample(image_grid, sample_name)
+        self._event_q.put(
+            Event(
+                EVENT_TYPE.NEW_SAMPLE,
+                {
+                    EVENT_DATA_KEY.SAMPLE_PATH:
+                    self._conf.df_logger.samples_dir / sample_name
+                }
+            )
         )
 
     def post_training(self) -> None:
