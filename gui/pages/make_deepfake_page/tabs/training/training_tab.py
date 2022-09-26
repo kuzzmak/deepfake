@@ -835,9 +835,12 @@ class TrainingTab(BaseWidget):
             worker.finished.connect(self._on_fs_trainer_worker_finished)
             self.enable_widget(self.start_btn, False)
             self.enable_widget(self.stop_btn, True)
-            worker.running.connect(
-                lambda: self._fs_options.refresh_runs_sig.emit()
-            )
+            # if resuming run, do not refresh runs again when training starts
+            # because resumed run is not then automatically selected
+            if not self._fs_options.resume:
+                worker.running.connect(
+                    lambda: self._fs_options.refresh_runs_sig.emit()
+                )
             worker.new_sample_path_sig.connect(
                 self._fs_training_preview.new_sample_sig
             )
