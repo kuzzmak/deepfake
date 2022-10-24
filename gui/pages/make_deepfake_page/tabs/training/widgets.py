@@ -13,6 +13,7 @@ from gui.widgets.common import (
     NoMarginLayout,
     Parameter,
 )
+from utils import str_to_bool
 from variables import APP_LOGGER
 
 
@@ -178,3 +179,7 @@ class LoggingConfig(qwt.QWidget):
     @property
     def checkpoint_frequency(self) -> int:
         return self._chkpt_freq_row.frequency
+
+    @property
+    def use_wandb(self) -> bool:
+        return str_to_bool(self._use_wandb.value)
