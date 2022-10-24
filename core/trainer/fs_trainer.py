@@ -8,6 +8,7 @@ import torchvision
 import wandb
 
 from common_structures import Event
+from core.trainer.configuration import TrainerConfiguration
 from core.trainer.trainer import StepTrainer, StepTrainerConfiguration
 from enums import EVENT_DATA_KEY, EVENT_TYPE
 from variables import IMAGENET_MEAN, IMAGENET_STD
@@ -19,12 +20,11 @@ class FSTrainer(StepTrainer):
 
     def __init__(
         self,
-        conf: StepTrainerConfiguration,
+        conf: TrainerConfiguration,
         event: threading.Event,
     ) -> None:
         super().__init__(conf)
 
-        self._conf = conf
         self._stop_event = event
         meters = [
             'loss_Gmain',
