@@ -1,120 +1,25 @@
 import logging
+from numbers import Number
 from queue import Queue
 import threading
 import time
-from dataclasses import dataclass, field
-from numbers import Number
 from typing import Any, Dict, List, Optional
 
 import enlighten
-import torch
-import wandb
 from torch.backends import cudnn
-from torch.nn import Module
-from torch.utils.data import DataLoader
+import wandb
+
 from common_structures import Event
-
-from df_logging.model_logging import DFLogger
+from core.trainer.configuration import TrainerConfiguration
 from enums import EVENT_DATA_KEY, EVENT_TYPE
-
-
-@dataclass
-class ModelConfig:
-    model: Module
-    options: Dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class BaseTrainerConfiguration:
-    train_data_loader: DataLoader
-    batch_size: int
-    steps: int
-    model_config: ModelConfig
-    df_logger: DFLogger
-    resume_run: bool
-    device: torch.device
-    use_cudnn_benchmark: bool
-    name: str
-
-    def __str__(self) -> str:
-        val = f'{self.name} TRAINER CONFIGURATION\n'
-        val += '--------------------------\n'
-        val += f'batch size:          {self.batch_size}\n'
-        val += f'steps:               {self.steps}\n'
-        val += f'resume_run:          {self.resume_run}\n'
-        val += f'use_cudnn_benchmark: {self.use_cudnn_benchmark}\n'
-        val += f'device:              {self.device}\n'
-        val += f'model options:\n'
-        longest_key = max([len(k) for k in self.model_config.options.keys()])
-        for k, v in self.model_config.options.items():
-            v = str(v).rjust(longest_key - len(k) + len(str(v)))
-            val += f'{k}: {v}\n'
-        return val
-
-
-class EpochIterConfiguration(BaseTrainerConfiguration):
-
-    def __init__(
-        self,
-        train_data_loader: DataLoader,
-        batch_size: int,
-        epochs: int,
-        model_config: ModelConfig,
-        df_logger: DFLogger,
-        resume_run: bool = False,
-        device: torch.device = torch.device('cuda'),
-        use_cudnn_benchmark: bool = False,
-    ) -> None:
-        super().__init__(
-            train_data_loader,
-            batch_size,
-            model_config,
-            df_logger,
-            resume_run,
-            device,
-            use_cudnn_benchmark,
-            'EPOCH',
-        )
-
-        self._epochs = epochs
-
-    @property
-    def epochs(self) -> int:
-        return self._epochs
-
-
-class StepTrainerConfiguration(BaseTrainerConfiguration):
-
-    def __init__(
-        self,
-        train_data_loader: DataLoader,
-        batch_size: int,
-        steps: int,
-        model_config: ModelConfig,
-        df_logger: DFLogger,
-        resume_run: bool = False,
-        device: torch.device = torch.device('cuda'),
-        use_cudnn_benchmark: bool = False,
-    ) -> None:
-        super().__init__(
-            train_data_loader,
-            batch_size,
-            steps,
-            model_config,
-            df_logger,
-            resume_run,
-            device,
-            use_cudnn_benchmark,
-            'STEP',
-        )
 
 
 class BaseTrainer:
 
     def __init__(
         self,
-        conf: BaseTrainerConfiguration,
-        stop_event: Optional[threading.Event],
+        conf: TrainerConfiguration,
+        stop_event: Optional[threading.Event] = None,
     ) -> None:
         self._starting_step = 0
         self._current_step = 0
@@ -123,15 +28,15 @@ class BaseTrainer:
         self._device = conf.device
         self._train_data_loader = conf.train_data_loader
         self._meters: Dict[str, Number] = {}
-        self._log_freq = self._conf.df_logger.log_frequency
-        self._save_freq = conf.df_logger.checkpoint_frequency
-        self._sample_freq = conf.df_logger.sample_frequency
-        self._checkpoint_dir = conf.df_logger.checkpoints_dir
-        self._samples_dir = conf.df_logger.samples_dir
-        self._use_wandb = self._conf.df_logger.use_wandb
+        self._log_freq = conf.logging_conf.log_frequency
+        self._save_freq = conf.logging_conf.checkpoint_frequency
+        self._sample_freq = conf.logging_conf.sample_frequency
+        self._checkpoint_dir = conf.logging_conf.checkpoints_dir
+        self._samples_dir = conf.logging_conf.samples_dir
+        self._use_wandb = self._conf.logging_conf.use_wandb
         cudnn.benchmark = conf.use_cudnn_benchmark
         self._enligten_manager = enlighten.get_manager()
-        self._run_name = conf.df_logger.run_name
+        self._run_name = conf.logging_conf.run_name
         self._logger = logging.getLogger(type(self).__name__)
         if stop_event is not None:
             self._stop_event = stop_event
@@ -246,14 +151,14 @@ class EpochIterTrainer(BaseTrainer):
 
     def __init__(
         self,
-        conf: EpochIterConfiguration,
+        conf: TrainerConfiguration,
         stop_event: Optional[threading.Event] = None,
     ) -> None:
         super().__init__(conf, stop_event)
 
         self._iters = len(self._train_data_loader)
         self._current_iter = 0
-        self._epochs = conf.epochs
+        self._epochs = conf.steps
         self._current_epoch = 0
 
     def init_progress_bars(self) -> None:
@@ -291,7 +196,7 @@ class StepTrainer(BaseTrainer):
 
     def __init__(
         self,
-        conf: StepTrainerConfiguration,
+        conf: TrainerConfiguration,
         stop_event: Optional[threading.Event] = None,
     ) -> None:
         super().__init__(conf, stop_event)
