@@ -67,6 +67,7 @@ class LoggingConfiguration:
         self._log_frequency = log_frequency
         self._sample_frequency = sample_frequency
         self._checkpoint_frequency = checkpoint_frequency
+        self._use_wandb = use_wandb
 
         if run_name is None:
             self.run_name = get_date_uid()
@@ -144,6 +145,10 @@ class LoggingConfiguration:
     @property
     def checkpoint_frequency(self) -> int:
         return self._checkpoint_frequency
+
+    @property
+    def use_wandb(self) -> bool:
+        return self._use_wandb
 
     def values(self) -> Dict[str, Union[str, int]]:
         return {
