@@ -1,9 +1,13 @@
 import logging
+import multiprocessing
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+import torch
+import torchvision.transforms as T
 import wandb
 
+from core.optimizer.configuration import OptimizerConfiguration
 from utils import get_date_uid
 from variables import APP_LOGGER
 
@@ -17,14 +21,31 @@ class DatasetConfiguration:
         self,
         root: Union[str, Path],
         batch_size: int,
+        shuffle: bool = True,
+        transforms: T.Compose = T.Compose([T.ToTensor()]),
+        num_workers: int = multiprocessing.cpu_count() // 2,
+        pin_memory: bool = True,
+        drop_last: bool = True,
+        persistent_workers: bool = True,
     ) -> None:
-        self._root = Path(root)
-        self._batch_size = batch_size
+        self.root = Path(root)
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.transforms = transforms,
+        self.pin_memory = pin_memory
+        self.num_workers = num_workers
+        self.drop_last = drop_last
+        self.persistent_workers = persistent_workers
 
-    def values(self) -> Dict[str, Union[str, int]]:
+    def values(self) -> Dict[str, Union[str, int, bool]]:
         return {
-            'root': str(self._root),
-            'batch_size': self._batch_size,
+            'root': str(self.root),
+            'batch_size': self.batch_size,
+            'shuffle': self.shuffle,
+            'pin_memory': self.pin_memory,
+            'num_workers': self.num_workers,
+            'drop_last': self.drop_last,
+            'persistent_workers': self.persistent_workers,
         }
 
 
@@ -48,24 +69,24 @@ class LoggingConfiguration:
         self._checkpoint_frequency = checkpoint_frequency
 
         if run_name is None:
-            self._run_name = get_date_uid()
+            self.run_name = get_date_uid()
         else:
-            self._run_name = run_name
+            self.run_name = run_name
 
         self._logs_dir = Path(logs_dir)
         self._logs_dir.mkdir(parents=True, exist_ok=True)
 
         self._checkpoints_dir = Path(
             checkpoints_dir
-        ) / self._model_name / self._run_name
+        ) / self._model_name / self.run_name
         self._checkpoints_dir.mkdir(parents=True, exist_ok=True)
 
         self._samples_dir = Path(
             samples_dir
-        ) / self._model_name / self._run_name
+        ) / self._model_name / self.run_name
         self._samples_dir.mkdir(parents=True, exist_ok=True)
 
-        self._run_log_dir = self._logs_dir / self._model_name / self._run_name
+        self._run_log_dir = self._logs_dir / self._model_name / self.run_name
         self._run_log_dir.mkdir(parents=True, exist_ok=True)
 
         if not use_wandb:
@@ -91,7 +112,7 @@ class LoggingConfiguration:
         wandb.init(
             dir=str(self._logs_dir),
             project=self._model_name,
-            name=self._run_name,
+            name=self.run_name,
             resume='allow',
             id=wandb_id,
         )
@@ -107,7 +128,7 @@ class LoggingConfiguration:
     @property
     def samples_dir(self) -> Path:
         return self._samples_dir
-    
+
     @property
     def run_log_dir(self) -> Path:
         return self._run_log_dir
@@ -119,7 +140,7 @@ class LoggingConfiguration:
     @property
     def sample_frequency(self) -> int:
         return self._sample_frequency
-    
+
     @property
     def checkpoint_frequency(self) -> int:
         return self._checkpoint_frequency
@@ -128,7 +149,7 @@ class LoggingConfiguration:
         return {
             'log_dir': str(self._logs_dir),
             'model_name': self._model_name,
-            'log_frequency': self._log_freuency,
+            'log_frequency': self._log_frequency,
             'sample_frequency': self._sample_frequency,
             'checkpoint_frequency': self._checkpoint_frequency,
         }
@@ -142,55 +163,44 @@ class LoggingConfiguration:
         )
 
 
-class OptimizerConfiguration:
-
-    def __init__(
-        self,
-        optimizer_module: str,
-        optimizer_class: str,
-        options: Dict[str, Any],
-    ) -> None:
-        self._optimizer_module = optimizer_module
-        self._optimizer_class = optimizer_class
-        self._options = options
-
-    def values(self) -> Dict[str, Union[str, Dict[str, Any]]]:
-        return {
-            'optimizer_module': self._optimizer_module,
-            'optimizer_class': self._optimizer_class,
-            'options': self._options,
-        }
-
-
 class ModelConfiguration:
 
-    def __init__(self, options: Dict[str, Any]) -> None:
-        self._options = options
+    def __init__(self, args: Dict[str, Any]) -> None:
+        self.args = args
 
     def values(self) -> Dict[str, Any]:
-        return self._options
+        return self.args
 
 
 class TrainerConfiguration:
 
     def __init__(
         self,
+        steps: int,
         dataset_conf: DatasetConfiguration,
         logging_conf: LoggingConfiguration,
         optimizer_conf: OptimizerConfiguration,
         model_conf: ModelConfiguration,
+        device: torch.device = torch.device('cuda'),
+        use_cudnn_benchmark: bool = True,
     ) -> None:
-        self._dataset_conf = dataset_conf
-        self._logging_conf = logging_conf
-        self._optimizer_conf = optimizer_conf
-        self._model_conf = model_conf
+        self.steps = steps
+        self.dataset_conf = dataset_conf
+        self.logging_conf = logging_conf
+        self.optimizer_conf = optimizer_conf
+        self.model_conf = model_conf
+        self.device = device
+        self.use_cudnn_benchmark = use_cudnn_benchmark
 
     def save(self) -> None:
         d = {
-            'dataset': self._dataset_conf.values(),
-            'logging': self._logging_conf.values(),
-            'optimizer': self._optimizer_conf.values(),
-            'model': self._model_conf.values(),
+            'steps': self.steps,
+            'dataset': self.dataset_conf.values(),
+            'logging': self.logging_conf.values(),
+            'optimizer': self.optimizer_conf.values(),
+            'model': self.model_conf.values(),
+            'device': self.device,
+            'use_cudnn_benchmark': self.use_cudnn_benchmark,
         }
         print(d)
 
