@@ -480,7 +480,7 @@ def str_to_bool(v: str) -> bool:
     bool
         converted value to bool
     """
-    return v.lower() in ("yes", "true", "t", "1")
+    return v.lower() in ('yes', 'true', 't', '1')
 
 
 def get_date_uid():
@@ -488,4 +488,4 @@ def get_date_uid():
     Returns:
         str: Return uid string, e.g. '20171122171307111552'.
     """
-    return str(datetime.datetime.now().strftime("%Y_%m%d_%H%M_%S"))
+    return str(datetime.datetime.now().strftime('%Y_%m%d_%H%M_%S'))
