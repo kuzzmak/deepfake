@@ -5,16 +5,20 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import cv2 as cv
 import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
+import torch
 import torch.nn as nn
-from torchvision import transforms
+import torchvision.transforms as T
 
 from common_structures import TensorCommObject
 from configs.app_config import APP_CONFIG
 from core import loss
-from core.dataset.configuration import DatasetConfiguration
 from core.image.augmentation import ImageAugmentation
-from core.model.configuration import ModelConfiguration
-from core.optimizer.configuration import OptimizerConfiguration
+from core.optimizer.configuration import (
+    DEFAULT_ADAM_CONF,
+    OptimizerConfiguration,
+)
+from core.trainer.configuration import ModelConfiguration
+from core.trainer.configuration_old import TrainerConfiguration as OldTrainerConfiguration
 from core.trainer.configuration import TrainerConfiguration
 from core.worker import FSTrainerWorker, Worker
 from core.worker.trainer_thread import TrainingWorker
@@ -29,8 +33,7 @@ from enums import (
 from gui.pages.make_deepfake_page.tabs.training.fs_model.options import \
     Options as FSOptions
 from gui.pages.make_deepfake_page.tabs.training.fs_model.training_preview import (
-    ModelRun,
-)
+    ModelRun, )
 from gui.pages.make_deepfake_page.tabs.training.fs_model.training_preview import \
     TrainingPreview as FSTrainingPreview
 from gui.widgets.base_widget import BaseWidget
@@ -38,7 +41,7 @@ from gui.widgets.common import HWidget, NoMarginLayout, RadioButtons, VWidget
 from gui.widgets.preview.configuration import PreviewConfiguration
 from gui.widgets.preview.preview import Preview
 from utils import parse_tuple
-from variables import APP_LOGGER
+from variables import APP_LOGGER, IMAGENET_MEAN, IMAGENET_STD
 
 logger = logging.getLogger(APP_LOGGER)
 
@@ -703,7 +706,8 @@ class TrainingTab(BaseWidget):
 
         return opts
 
-    def _make_trainer_configuration(self) -> Union[TrainerConfiguration, None]:
+    def _make_trainer_configuration(
+            self) -> Union[OldTrainerConfiguration, None]:
         """Tries to construct trainer configuration. If anything user inputed
         was wrong, configuration can not be made.
 
@@ -745,9 +749,7 @@ class TrainingTab(BaseWidget):
             logger.error('Ouput shape is invalid, must have 3 numbers')
             return None
 
-        model_conf = ModelConfiguration(MODEL.ORIGINAL)
-
-        data_transforms = transforms.Compose([transforms.ToTensor()])
+        from core.dataset.configuration import DatasetConfiguration
         dataset_conf = DatasetConfiguration(
             path_A=self.training_conf.input_A_directory,
             path_B=self.training_conf.input_B_directory,
@@ -755,7 +757,7 @@ class TrainingTab(BaseWidget):
             output_size=output_shape[1],
             batch_size=int(self.training_conf.batch_size),
             image_augmentations=augs,
-            data_transforms=data_transforms,
+            data_transforms=T.Compose([T.ToTensor()]),
         )
 
         comm_obj = TensorCommObject()
@@ -763,8 +765,10 @@ class TrainingTab(BaseWidget):
         preview_conf = PreviewConfiguration(True, comm_obj)
 
         criterion = self.training_conf.loss_function
+        from core.model.configuration import ModelConfiguration
+        model_conf = ModelConfiguration(MODEL.ORIGINAL)
 
-        conf = TrainerConfiguration(
+        conf = OldTrainerConfiguration(
             device=self.training_conf.device,
             input_shape=input_shape,
             epochs=int(self.training_conf.epochs),
@@ -808,24 +812,50 @@ class TrainingTab(BaseWidget):
             self.enable_widget(self.stop_btn, True)
 
         elif self._selected_model == MODEL.FS:
+            from core.trainer.configuration import (
+                DatasetConfiguration,
+                LoggingConfiguration,
+            )
+            dataset_conf = DatasetConfiguration(
+                root=self._fs_options.dataset_dir,
+                batch_size=self._fs_options.batch_size,
+                transforms=T.Compose([
+                    T.ToTensor(),
+                    T.Normalize(IMAGENET_MEAN, IMAGENET_STD),
+                ]),
+            )
+            logging_conf = LoggingConfiguration(
+                MODEL.FS,
+                self._fs_options.log_frequency,
+                self._fs_options.sample_frequency,
+                self._fs_options.checkpoint_frequency,
+                run_name=self._fs_options.resume_run_name,
+            )
+            optimizer_conf = DEFAULT_ADAM_CONF
+            optimizer_conf.args['lr'] = 0.0004
+            optimizer_conf.args['betas'] = (0.2, 0.999)
+            model_conf = ModelConfiguration(
+                {
+                    'gdeep': self._fs_options.gdeep,
+                    'lambda_id': self._fs_options.lambda_id,
+                    'lambda_feat': self._fs_options.lambda_feat,
+                    'lambda_rec': self._fs_options.lambda_rec,
+                }
+            )
+            device = torch.device('cuda') \
+                if torch.cuda.is_available() \
+                else torch.device('cpu')
+            trainer_conf = TrainerConfiguration(
+                dataset_conf,
+                logging_conf,
+                optimizer_conf,
+                model_conf,
+                device,
+            )
             thread = qtc.QThread()
             worker = FSTrainerWorker(
-                steps=self._fs_options.steps,
-                batch_size=self._fs_options.batch_size,
-                lr=self._fs_options.lr,
-                dataset_root=self._fs_options.dataset_dir,
-                gdeep=self._fs_options.gdeep,
-                beta1=self._fs_options.beta1,
-                lambda_id=self._fs_options.lambda_id,
-                lambda_feat=self._fs_options.lambda_feat,
-                lambda_rec=self._fs_options.lambda_rec,
-                use_cudnn_benchmark=self._fs_options.use_cudnn,
-                log_frequency=self._fs_options.log_frequency,
-                sample_frequency=self._fs_options.sample_frequency,
-                checkpoint_frequency=self._fs_options.checkpoint_frequency,
-                resume=self._fs_options.resume,
-                resume_run_name=self._fs_options.resume_run_name,
-                message_worker_sig=self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
+                trainer_conf,
+                self.signals[SIGNAL_OWNER.MESSAGE_WORKER],
             )
             self.stop_training_sig.connect(lambda: worker.stop())
             worker.moveToThread(thread)
