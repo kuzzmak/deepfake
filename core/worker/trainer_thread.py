@@ -12,7 +12,7 @@ from core.aligner import Aligner, AlignerConfiguration
 from core.dataset.dataset_old import DeepfakeDataset
 from core.model.model import DeepfakeModel
 from core.model.original_ae import OriginalAE
-from core.trainer.configuration import TrainerConfiguration
+from core.trainer.configuration_old import TrainerConfiguration
 from core.trainer.trainer_old import Trainer
 from enums import MODEL
 from utils import get_aligned_landmarks_filename
@@ -130,7 +130,7 @@ class TrainingWorker(qtc.QObject):
         return model
 
     def _init_optimizer(self, parameters: Iterator[Parameter]) -> Optimizer:
-        optim = self._conf.optimizer_conf.optimizer.value
+        optim = self._conf.optimizer_conf.optimizer_class.value
         optim = getattr(torch.optim, optim)
         optim_args = self._conf.optimizer_conf.optimizer_args
         optim = optim(params=parameters, **optim_args)
