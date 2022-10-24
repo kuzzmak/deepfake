@@ -198,6 +198,10 @@ class Options(BaseWidget):
     def run_description(self) -> str:
         return self._desc_input.toPlainText()
 
+    @property
+    def use_wandb(self) -> bool:
+        return self._log_config_wgt.use_wandb
+
     @qtc.pyqtSlot(int)
     def _run_selection_changed(self, index: int) -> None:
         self.run_changed_sig.emit()
