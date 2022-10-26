@@ -9,7 +9,7 @@ import wandb
 
 from common_structures import Event
 from core.trainer.configuration import TrainerConfiguration
-from core.trainer.trainer import StepTrainer, StepTrainerConfiguration
+from core.trainer.trainer import StepTrainer
 from enums import EVENT_DATA_KEY, EVENT_TYPE
 from variables import IMAGENET_MEAN, IMAGENET_STD
 
@@ -42,8 +42,8 @@ class FSTrainer(StepTrainer):
         self._imagenet_std = torch.Tensor(IMAGENET_MEAN).view(3, 1, 1)
         self._imagenet_mean = torch.Tensor(IMAGENET_STD).view(3, 1, 1)
 
-        self._lambda_id = self._conf.model_config.options['lambda_id']
-        self._lambda_feat = self._conf.model_config.options['lambda_feat']
+        self._lambda_id = self._conf.model_conf.args['lambda_id']
+        self._lambda_feat = self._conf.model_conf.args['lambda_feat']
 
     def post_model_init(self) -> None:
         self._optim_g = self._model.optimizer_G
@@ -68,7 +68,7 @@ class FSTrainer(StepTrainer):
             save_path,
         )
         self._logger.debug(f'Saved model checkpoint: {str(save_path)}.')
-        chkpt_fp = self._conf.df_logger.latest_checkpoints_file_path
+        chkpt_fp = self._conf.logging_conf.latest_checkpoints_file_path
         with open(chkpt_fp, 'wt') as f:
             f.write(str(save_path))
             self._logger.debug(
@@ -76,7 +76,7 @@ class FSTrainer(StepTrainer):
             )
 
     def load_checkpoint(self) -> None:
-        chkpt_fp = self._conf.df_logger.latest_checkpoints_file_path
+        chkpt_fp = self._conf.logging_conf.latest_checkpoints_file_path
         if not chkpt_fp.exists():
             self._logger.warning(
                 'File with latest checkpoint does not exist, ' +
@@ -118,7 +118,7 @@ class FSTrainer(StepTrainer):
             img_1, img_2 = self.get_batch_of_data()
             img_1: torch.Tensor = img_1.to(self._device)
             img_2: torch.Tensor = img_2.to(self._device)
-            randindex = list(range(self._conf.batch_size))
+            randindex = list(range(self._conf.dataset_conf.batch_size))
             random.shuffle(randindex)
             if self._current_step % 2 == 0:
                 img_id = img_2
@@ -172,7 +172,7 @@ class FSTrainer(StepTrainer):
                     loss_G_Rec = self._model.criterionRec(
                         img_fake,
                         img_1,
-                    ) * self._conf.model_config.options['lambda_rec']
+                    ) * self._conf.model_conf.args['lambda_rec']
                     self.update_meter('loss_G_Rec', loss_G_Rec.item())
                     loss_G += loss_G_Rec
 
@@ -182,7 +182,7 @@ class FSTrainer(StepTrainer):
 
         if (self._current_step + 1) % self._sample_freq == 0:
             self._model.netG.eval()
-            bs = self._conf.batch_size
+            bs = self._conf.dataset_conf.batch_size
             with torch.no_grad():
                 imgs = [torch.zeros_like(img_1[0]).cpu()]
                 save_img = img_1.cpu() * self._imagenet_std + \
@@ -208,17 +208,17 @@ class FSTrainer(StepTrainer):
     def plot_samples(self, samples: List[torch.Tensor]) -> None:
         image_grid = torchvision.utils.make_grid(
             samples,
-            nrow=self._conf.batch_size + 1,
+            nrow=self._conf.dataset_conf.batch_size + 1,
             padding=0,
         )
         sample_name = f'step_{self._current_step + 1}.jpg'
-        self._conf.df_logger.save_sample(image_grid, sample_name)
+        self.save_sample(image_grid, sample_name)
         self._event_q.put(
             Event(
                 EVENT_TYPE.NEW_SAMPLE,
                 {
                     EVENT_DATA_KEY.SAMPLE_PATH:
-                    self._conf.df_logger.samples_dir / sample_name
+                    self._conf.logging_conf.samples_dir / sample_name
                 }
             )
         )
