@@ -8,6 +8,7 @@ import torchvision.transforms as T
 import wandb
 
 from core.optimizer.configuration import OptimizerConfiguration
+from enums import MODEL
 from utils import get_date_uid
 from variables import APP_LOGGER
 
@@ -150,6 +151,14 @@ class LoggingConfiguration:
     def use_wandb(self) -> bool:
         return self._use_wandb
 
+    @property
+    def wandb_last_step(self) -> int:
+        return self._wandb_last_step
+
+    @property
+    def latest_checkpoints_file_path(self) -> Path:
+        return self._checkpoints_dir / 'latest_checkpoint.txt'
+
     def values(self) -> Dict[str, Union[str, int]]:
         return {
             'log_dir': str(self._logs_dir),
@@ -173,11 +182,15 @@ class LoggingConfiguration:
 
 class ModelConfiguration:
 
-    def __init__(self, args: Dict[str, Any]) -> None:
+    def __init__(self, model: MODEL, args: Dict[str, Any]) -> None:
+        self.model = model
         self.args = args
 
     def values(self) -> Dict[str, Any]:
-        return self.args
+        return {
+            'model': self.model.value,
+            'args': self.args,
+        }
 
 
 class TrainerConfiguration:
@@ -189,6 +202,7 @@ class TrainerConfiguration:
         logging_conf: LoggingConfiguration,
         optimizer_conf: OptimizerConfiguration,
         model_conf: ModelConfiguration,
+        resume: bool = False,
         device: torch.device = torch.device('cuda'),
         use_cudnn_benchmark: bool = True,
     ) -> None:
@@ -197,6 +211,7 @@ class TrainerConfiguration:
         self.logging_conf = logging_conf
         self.optimizer_conf = optimizer_conf
         self.model_conf = model_conf
+        self.resume = resume
         self.device = device
         self.use_cudnn_benchmark = use_cudnn_benchmark
 
@@ -207,6 +222,7 @@ class TrainerConfiguration:
             'logging': self.logging_conf.values(),
             'optimizer': self.optimizer_conf.values(),
             'model': self.model_conf.values(),
+            'resume': self.resume,
             'device': self.device,
             'use_cudnn_benchmark': self.use_cudnn_benchmark,
         }
