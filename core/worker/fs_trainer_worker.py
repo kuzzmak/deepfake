@@ -1,22 +1,21 @@
 from pathlib import Path
 from queue import Empty
 from threading import Thread
-from typing import Optional, Union
+from typing import Optional
 
 import PyQt6.QtCore as qtc
-import torch
-from torch.utils.data import DataLoader
-import torchvision.transforms as T
 
-from core.dataset.dataset import FSDataset
-from core.model.configuration import ModelConfig
 from core.trainer.configuration import TrainerConfiguration
 from core.trainer.fs_trainer import FSTrainer
-from core.model.fs import FS
-from core.trainer.trainer import StepTrainerConfiguration
 from core.worker import Worker
-from df_logging.model_logging import DFLogger
-from enums import EVENT_DATA_KEY, EVENT_TYPE, JOB_NAME, JOB_TYPE, SIGNAL_OWNER, WIDGET
+from enums import (
+    EVENT_DATA_KEY,
+    EVENT_TYPE,
+    JOB_NAME,
+    JOB_TYPE,
+    SIGNAL_OWNER,
+    WIDGET,
+)
 from message.message import Messages
 
 
@@ -34,7 +33,6 @@ class FSTrainerWorker(Worker):
         self.conf = trainer_conf
 
     def run_job(self) -> None:
-        # 'arc_path': r'C:\Users\tonkec\Documents\SimSwap-main\arcface_model\new_arc.tar',
         trainer = FSTrainer(self.conf, self.stop_event)
 
         conf_wgt_msg = Messages.CONFIGURE_WIDGET(
