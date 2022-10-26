@@ -46,21 +46,21 @@ class FS(nn.Module):
                 opt['which_epoch'],
                 pretrained_path)
             return
+
         self.netD = ProjectedDiscriminator()
         self.netD.cuda()
 
-        if self._train:
-            self.criterionFeat = nn.L1Loss()
-            self.criterionRec = nn.L1Loss()
-            self.optimizer_G = torch.optim.Adam(
-                self.netG.parameters(),
-                lr=opt['lr'],
-                betas=(opt['beta1'], 0.99),
-            )
-            self.optimizer_D = torch.optim.Adam(
-                self.netD.parameters(),
-                lr=opt['lr'],
-                betas=(opt['beta1'], 0.99),
-            )
+        self.criterionFeat = nn.L1Loss()
+        self.criterionRec = nn.L1Loss()
+        self.optimizer_G = torch.optim.Adam(
+            self.netG.parameters(),
+            lr=opt['lr'],
+            betas=opt['betas'],
+        )
+        self.optimizer_D = torch.optim.Adam(
+            self.netD.parameters(),
+            lr=opt['lr'],
+            betas=opt['betas'],
+        )
 
         torch.cuda.empty_cache()
