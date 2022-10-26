@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from enums import VIDEO_FORMAT
+from enums import MODEL, VIDEO_FORMAT
 
 DEEPFAKE_ROOT = Path(__file__).parent.absolute()
 
@@ -44,3 +44,8 @@ DETECT_DEEPFAKE_PAGE_NAME = 'detect_deepfake_page'
 DETECT_DEEPFAKE_PAGE_TITLE = 'Detect deepfake page'
 
 APP_LOGGER = 'app'
+
+MODEL_NAME_CLASS_NAME_MAPPING = {
+    MODEL.FS: 'FS',
+    MODEL.ORIGINAL: 'OriginalAE',
+}
