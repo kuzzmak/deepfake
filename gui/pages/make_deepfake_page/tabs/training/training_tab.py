@@ -825,7 +825,7 @@ class TrainingTab(BaseWidget):
                 ]),
             )
             logging_conf = LoggingConfiguration(
-                MODEL.FS,
+                MODEL.FS.value,
                 self._fs_options.log_frequency,
                 self._fs_options.sample_frequency,
                 self._fs_options.checkpoint_frequency,
@@ -833,14 +833,19 @@ class TrainingTab(BaseWidget):
             )
             optimizer_conf = DEFAULT_ADAM_CONF
             optimizer_conf.args['lr'] = 0.0004
-            optimizer_conf.args['betas'] = (0.2, 0.999)
+            optimizer_conf.args['betas'] = (0.2, 0.99)
             model_conf = ModelConfiguration(
+                MODEL.FS,
                 {
                     'gdeep': self._fs_options.gdeep,
                     'lambda_id': self._fs_options.lambda_id,
                     'lambda_feat': self._fs_options.lambda_feat,
                     'lambda_rec': self._fs_options.lambda_rec,
-                }
+                    'train': True,
+                    'betas': (0.2, 0.99),
+                    'lr': 0.0004,
+                    'arc_path': r'C:\\Users\\tonkec\\Documents\SimSwap-main\\arcface_model\\new_arc.tar',
+                },
             )
             device = torch.device('cuda') \
                 if torch.cuda.is_available() \
@@ -850,6 +855,7 @@ class TrainingTab(BaseWidget):
                 logging_conf,
                 optimizer_conf,
                 model_conf,
+                self._fs_options.resume,
                 device,
             )
             thread = qtc.QThread()
