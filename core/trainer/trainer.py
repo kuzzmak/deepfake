@@ -6,12 +6,18 @@ import time
 from typing import Any, Dict, List, Optional
 
 import enlighten
+from PIL import Image
+import torch
 from torch.backends import cudnn
+from torch.utils.data import DataLoader
 import wandb
 
 from common_structures import Event
+import core.dataset
+import core.model
 from core.trainer.configuration import TrainerConfiguration
 from enums import EVENT_DATA_KEY, EVENT_TYPE
+from variables import MODEL_NAME_CLASS_NAME_MAPPING
 
 
 class BaseTrainer:
@@ -26,14 +32,14 @@ class BaseTrainer:
         self._steps = conf.steps
         self._conf = conf
         self._device = conf.device
-        self._train_data_loader = conf.train_data_loader
+        self._train_data_loader = self._init_data_loader()
         self._meters: Dict[str, Number] = {}
         self._log_freq = conf.logging_conf.log_frequency
         self._save_freq = conf.logging_conf.checkpoint_frequency
         self._sample_freq = conf.logging_conf.sample_frequency
         self._checkpoint_dir = conf.logging_conf.checkpoints_dir
         self._samples_dir = conf.logging_conf.samples_dir
-        self._use_wandb = self._conf.logging_conf.use_wandb
+        self._use_wandb = conf.logging_conf.use_wandb
         cudnn.benchmark = conf.use_cudnn_benchmark
         self._enligten_manager = enlighten.get_manager()
         self._run_name = conf.logging_conf.run_name
@@ -50,11 +56,33 @@ class BaseTrainer:
     def should_stop(self) -> bool:
         return self._stop_event.is_set()
 
+    def _init_data_loader(self) -> DataLoader:
+        dataset_class_name = MODEL_NAME_CLASS_NAME_MAPPING[
+            self._conf.model_conf.model
+        ]
+        self._logger.debug(f'Loading {dataset_class_name} dataset.')
+        dc = self._conf.dataset_conf
+        dataset_class = getattr(core.dataset, dataset_class_name)
+        dataset = dataset_class(dc.root, dc.transforms)
+        dataloader = DataLoader(
+            dataset=dataset,
+            batch_size=dc.batch_size,
+            shuffle=dc.shuffle,
+            num_workers=dc.num_workers,
+            pin_memory=dc.pin_memory,
+            drop_last=dc.drop_last,
+            persistent_workers=dc.persistent_workers,
+        )
+        self._logger.debug('Dataset loaded.')
+        return dataloader
+
     def init_model(self) -> None:
         self._logger.info('Loading model.')
-        mc = self._conf.model_config
-        self._model = mc.model()
-        self._model.initialize(mc.options)
+        mc = self._conf.model_conf
+        model_class_name = MODEL_NAME_CLASS_NAME_MAPPING[mc.model]
+        model_class = getattr(core.model, model_class_name)
+        self._model = model_class()
+        self._model.initialize(mc.args)
         self._logger.info('Model loaded.')
 
     def init_progress_bars(self) -> None:
@@ -73,8 +101,8 @@ class BaseTrainer:
     def _init_wandb(self) -> None:
         wandb.config.update(
             {
-                'learning_rate': self._conf.model_config.options['lr'],
-                'batch_size': self._conf.batch_size,
+                'learning_rate': self._conf.optimizer_conf.args['lr'],
+                'batch_size': self._conf.dataset_conf.batch_size,
             }
         )
         wandb.watch(self._model)
@@ -114,21 +142,43 @@ class BaseTrainer:
 
     def log(self) -> None:
         if (self._current_step + 1) % self._log_freq == 0 and self._use_wandb:
-            self._conf.df_logger.update_wandb_last_step(
+            self._conf.logging_conf.update_wandb_last_step(
                 self._current_step + 1
             )
             if self._current_step + 1 > \
-                    self._conf.df_logger.wandb_last_step:
+                    self._conf.logging_conf.wandb_last_step:
                 wandb.log(
                     data=self._meters,
                     step=self._current_step + 1,
                 )
             # TODO log to file
 
+    def save_sample(
+        self,
+        sample: torch.Tensor,
+        sample_name: str,
+    ) -> None:
+        sp = self._samples_dir / sample_name
+        ndarr = sample \
+            .mul(255) \
+            .add_(0.5) \
+            .clamp_(0, 255) \
+            .permute(1, 2, 0) \
+            .to('cpu', torch.uint8) \
+            .numpy()
+        im = Image.fromarray(ndarr)
+        im.save(sp)
+        self._logger.debug(
+            f'Saved new sample from the model on path: {str(sp)}'
+        )
+        if self._use_wandb:
+            wandb.log({sp.stem: [wandb.Image(str(sp))]})
+            self._logger.debug('Logged new sample to wandb.')
+
     def start(self) -> None:
         self.init_model()
         self.post_model_init()
-        if self._conf.resume_run:
+        if self._conf.resume:
             self.load_checkpoint()
         self.init_progress_bars()
         self._init_logging()
