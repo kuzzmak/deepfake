@@ -32,7 +32,7 @@ class DatasetConfiguration:
         self.root = Path(root)
         self.batch_size = batch_size
         self.shuffle = shuffle
-        self.transforms = transforms,
+        self.transforms = transforms
         self.pin_memory = pin_memory
         self.num_workers = num_workers
         self.drop_last = drop_last
@@ -175,7 +175,7 @@ class LoggingConfiguration:
         with open(self._wandb_last_step_path, 'w') as f:
             f.write(str(step))
         logger.debug(
-            f'Updated last wand step ({step}) in file '
+            f'Updated last wandb step ({step}) in file '
             f'{str(self._wandb_last_step_path)}.'
         )
 
