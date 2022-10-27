@@ -51,7 +51,7 @@ class FSTrainer(StepTrainer):
         self._model.netD.feature_network.requires_grad_(False)
 
     def post_init_logging(self) -> None:
-        if self._conf.df_logger.use_wandb:
+        if self._conf.logging_conf.use_wandb:
             wandb.config.update({'steps': self._conf.steps})
 
     def save_checkpoint(self) -> None:
@@ -116,8 +116,8 @@ class FSTrainer(StepTrainer):
 
         for idx in range(2):
             img_1, img_2 = self.get_batch_of_data()
-            img_1: torch.Tensor = img_1.to(self._device)
-            img_2: torch.Tensor = img_2.to(self._device)
+            img_1: torch.Tensor = img_1.to(self._device, non_blocking=True)
+            img_2: torch.Tensor = img_2.to(self._device, non_blocking=True)
             randindex = list(range(self._conf.dataset_conf.batch_size))
             random.shuffle(randindex)
             if self._current_step % 2 == 0:
