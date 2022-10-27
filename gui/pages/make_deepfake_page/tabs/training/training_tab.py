@@ -851,12 +851,13 @@ class TrainingTab(BaseWidget):
                 if torch.cuda.is_available() \
                 else torch.device('cpu')
             trainer_conf = TrainerConfiguration(
-                dataset_conf,
-                logging_conf,
-                optimizer_conf,
-                model_conf,
-                self._fs_options.resume,
-                device,
+                steps=self._fs_options.steps,
+                dataset_conf=dataset_conf,
+                logging_conf=logging_conf,
+                optimizer_conf=optimizer_conf,
+                model_conf=model_conf,
+                resume=self._fs_options.resume,
+                device=device,
             )
             thread = qtc.QThread()
             worker = FSTrainerWorker(
