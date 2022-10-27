@@ -132,7 +132,7 @@ class DFLogger:
         with open(self._wandb_last_step_path, 'w+') as f:
             f.write(str(step))
         logger.debug(
-            f'Updated last wand step ({step}) in file '
+            f'Updated last wandb step ({step}) in file '
             f'{str(self._wandb_last_step_path)}.'
         )
 
