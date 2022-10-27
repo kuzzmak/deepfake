@@ -32,7 +32,6 @@ class BaseTrainer:
         self._steps = conf.steps
         self._conf = conf
         self._device = conf.device
-        self._train_data_loader = self._init_data_loader()
         self._meters: Dict[str, Number] = {}
         self._log_freq = conf.logging_conf.log_frequency
         self._save_freq = conf.logging_conf.checkpoint_frequency
@@ -56,15 +55,15 @@ class BaseTrainer:
     def should_stop(self) -> bool:
         return self._stop_event.is_set()
 
-    def _init_data_loader(self) -> DataLoader:
+    def _init_data_loaders(self) -> DataLoader:
         dataset_class_name = MODEL_NAME_CLASS_NAME_MAPPING[
             self._conf.model_conf.model
         ]
         self._logger.debug(f'Loading {dataset_class_name} dataset.')
         dc = self._conf.dataset_conf
-        dataset_class = getattr(core.dataset, dataset_class_name)
+        dataset_class = getattr(core.dataset, dataset_class_name + 'Dataset')
         dataset = dataset_class(dc.root, dc.transforms)
-        dataloader = DataLoader(
+        self._train_data_loader = DataLoader(
             dataset=dataset,
             batch_size=dc.batch_size,
             shuffle=dc.shuffle,
@@ -74,7 +73,6 @@ class BaseTrainer:
             persistent_workers=dc.persistent_workers,
         )
         self._logger.debug('Dataset loaded.')
-        return dataloader
 
     def init_model(self) -> None:
         self._logger.info('Loading model.')
@@ -176,6 +174,7 @@ class BaseTrainer:
             self._logger.debug('Logged new sample to wandb.')
 
     def start(self) -> None:
+        self._init_data_loaders()
         self.init_model()
         self.post_model_init()
         if self._conf.resume:
@@ -251,8 +250,6 @@ class StepTrainer(BaseTrainer):
     ) -> None:
         super().__init__(conf, stop_event)
 
-        self._train_data_iter = iter(self._train_data_loader)
-
     def init_progress_bars(self) -> None:
         self._step_pbar = self._init_step_progress_bar(self._starting_step)
 
@@ -277,6 +274,7 @@ class StepTrainer(BaseTrainer):
         raise NotImplementedError
 
     def train(self) -> None:
+        self._train_data_iter = iter(self._train_data_loader)
         for s in range(self._starting_step, self._steps):
             if self.should_stop():
                 self._logger.info('Requested stop, please wait...')
