@@ -162,7 +162,7 @@ class LoggingConfiguration:
     def values(self) -> Dict[str, Union[str, int]]:
         return {
             'log_dir': str(self._logs_dir),
-            'ckeckpoints_dir': str(self._checkpoints_dir),
+            'checkpoints_dir': str(self._checkpoints_dir),
             'samples_dir': str(self._samples_dir),
             'model_name': self._model_name,
             'log_frequency': self._log_frequency,
