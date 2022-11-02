@@ -1,3 +1,4 @@
+import json
 import logging
 import multiprocessing
 from pathlib import Path
@@ -223,10 +224,11 @@ class TrainerConfiguration:
             'optimizer': self.optimizer_conf.values(),
             'model': self.model_conf.values(),
             'resume': self.resume,
-            'device': self.device,
+            'device': str(self.device),
             'use_cudnn_benchmark': self.use_cudnn_benchmark,
         }
-        print(d)
+        with open(self.logging_conf.run_log_dir / 'configuration.json', 'w') as f:
+            f.write(json.dumps(d, indent=4))
 
         # import importlib
         # module = importlib.import_module(d['optimizer']['optimizer_module'])
