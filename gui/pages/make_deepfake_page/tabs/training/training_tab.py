@@ -852,10 +852,10 @@ class TrainingTab(BaseWidget):
                 else torch.device('cpu')
             trainer_conf = TrainerConfiguration(
                 steps=self._fs_options.steps,
-                dataset_conf=dataset_conf,
-                logging_conf=logging_conf,
-                optimizer_conf=optimizer_conf,
-                model_conf=model_conf,
+                dataset=dataset_conf,
+                logging=logging_conf,
+                optimizer=optimizer_conf,
+                model=model_conf,
                 resume=self._fs_options.resume,
                 device=device,
             )
