@@ -6,6 +6,7 @@ import PyQt6.QtCore as qtc
 import PyQt6.QtWidgets as qwt
 
 from core.model.fs import FS
+from core.trainer.configuration import TrainerConfiguration
 from enums import FREQUENCY_UNIT, WIDGET_TYPE
 from gui.pages.make_deepfake_page.tabs.training.widgets import (
     LoggingConfig,
@@ -54,6 +55,7 @@ class Options(BaseWidget):
             WIDGET_TYPE.RADIO_BUTTON,
         )
         train_options_gb.layout().addWidget(self._resume)
+        self._resume._btn_bg.buttonClicked.connect(self._possible_resume)
 
         run_row = HWidget()
         train_options_gb.layout().addWidget(run_row)
@@ -226,3 +228,24 @@ class Options(BaseWidget):
     @qtc.pyqtSlot()
     def _run_info(self) -> None:
         print('inf')
+
+    @qtc.pyqtSlot(qwt.QAbstractButton)
+    def _possible_resume(self, button: qwt.QAbstractButton) -> None:
+        resume = str_to_bool(button.text())
+        if not resume:
+            return
+        
+        # should resume from the conf file in run log directory
+        run_dir = self._log_config_wgt.log_dir / \
+            self._model_name / \
+            self.resume_run_name
+        conf_fp = run_dir / 'configuration.json'
+        if not conf_fp.exists():
+            logger.warning(
+                'configuration.json file for resuming training not found '
+                f'in {str(run_dir)}'
+            )
+            return
+
+        conf = TrainerConfiguration.load(conf_fp)
+        print(conf)
