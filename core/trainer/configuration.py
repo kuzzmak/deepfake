@@ -1,4 +1,8 @@
+from __future__ import annotations
+from dataclasses import dataclass
 import json
+import importlib
+import inspect
 import logging
 import multiprocessing
 from pathlib import Path
@@ -10,36 +14,75 @@ import wandb
 
 from core.optimizer.configuration import OptimizerConfiguration
 from enums import MODEL
-from utils import get_date_uid
+from utils import get_date_uid, str_to_bool
 from variables import APP_LOGGER
 
 
 logger = logging.getLogger(APP_LOGGER)
 
 
+@dataclass
 class DatasetConfiguration:
+    root: Union[str, Path]
+    batch_size: int
+    shuffle: bool = True
+    transforms: T.Compose = T.Compose([T.ToTensor()])
+    num_workers: int = multiprocessing.cpu_count() // 2
+    pin_memory: bool = True
+    drop_last: bool = True
+    persistent_workers: bool = True
 
-    def __init__(
-        self,
-        root: Union[str, Path],
-        batch_size: int,
-        shuffle: bool = True,
-        transforms: T.Compose = T.Compose([T.ToTensor()]),
-        num_workers: int = multiprocessing.cpu_count() // 2,
-        pin_memory: bool = True,
-        drop_last: bool = True,
-        persistent_workers: bool = True,
-    ) -> None:
-        self.root = Path(root)
-        self.batch_size = batch_size
-        self.shuffle = shuffle
-        self.transforms = transforms
-        self.pin_memory = pin_memory
-        self.num_workers = num_workers
-        self.drop_last = drop_last
-        self.persistent_workers = persistent_workers
+    @classmethod
+    def from_dict(
+        cls,
+        dict: Dict[str, Union[str, int, bool]],
+    ) -> DatasetConfiguration:
+        transforms_list = dict['transforms']
+        transforms = []
+        for t in transforms_list:
+            t_class = getattr(
+                importlib.import_module(t['module']),
+                t['class'],
+            )
+            transform = t_class(**t['args'])
+            transforms.append(transform)
+        transforms = T.Compose(transforms)
+
+        return cls(
+            root=Path(dict['root']), 
+            batch_size=dict['batch_size'],
+            shuffle=dict['shuffle'],
+            num_workers=dict['num_workers'],
+            pin_memory=dict['pin_memory'],
+            drop_last=dict['drop_last'],
+            persistent_workers=dict['persistent_workers'],
+            transforms=transforms,
+        )
 
     def values(self) -> Dict[str, Union[str, int, bool]]:
+        transforms = []
+        if self.transforms != None:
+            for transform in self.transforms.transforms:
+                transform_module = transform.__class__.__module__
+                transform_class_name = transform.__class__.__name__
+                transform_class = getattr(
+                    importlib.import_module(transform_module),
+                    transform_class_name,
+                )
+                args = [
+                    p.name for p in inspect.signature(transform_class) \
+                        .parameters.values()
+                ]
+                transform_dict = {
+                    'module': transform_module,
+                    'class': transform_class_name,
+                    'args': {},
+                }
+                for arg in args:
+                    transform_dict['args'][f'{arg}'] = getattr(transform, arg)
+                    
+                transforms.append(transform_dict)
+
         return {
             'root': str(self.root),
             'batch_size': self.batch_size,
@@ -48,6 +91,7 @@ class DatasetConfiguration:
             'num_workers': self.num_workers,
             'drop_last': self.drop_last,
             'persistent_workers': self.persistent_workers,
+            'transforms': transforms,
         }
 
 
@@ -112,13 +156,13 @@ class LoggingConfiguration:
             with open(self._wandb_last_step_path, 'r+') as f:
                 self._wandb_last_step = int(f.read())
 
-        wandb.init(
-            dir=str(self._logs_dir),
-            project=self._model_name,
-            name=self.run_name,
-            resume='allow',
-            id=wandb_id,
-        )
+        # wandb.init(
+        #     dir=str(self._logs_dir),
+        #     project=self._model_name,
+        #     name=self.run_name,
+        #     resume='allow',
+        #     id=wandb_id,
+        # )
 
     @property
     def logs_dir(self) -> Path:
@@ -199,19 +243,19 @@ class TrainerConfiguration:
     def __init__(
         self,
         steps: int,
-        dataset_conf: DatasetConfiguration,
-        logging_conf: LoggingConfiguration,
-        optimizer_conf: OptimizerConfiguration,
-        model_conf: ModelConfiguration,
+        dataset: DatasetConfiguration,
+        logging: LoggingConfiguration,
+        optimizer: OptimizerConfiguration,
+        model: ModelConfiguration,
         resume: bool = False,
         device: torch.device = torch.device('cuda'),
         use_cudnn_benchmark: bool = True,
     ) -> None:
         self.steps = steps
-        self.dataset_conf = dataset_conf
-        self.logging_conf = logging_conf
-        self.optimizer_conf = optimizer_conf
-        self.model_conf = model_conf
+        self.dataset = dataset
+        self.logging = logging
+        self.optimizer = optimizer
+        self.model = model
         self.resume = resume
         self.device = device
         self.use_cudnn_benchmark = use_cudnn_benchmark
@@ -219,17 +263,30 @@ class TrainerConfiguration:
     def save(self) -> None:
         d = {
             'steps': self.steps,
-            'dataset': self.dataset_conf.values(),
-            'logging': self.logging_conf.values(),
-            'optimizer': self.optimizer_conf.values(),
-            'model': self.model_conf.values(),
+            'dataset': self.dataset.values(),
+            'logging': self.logging.values(),
+            'optimizer': self.optimizer.values(),
+            'model': self.model.values(),
             'resume': self.resume,
             'device': str(self.device),
             'use_cudnn_benchmark': self.use_cudnn_benchmark,
         }
-        with open(self.logging_conf.run_log_dir / 'configuration.json', 'w') as f:
+        with open(self.logging.run_log_dir / 'configuration.json', 'w') as f:
             f.write(json.dumps(d, indent=4))
 
+    @classmethod
+    def load(cls, config_path: Union[str, Path]) -> TrainerConfiguration:
+        p = Path(config_path)
+        with open(p, 'r') as f:
+            obj = json.load(f)
+        
+        dataset = DatasetConfiguration.from_dict(obj['dataset'])
+        print(dataset.root.exists())
+        print('dataset', dataset, type(dataset.num_workers))
+    #     attributes = [a for a, v in Test.__dict__.items()
+    #                   if not re.match('<function.*?>', str(v))
+    #                   and not (a.startswith('__') and a.endswith('__'))]
+    #     print(attributes)
         # import importlib
         # module = importlib.import_module(d['optimizer']['optimizer_module'])
         # optim_class = getattr(module, d['optimizer']['optimizer_class'])
