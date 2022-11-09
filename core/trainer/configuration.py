@@ -206,7 +206,7 @@ class LoggingConfiguration:
 
     def values(self) -> Dict[str, Union[str, int]]:
         return {
-            'log_dir': str(self._logs_dir),
+            'logs_dir': str(self._logs_dir),
             'checkpoints_dir': str(self._checkpoints_dir),
             'samples_dir': str(self._samples_dir),
             'model_name': self._model_name,
@@ -215,6 +215,13 @@ class LoggingConfiguration:
             'checkpoint_frequency': self._checkpoint_frequency,
             'use_wandb': self._use_wandb,
         }
+
+    @classmethod
+    def from_dict(
+        cls,
+        dict: Dict[str, Union[str, int]],
+    ) -> LoggingConfiguration:
+        return cls(**dict)
 
     def update_wandb_last_step(self, step: int) -> None:
         with open(self._wandb_last_step_path, 'w') as f:
@@ -230,6 +237,10 @@ class ModelConfiguration:
     def __init__(self, model: MODEL, args: Dict[str, Any]) -> None:
         self.model = model
         self.args = args
+
+    @classmethod
+    def from_dict(cls, dict: Dict[str, Any]) -> ModelConfiguration:
+        return cls(model=MODEL[dict['model'].upper()], args=dict['args'])
 
     def values(self) -> Dict[str, Any]:
         return {
@@ -261,7 +272,28 @@ class TrainerConfiguration:
         self.use_cudnn_benchmark = use_cudnn_benchmark
 
     def save(self) -> None:
-        d = {
+        with open(self.logging.run_log_dir / 'configuration.json', 'w') as f:
+            f.write(json.dumps(self.values(), indent=4))
+
+    @classmethod
+    def from_dict(cls, dict: Dict[str, Any]) -> TrainerConfiguration:
+        dataset_conf = DatasetConfiguration.from_dict(dict['dataset'])
+        logging_conf = LoggingConfiguration.from_dict(dict['logging'])
+        model_conf = ModelConfiguration.from_dict(dict['model'])
+        optim_conf = OptimizerConfiguration.from_dict(dict['optimizer'])
+        return cls(
+            steps=dict['steps'],
+            resume=dict['resume'],
+            device=torch.device(dict['device']),
+            use_cudnn_benchmark=dict['use_cudnn_benchmark'],
+            dataset=dataset_conf,
+            model=model_conf,
+            logging=logging_conf,
+            optimizer=optim_conf,
+        )
+
+    def values(self) -> Dict[str, Any]:
+        return {
             'steps': self.steps,
             'dataset': self.dataset.values(),
             'logging': self.logging.values(),
@@ -271,8 +303,6 @@ class TrainerConfiguration:
             'device': str(self.device),
             'use_cudnn_benchmark': self.use_cudnn_benchmark,
         }
-        with open(self.logging.run_log_dir / 'configuration.json', 'w') as f:
-            f.write(json.dumps(d, indent=4))
 
     @classmethod
     def load(cls, config_path: Union[str, Path]) -> TrainerConfiguration:
@@ -280,9 +310,9 @@ class TrainerConfiguration:
         with open(p, 'r') as f:
             obj = json.load(f)
         
-        dataset = DatasetConfiguration.from_dict(obj['dataset'])
-        print(dataset.root.exists())
-        print('dataset', dataset, type(dataset.num_workers))
+        conf = TrainerConfiguration.from_dict(obj)
+        print(conf)
+    
     #     attributes = [a for a, v in Test.__dict__.items()
     #                   if not re.match('<function.*?>', str(v))
     #                   and not (a.startswith('__') and a.endswith('__'))]
