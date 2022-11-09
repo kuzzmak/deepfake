@@ -130,7 +130,7 @@ class TrainingWorker(qtc.QObject):
         return model
 
     def _init_optimizer(self, parameters: Iterator[Parameter]) -> Optimizer:
-        optim = self._conf.optimizer_conf.optimizer_class.value
+        optim = self._conf.optimizer_conf.classname.value
         optim = getattr(torch.optim, optim)
         optim_args = self._conf.optimizer_conf.optimizer_args
         optim = optim(params=parameters, **optim_args)
