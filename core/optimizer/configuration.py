@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 import inspect
 from typing import Any, Dict, Union
@@ -8,16 +9,27 @@ from enums import OPTIMIZER
 
 @dataclass
 class OptimizerConfiguration:
-    optimizer_class: OPTIMIZER
-    optimizer_module: str
+    classname: OPTIMIZER
+    module: str
     args: dict = field(default_factory=dict)
 
     def values(self) -> Dict[str, Union[str, Dict[str, Any]]]:
         return {
-            'optimizer_module': self.optimizer_module,
-            'optimizer_class': self.optimizer_class.value,
-            'options': self.args,
+            'class': self.classname.value,
+            'module': self.module,
+            'args': self.args,
         }
+
+    @classmethod
+    def from_dict(
+        cls,
+        dict: Dict[str, Union[str, Dict[str, Any]]],
+    ) -> OptimizerConfiguration:
+        return cls(
+            classname=OPTIMIZER[dict['class'].upper()],
+            module=dict['module'],
+            args=dict['args'],
+        )
 
 
 def _default_arg_names_and_vals(cls):
