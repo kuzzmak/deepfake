@@ -681,6 +681,7 @@ class TrainingTab(BaseWidget):
         self._selected_run_changed()
 
     def _selected_run_changed(self) -> None:
+        # TODO update logging configuration
         if self._selected_model == MODEL.FS:
             run = ModelRun(MODEL.FS, self._fs_options.resume_run_name)
             self._fs_training_preview.selected_run_sig.emit(run)
