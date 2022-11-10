@@ -6,6 +6,7 @@ import PyQt6.QtWidgets as qwt
 
 from configs.app_config import APP_CONFIG
 from enums import DEVICE, LAYOUT, WIDGET_TYPE
+from variables import RADIO_BUTTON_NAME
 
 
 def VerticalSpacer() -> qwt.QSpacerItem:
@@ -336,8 +337,14 @@ class Parameter(qwt.QWidget):
             if len(vals) == 0:
                 return
             self._btn_bg = qwt.QButtonGroup(self)
+            # radio buttons dictionary where key is the name of the button
+            # and value is the button object which can be accessed and toggled
+            # from other places
+            self._r_btns = {}
             for idx, val in enumerate(vals):
                 btn = qwt.QRadioButton(str(val))
+                btn_attr_name = RADIO_BUTTON_NAME.format(str(val))
+                self._r_btns[btn_attr_name] = btn
                 if idx == 0:
                     btn.setChecked(True)
                 if self._default_value is not None and \
