@@ -49,3 +49,5 @@ MODEL_NAME_CLASS_NAME_MAPPING = {
     MODEL.FS: 'FS',
     MODEL.ORIGINAL: 'OriginalAE',
 }
+
+RADIO_BUTTON_NAME = 'r_button_{}'
