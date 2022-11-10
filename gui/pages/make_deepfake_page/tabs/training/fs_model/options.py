@@ -22,7 +22,7 @@ from gui.widgets.common import (
     VerticalSpacer,
 )
 from utils import str_to_bool
-from variables import APP_LOGGER
+from variables import APP_LOGGER, RADIO_BUTTON_NAME
 
 logger = logging.getLogger(APP_LOGGER)
 
@@ -112,8 +112,7 @@ class Options(BaseWidget):
 
         self._dataset_path_row = SelectDirRow(
             'Dataset',
-            # r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
-            r'C:\Users\tonkec\Desktop\trump_cage_dataset',
+            r'C:\Users\tonkec\Desktop\vggface2_crop_arcfacealign_224',
         )
         dataset_gb.layout().addWidget(self._dataset_path_row)
 
@@ -207,6 +206,9 @@ class Options(BaseWidget):
     @qtc.pyqtSlot(int)
     def _run_selection_changed(self, index: int) -> None:
         self.run_changed_sig.emit()
+        # when run changed, select False option for resuming run
+        self._resume._r_btns[RADIO_BUTTON_NAME.format(str(False))] \
+            .setChecked(True)
 
     def _update_runs_selection(self) -> None:
         runs_dir = self._log_config_wgt.log_dir / self._model_name
