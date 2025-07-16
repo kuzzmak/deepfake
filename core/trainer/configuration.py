@@ -107,15 +107,17 @@ class LoggingConfiguration:
         checkpoints_dir: Union[str, Path] = 'checkpoints',
         samples_dir: Union[str, Path] = 'samples',
         run_name: Optional[str] = None,
+        resume: bool = False,
         use_wandb: bool = True,
     ) -> None:
         self._model_name = model_name
         self._log_frequency = log_frequency
         self._sample_frequency = sample_frequency
         self._checkpoint_frequency = checkpoint_frequency
+        self._resume = resume
         self._use_wandb = use_wandb
 
-        if run_name is None:
+        if run_name is None or not resume:
             self.run_name = get_date_uid()
         else:
             self.run_name = run_name
@@ -193,6 +195,10 @@ class LoggingConfiguration:
         return self._checkpoint_frequency
 
     @property
+    def resume(self) -> bool:
+        return self._resume
+
+    @property
     def use_wandb(self) -> bool:
         return self._use_wandb
 
@@ -213,6 +219,7 @@ class LoggingConfiguration:
             'log_frequency': self._log_frequency,
             'sample_frequency': self._sample_frequency,
             'checkpoint_frequency': self._checkpoint_frequency,
+            'resume': self._resume,
             'use_wandb': self._use_wandb,
         }
 
@@ -311,7 +318,7 @@ class TrainerConfiguration:
             obj = json.load(f)
         
         conf = TrainerConfiguration.from_dict(obj)
-        print(conf)
+        return conf
     
     #     attributes = [a for a, v in Test.__dict__.items()
     #                   if not re.match('<function.*?>', str(v))

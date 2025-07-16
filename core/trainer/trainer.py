@@ -33,15 +33,15 @@ class BaseTrainer:
         self._conf = conf
         self._device = conf.device
         self._meters: Dict[str, Number] = {}
-        self._log_freq = conf.logging_conf.log_frequency
-        self._save_freq = conf.logging_conf.checkpoint_frequency
-        self._sample_freq = conf.logging_conf.sample_frequency
-        self._checkpoint_dir = conf.logging_conf.checkpoints_dir
-        self._samples_dir = conf.logging_conf.samples_dir
-        self._use_wandb = conf.logging_conf.use_wandb
+        self._log_freq = conf.logging.log_frequency
+        self._save_freq = conf.logging.checkpoint_frequency
+        self._sample_freq = conf.logging.sample_frequency
+        self._checkpoint_dir = conf.logging.checkpoints_dir
+        self._samples_dir = conf.logging.samples_dir
+        self._use_wandb = conf.logging.use_wandb
         cudnn.benchmark = conf.use_cudnn_benchmark
         self._enligten_manager = enlighten.get_manager()
-        self._run_name = conf.logging_conf.run_name
+        self._run_name = conf.logging.run_name
         self._logger = logging.getLogger(type(self).__name__)
         if stop_event is not None:
             self._stop_event = stop_event
@@ -57,10 +57,10 @@ class BaseTrainer:
 
     def _init_data_loaders(self) -> DataLoader:
         dataset_class_name = MODEL_NAME_CLASS_NAME_MAPPING[
-            self._conf.model_conf.model
+            self._conf.model.model
         ]
         self._logger.debug(f'Loading {dataset_class_name} dataset.')
-        dc = self._conf.dataset_conf
+        dc = self._conf.dataset
         dataset_class = getattr(core.dataset, dataset_class_name + 'Dataset')
         dataset = dataset_class(dc.root, dc.transforms)
         self._train_data_loader = DataLoader(
@@ -76,7 +76,7 @@ class BaseTrainer:
 
     def init_model(self) -> None:
         self._logger.info('Loading model.')
-        mc = self._conf.model_conf
+        mc = self._conf.model
         model_class_name = MODEL_NAME_CLASS_NAME_MAPPING[mc.model]
         model_class = getattr(core.model, model_class_name)
         self._model = model_class()
@@ -99,8 +99,8 @@ class BaseTrainer:
     def _init_wandb(self) -> None:
         wandb.config.update(
             {
-                'learning_rate': self._conf.optimizer_conf.args['lr'],
-                'batch_size': self._conf.dataset_conf.batch_size,
+                'learning_rate': self._conf.optimizer.args['lr'],
+                'batch_size': self._conf.dataset.batch_size,
             }
         )
         wandb.watch(self._model)
@@ -139,17 +139,18 @@ class BaseTrainer:
         )
 
     def log(self) -> None:
-        if (self._current_step + 1) % self._log_freq == 0 and self._use_wandb:
-            self._conf.logging_conf.update_wandb_last_step(
-                self._current_step + 1
-            )
-            if self._current_step + 1 > \
-                    self._conf.logging_conf.wandb_last_step:
-                wandb.log(
-                    data=self._meters,
-                    step=self._current_step + 1,
-                )
-            # TODO log to file
+        ...
+        # if (self._current_step + 1) % self._log_freq == 0 and self._use_wandb:
+        #     self._conf.logging_conf.update_wandb_last_step(
+        #         self._current_step + 1
+        #     )
+        #     if self._current_step + 1 > \
+        #             self._conf.logging_conf.wandb_last_step:
+        #         wandb.log(
+        #             data=self._meters,
+        #             step=self._current_step + 1,
+        #         )
+        # TODO log to file
 
     def save_sample(
         self,
@@ -173,27 +174,31 @@ class BaseTrainer:
             wandb.log({sp.stem: [wandb.Image(str(sp))]})
             self._logger.debug('Logged new sample to wandb.')
 
+    def save_configuration(self) -> None:
+        self._conf.save()
+
     def start(self) -> None:
-        self._init_data_loaders()
-        self.init_model()
-        self.post_model_init()
-        if self._conf.resume:
-            self.load_checkpoint()
-        self.init_progress_bars()
-        self._init_logging()
-        self.post_init_logging()
+        # self._init_data_loaders()
+        # self.init_model()
+        # self.post_model_init()
+        # if self._conf.resume:
+        #     self.load_checkpoint()
+        # self.init_progress_bars()
+        # self._init_logging()
+        # self.post_init_logging()
+        self.save_configuration()
         try:
             self._logger.info('Training started.')
-            self.train()
+            # self.train()
         except KeyboardInterrupt:
             print('Received stop signal, exiting...')
         finally:
-            self._enligten_manager.stop()
-            if self._use_wandb:
-                self._logger.debug('Closing wandb.')
-                wandb.finish()
+            # self._enligten_manager.stop()
+            # if self._use_wandb:
+            #     self._logger.debug('Closing wandb.')
+            #     wandb.finish()
             self.post_training()
-            self._logger.info('Training finished.')
+            # self._logger.info('Training finished.')
 
 
 class EpochIterTrainer(BaseTrainer):

@@ -1,21 +1,18 @@
-from glob import glob
 import multiprocessing
 import os
+from glob import glob
 from pathlib import Path
 
 import pandas as pd
-from PIL import Image
 import torch
+from PIL import Image
 from torchvision.transforms import transforms
 from torchvision.utils import save_image
 from tqdm import tqdm
 
 from core.df_detection.mri_gan.data_utils.utils import (
-    get_test_reals_and_fakes,
-    get_training_reals_and_fakes,
-    get_valid_reals_and_fakes,
-    get_video_frame_labels_mapping,
-)
+    get_test_reals_and_fakes, get_training_reals_and_fakes,
+    get_valid_reals_and_fakes, get_video_frame_labels_mapping)
 from core.df_detection.mri_gan.mri_gan.model import get_MRI_GAN
 from core.df_detection.mri_gan.utils import ConfigParser
 
@@ -240,6 +237,85 @@ def generate_frame_label_csv(mode=None, dataset=None):
         df = df.append(r, ignore_index=True)
     df.set_index('video_id', inplace=True)
     df.to_csv(csv_file)
+
+# def generate_frame_label_csv(mode=None, dataset=None):
+#     if mode == 'train':
+#         originals_, fakes_ = get_training_reals_and_fakes()
+#         if dataset == 'plain':
+#             csv_file = ConfigParser \
+#                 .getInstance() \
+#                 .get_dfdc_train_frame_label_csv_path()
+#             crop_path = ConfigParser.getInstance().get_dfdc_crops_train_path()
+#         elif dataset == 'mri':
+#             csv_file = ConfigParser \
+#                 .getInstance() \
+#                 .get_train_mriframe_label_csv_path()
+#             crop_path = ConfigParser \
+#                 .getInstance() \
+#                 .get_train_mrip2p_png_data_path()
+#         else:
+#             raise Exception('Bad dataset')
+#     elif mode == 'valid':
+#         originals_, fakes_ = get_valid_reals_and_fakes()
+#         if dataset == 'plain':
+#             csv_file = ConfigParser \
+#                 .getInstance() \
+#                 .get_dfdc_valid_frame_label_csv_path()
+#             crop_path = ConfigParser.getInstance().get_dfdc_crops_valid_path()
+#         elif dataset == 'mri':
+#             csv_file = ConfigParser \
+#                 .getInstance() \
+#                 .get_valid_mriframe_label_csv_path()
+#             crop_path = ConfigParser \
+#                 .getInstance() \
+#                 .get_valid_mrip2p_png_data_path()
+#         else:
+#             raise Exception('Bad dataset')
+
+#     elif mode == 'test':
+#         originals_, fakes_ = get_test_reals_and_fakes()
+#         if dataset == 'plain':
+#             csv_file = ConfigParser \
+#                 .getInstance() \
+#                 .get_dfdc_test_frame_label_csv_path()
+#             crop_path = ConfigParser.getInstance().get_dfdc_crops_test_path()
+#         elif dataset == 'mri':
+#             csv_file = ConfigParser \
+#                 .getInstance() \
+#                 .get_test_mriframe_label_csv_path()
+#             crop_path = ConfigParser \
+#                 .getInstance() \
+#                 .get_test_mrip2p_png_data_path()
+#         else:
+#             raise Exception('Bad dataset')
+#     else:
+#         raise Exception('Bad mode in generate_frame_label_csv')
+
+#     originals = [os.path.splitext(video_filename)[0]
+#                  for video_filename in originals_]
+#     fakes = [os.path.splitext(video_filename)[0] for video_filename in fakes_]
+
+#     print(f'mode {mode}, csv file : {csv_file}')
+#     df = pd.DataFrame(columns=['video_id', 'frame', 'label'])
+
+#     crop_ids = glob(crop_path + '/*')
+#     results = []
+#     with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
+#         jobs = []
+#         for cid in tqdm(crop_ids, desc='Scheduling jobs to label frames'):
+#             jobs.append(
+#                 pool.apply_async(
+#                     get_video_frame_labels_mapping,
+#                     (cid, originals, fakes,)))
+
+#         for job in tqdm(jobs, desc="Labeling frames"):
+#             r = job.get()
+#             results.append(r)
+
+#     for r in tqdm(results, desc='Consolidating results'):
+#         df = df.append(r, ignore_index=True)
+#     df.set_index('video_id', inplace=True)
+#     df.to_csv(csv_file)
 
 
 def generate_frame_label_csv_files():

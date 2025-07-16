@@ -12,3 +12,13 @@ logs
 samples
 checkpoints
 configs/mri_gan_config.yaml
+core/df_detection/mri_gan/assets/*.csv
+inp.txt
+input.txt
+output.mp4
+test.py
+reverse_alignment.py
+test2.py
+test_tensorboard.py
+test3.py
+test4.py

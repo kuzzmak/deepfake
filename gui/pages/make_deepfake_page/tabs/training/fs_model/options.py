@@ -31,6 +31,7 @@ class Options(BaseWidget):
 
     refresh_runs_sig = qtc.pyqtSignal()
     run_changed_sig = qtc.pyqtSignal()
+    loaded_conf_sig = qtc.pyqtSignal(TrainerConfiguration)
 
     def __init__(self) -> None:
         super().__init__()
@@ -236,7 +237,7 @@ class Options(BaseWidget):
         resume = str_to_bool(button.text())
         if not resume:
             return
-        
+
         # should resume from the conf file in run log directory
         run_dir = self._log_config_wgt.log_dir / \
             self._model_name / \
@@ -250,4 +251,4 @@ class Options(BaseWidget):
             return
 
         conf = TrainerConfiguration.load(conf_fp)
-        print(conf)
+        self.loaded_conf_sig.emit(conf)

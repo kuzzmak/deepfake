@@ -633,6 +633,9 @@ class TrainingTab(BaseWidget):
         self._fs_options = FSOptions()
         self._stacked_wgt.addWidget(self._fs_options)
         self._fs_options.run_changed_sig.connect(self._selected_run_changed)
+        self._fs_options.loaded_conf_sig.connect(
+            self._update_gui_with_loaded_conf
+        )
 
         self._model_option_mappings = {
             MODEL.ORIGINAL: self._training_conf,
@@ -671,6 +674,15 @@ class TrainingTab(BaseWidget):
             MODEL.ORIGINAL: self.preview,
             MODEL.FS: self._fs_training_preview,
         }
+
+    @qtc.pyqtSlot(TrainerConfiguration)
+    def _update_gui_with_loaded_conf(self, conf: TrainerConfiguration) -> None:
+
+        self._fs_options.steps = conf.steps
+        self._fs_options.use_cudnn = conf.use_cudnn_benchmark
+        self._fs_options.lr = conf.optimizer.args['lr']
+        print('received')
+        print(conf)
 
     def _change_training_options(self, model: MODEL) -> None:
         self._stacked_wgt.setCurrentWidget(self._model_option_mappings[model])
@@ -831,6 +843,7 @@ class TrainingTab(BaseWidget):
                 self._fs_options.sample_frequency,
                 self._fs_options.checkpoint_frequency,
                 run_name=self._fs_options.resume_run_name,
+                resume=self._fs_options.resume,
             )
             optimizer_conf = DEFAULT_ADAM_CONF
             optimizer_conf.args['lr'] = 0.0004
